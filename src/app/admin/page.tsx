@@ -3,7 +3,34 @@ import { motion } from "framer-motion"
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card"
 import { Users, Server, ListOrdered, Coins, Ticket } from "lucide-react"
 
+import { useEffect, useState } from "react"
+import api from "@/lib/api"
+
 export default function AdminDashboardPage() {
+  const [runningServers, setRunningServers] = useState(0)
+  const [queuedServers, setQueuedServers] = useState(0)
+  const [creditsBurned, setCreditsBurned] = useState(0)
+  const [loading, setLoading] = useState(true)
+
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        const [serversRes, queueRes, statsRes] = await Promise.all([
+          api.get('/admin/billing/running-servers'),
+          api.get('/admin/queue/active'),
+          api.get('/admin/billing/stats')
+        ])
+        setRunningServers(serversRes.data.length)
+        setQueuedServers(queueRes.data.waiting?.length || 0)
+        setCreditsBurned(statsRes.data.totalCreditsBurned || 0)
+      } catch (err) {
+        console.error(err)
+      } finally {
+        setLoading(false)
+      }
+    }
+    fetchData()
+  }, [])
   const containerVariants = {
     hidden: { opacity: 0 },
     visible: { opacity: 1, transition: { staggerChildren: 0.1 } }
@@ -66,8 +93,7 @@ export default function AdminDashboardPage() {
               </CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="text-3xl font-black">4,120</div>
-              <p className="text-xs text-foreground/50 mt-1">Capacity: 75%</p>
+              <div className="text-3xl font-black">{loading ? '...' : runningServers}</div>
             </CardContent>
           </Card>
         </motion.div>
@@ -81,8 +107,7 @@ export default function AdminDashboardPage() {
               </CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="text-3xl font-black text-orange-500">142</div>
-              <p className="text-xs text-orange-500/70 mt-1">Avg Wait: 4m 30s</p>
+              <div className="text-3xl font-black text-orange-500">{loading ? '...' : queuedServers}</div>
             </CardContent>
           </Card>
         </motion.div>
@@ -96,8 +121,8 @@ export default function AdminDashboardPage() {
               </CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="text-3xl font-black">2.5M</div>
-              <p className="text-xs text-foreground/50 mt-1">Credits in wallets</p>
+              <div className="text-3xl font-black">{loading ? '...' : creditsBurned.toLocaleString()}</div>
+              <p className="text-xs text-foreground/50 mt-1">Total Burned Credits</p>
             </CardContent>
           </Card>
         </motion.div>

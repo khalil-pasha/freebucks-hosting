@@ -1,0 +1,12 @@
+"use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
+const express_1 = require("express");
+const credits_controller_1 = require("../controllers/credits.controller");
+const auth_1 = require("../middleware/auth");
+const router = (0, express_1.Router)();
+router.use(auth_1.requireAuth);
+router.get('/balance', credits_controller_1.CreditsController.getBalance);
+router.post('/hourly-claim', credits_controller_1.CreditsController.hourlyClaim);
+router.post('/daily-spin', credits_controller_1.CreditsController.dailySpin);
+router.get('/history', credits_controller_1.CreditsController.getHistory);
+exports.default = router;

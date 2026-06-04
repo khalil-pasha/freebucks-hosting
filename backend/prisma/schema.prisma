@@ -1,0 +1,191 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+enum Role {
+  USER
+  ADMIN
+}
+
+enum ServerStatus {
+  STARTING
+  RESTARTING
+  RUNNING
+  STOPPING
+  STOPPED
+  ARCHIVED
+}
+
+enum TransactionType {
+  EARNED
+  SPENT
+}
+
+enum QueueStatus {
+  WAITING
+  PROCESSING
+  STARTING
+  RESTARTING
+  COMPLETED
+  FAILED
+  CANCELLED
+}
+
+enum TicketStatus {
+  OPEN
+  IN_PROGRESS
+  RESOLVED
+  CLOSED
+}
+
+enum PremiumOrderStatus {
+  PENDING
+  COMPLETED
+  FAILED
+  REFUNDED
+}
+
+model User {
+  id        String   @id @default(uuid())
+  discordId String   @unique
+  username  String
+  avatar    String?
+  email     String?  @unique
+  role      Role     @default(USER)
+  balance   Float    @default(12.5) // Realistic starting balance
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  servers           Server[]
+  transactions      CreditsTransaction[]
+  referralsMade     Referral[]           @relation("Referrer")
+  referralsReceived Referral[]           @relation("Referred")
+  voucherClaims     VoucherClaim[]
+  queueJobs         QueueJob[]
+  supportTickets    SupportTicket[]
+  premiumOrders     PremiumOrder[]
+}
+
+model Admin {
+  id        String   @id @default(uuid())
+  discordId String   @unique // For linking to user or separate admin accounts
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Server {
+  id           String       @id @default(uuid())
+  userId       String
+  user         User         @relation(fields: [userId], references: [id])
+  name         String
+  ramGB        Float
+  status       ServerStatus @default(STOPPED)
+  nodeLocation String       @default("mumbai") // Indian nodes only
+  costPerHour  Float
+  createdAt    DateTime     @default(now())
+  updatedAt    DateTime     @updatedAt
+
+  pterodactylServerId   Int?
+  pterodactylIdentifier String?
+
+  billingLogs ServerBillingLog[]
+  queueJobs   QueueJob[]
+}
+
+model CreditsTransaction {
+  id        String          @id @default(uuid())
+  userId    String
+  user      User            @relation(fields: [userId], references: [id])
+  amount    Float
+  type      TransactionType
+  source    String // e.g., 'daily_spin', 'hourly_claim', 'server_cost'
+  timestamp DateTime        @default(now())
+}
+
+model Referral {
+  id           String   @id @default(uuid())
+  referrerId   String
+  referrer     User     @relation("Referrer", fields: [referrerId], references: [id])
+  referredId   String
+  referred     User     @relation("Referred", fields: [referredId], references: [id])
+  status       String   @default("COMPLETED")
+  rewardAmount Float
+  createdAt    DateTime @default(now())
+}
+
+model Voucher {
+  id           String    @id @default(uuid())
+  code         String    @unique
+  rewardAmount Float
+  maxUses      Int
+  currentUses  Int       @default(0)
+  expiresAt    DateTime?
+  createdAt    DateTime  @default(now())
+
+  claims VoucherClaim[]
+}
+
+model VoucherClaim {
+  id        String   @id @default(uuid())
+  voucherId String
+  voucher   Voucher  @relation(fields: [voucherId], references: [id])
+  userId    String
+  user      User     @relation(fields: [userId], references: [id])
+  claimedAt DateTime @default(now())
+
+  @@unique([voucherId, userId])
+}
+
+model QueueJob {
+  id        String      @id @default(uuid())
+  userId    String
+  user      User        @relation(fields: [userId], references: [id])
+  serverId  String
+  server    Server      @relation(fields: [serverId], references: [id])
+  action    String // START, RESTART
+  status    QueueStatus @default(WAITING)
+  position  Int?
+  priority  Int         @default(10)
+  createdAt DateTime    @default(now())
+  updatedAt DateTime    @updatedAt
+}
+
+model ServerBillingLog {
+  id             String   @id @default(uuid())
+  serverId       String
+  server         Server   @relation(fields: [serverId], references: [id])
+  amountDeducted Float
+  reason         String
+  timestamp      DateTime @default(now())
+}
+
+model SupportTicket {
+  id        String       @id @default(uuid())
+  userId    String
+  user      User         @relation(fields: [userId], references: [id])
+  subject   String
+  status    TicketStatus @default(OPEN)
+  createdAt DateTime     @default(now())
+  updatedAt DateTime     @updatedAt
+}
+
+model PremiumOrder {
+  id          String             @id @default(uuid())
+  userId      String
+  user        User               @relation(fields: [userId], references: [id])
+  status      PremiumOrderStatus @default(PENDING)
+  processedAt DateTime?
+  createdAt   DateTime           @default(now())
+  updatedAt   DateTime           @updatedAt
+}
+
+model Setting {
+  key         String   @id
+  value       String
+  description String?
+  updatedAt   DateTime @updatedAt
+}

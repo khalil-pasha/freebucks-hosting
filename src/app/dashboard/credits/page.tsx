@@ -5,16 +5,31 @@ import { Button } from "@/components/ui/button"
 import { Coins, TrendingUp, TrendingDown, Clock, Download, Dices, Server } from "lucide-react"
 import Link from "next/link"
 
-const transactions = [
-  { id: "TX-1049", date: "Today, 10:42 AM", desc: "Hourly Reward Claimed", amount: "+1.5", type: "earn" },
-  { id: "TX-1048", date: "Today, 09:00 AM", desc: "Server Burn (6GB, 1 Hour)", amount: "-6.0", type: "spend" },
-  { id: "TX-1047", date: "Yesterday, 11:30 PM", desc: "Server Burn (6GB, 1 Hour)", amount: "-6.0", type: "spend" },
-  { id: "TX-1046", date: "Yesterday, 08:15 PM", desc: "Daily Spin Won", amount: "+15.0", type: "earn" },
-  { id: "TX-1045", date: "Yesterday, 08:00 PM", desc: "Server Burn (6GB, 1 Hour)", amount: "-6.0", type: "spend" },
-  { id: "TX-1044", date: "Yesterday, 12:00 PM", desc: "Referral Bonus (Notch)", amount: "+25.0", type: "earn" },
-]
+import { useEffect, useState } from "react"
+import api from "@/lib/api"
 
 export default function CreditsPage() {
+  const [balance, setBalance] = useState<number>(0)
+  const [transactions, setTransactions] = useState<any[]>([])
+  const [loading, setLoading] = useState(true)
+
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        const [balRes, histRes] = await Promise.all([
+          api.get('/credits/balance'),
+          api.get('/credits/history')
+        ])
+        setBalance(balRes.data.balance)
+        setTransactions(histRes.data)
+      } catch (err) {
+        console.error(err)
+      } finally {
+        setLoading(false)
+      }
+    }
+    fetchData()
+  }, [])
   const containerVariants = {
     hidden: { opacity: 0 },
     visible: { opacity: 1, transition: { staggerChildren: 0.1 } }
@@ -55,7 +70,7 @@ export default function CreditsPage() {
               </CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="text-4xl font-black text-foreground mt-2">12.5 <span className="text-lg text-foreground/50 font-medium">Credits</span></div>
+              <div className="text-4xl font-black text-foreground mt-2">{loading ? '...' : balance} <span className="text-lg text-foreground/50 font-medium">Credits</span></div>
             </CardContent>
           </Card>
         </motion.div>
@@ -69,16 +84,16 @@ export default function CreditsPage() {
               </CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="text-3xl font-bold text-secondary mt-2">+20.0 <span className="text-sm text-foreground/50 font-normal">Credits</span></div>
+              <div className="text-3xl font-bold text-secondary mt-2">Tracking... <span className="text-sm text-foreground/50 font-normal"></span></div>
               
               {/* Daily Cap Progress */}
               <div className="mt-4">
                 <div className="flex justify-between text-xs mb-1">
                   <span className="text-foreground/60 font-medium">Daily Free Cap</span>
-                  <span className="font-bold">20 / 35</span>
+                  <span className="font-bold">-- / 35</span>
                 </div>
                 <div className="w-full bg-background rounded-full h-1.5 border border-border/50 overflow-hidden">
-                  <div className="bg-secondary h-full rounded-full w-[57%]" />
+                  <div className="bg-secondary h-full rounded-full w-[0%]" />
                 </div>
               </div>
             </CardContent>
@@ -94,7 +109,7 @@ export default function CreditsPage() {
               </CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="text-3xl font-bold text-red-500 mt-2">-18.0 <span className="text-sm text-foreground/50 font-normal">Credits</span></div>
+              <div className="text-3xl font-bold text-red-500 mt-2">Tracking... <span className="text-sm text-foreground/50 font-normal"></span></div>
               <p className="text-xs text-foreground/50 mt-4 flex items-center gap-1">
                 <Server className="w-3 h-3" /> Server Burn Rate: 6/hr
               </p>
@@ -127,15 +142,19 @@ export default function CreditsPage() {
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-border/50">
-                  {transactions.map((tx) => (
+                  {loading ? (
+                    <tr><td colSpan={4} className="px-4 py-4 text-center">Loading...</td></tr>
+                  ) : transactions.length === 0 ? (
+                    <tr><td colSpan={4} className="px-4 py-4 text-center">No transactions yet</td></tr>
+                  ) : transactions.map((tx) => (
                     <tr key={tx.id} className="hover:bg-background/50 transition-colors">
-                      <td className="px-4 py-4 font-mono text-xs text-foreground/70">{tx.id}</td>
+                      <td className="px-4 py-4 font-mono text-xs text-foreground/70">{tx.id.substring(0,8)}</td>
                       <td className="px-4 py-4 text-foreground/80 flex items-center gap-2">
-                        <Clock className="w-3 h-3 text-foreground/40" /> {tx.date}
+                        <Clock className="w-3 h-3 text-foreground/40" /> {new Date(tx.createdAt).toLocaleString()}
                       </td>
-                      <td className="px-4 py-4 font-medium">{tx.desc}</td>
-                      <td className={`px-4 py-4 text-right font-bold ${tx.type === 'earn' ? 'text-success' : 'text-red-500'}`}>
-                        {tx.amount}
+                      <td className="px-4 py-4 font-medium">{tx.source}</td>
+                      <td className={`px-4 py-4 text-right font-bold ${tx.type === 'EARNED' ? 'text-success' : 'text-red-500'}`}>
+                        {tx.type === 'EARNED' ? '+' : '-'}{tx.amount}
                       </td>
                     </tr>
                   ))}

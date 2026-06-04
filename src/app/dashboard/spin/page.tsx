@@ -4,13 +4,59 @@ import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Coins, Dices, Timer, History, CheckCircle2 } from "lucide-react"
 
-const claimHistory = [
-  { id: 1, action: "Hourly Claim", amount: "+1.5", time: "10 mins ago" },
-  { id: 2, action: "Hourly Claim", amount: "+1.5", time: "1 hr 10 mins ago" },
-  { id: 3, action: "Daily Spin", amount: "+15.0", time: "5 hours ago" },
-]
+import { useEffect, useState } from "react"
+import api from "@/lib/api"
+import { useAuth } from "@/components/AuthProvider"
 
 export default function RewardsPage() {
+  const { user } = useAuth()
+  const [balanceData, setBalanceData] = useState<any>(null)
+  const [history, setHistory] = useState<any[]>([])
+  const [loading, setLoading] = useState(false)
+  
+  const fetchRewardsData = async () => {
+    try {
+      const [balRes, histRes] = await Promise.all([
+        api.get('/credits/balance'),
+        api.get('/credits/history')
+      ])
+      setBalanceData(balRes.data)
+      setHistory(histRes.data.filter((tx: any) => tx.source === 'HOURLY_CLAIM' || tx.source === 'DAILY_SPIN').slice(0, 10))
+    } catch (err) {
+      console.error(err)
+    }
+  }
+
+  useEffect(() => {
+    fetchRewardsData()
+  }, [])
+
+  const handleSpin = async () => {
+    setLoading(true)
+    try {
+      const rolledAmount = Math.floor(Math.random() * (50 - 5 + 1) + 5)
+      const res = await api.post('/credits/daily-spin', { rolledAmount })
+      alert(`You spun and won ${res.data.actualReward} credits!`)
+      fetchRewardsData()
+    } catch (err: any) {
+      alert(err.response?.data?.error || err.message)
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  const handleHourly = async () => {
+    setLoading(true)
+    try {
+      const res = await api.post('/credits/hourly-claim')
+      alert(`You claimed ${res.data.amount} hourly credits!`)
+      fetchRewardsData()
+    } catch (err: any) {
+      alert(err.response?.data?.error || err.message)
+    } finally {
+      setLoading(false)
+    }
+  }
   const containerVariants = {
     hidden: { opacity: 0 },
     visible: { opacity: 1, transition: { staggerChildren: 0.1 } }
@@ -39,7 +85,7 @@ export default function RewardsPage() {
             <p className="text-sm text-foreground/70">You can still earn 15 more free credits today before hitting the 35 cap.</p>
           </div>
         </div>
-        <div className="hidden sm:block text-2xl font-black text-secondary">15 / 35</div>
+        <div className="hidden sm:block text-2xl font-black text-secondary">{balanceData ? balanceData.dailyEarned : '--'} / {balanceData ? balanceData.dailyLimit : '--'}</div>
       </motion.div>
 
       <motion.div 
@@ -68,7 +114,7 @@ export default function RewardsPage() {
                 <div className="text-3xl font-black text-primary">SPIN</div>
               </div>
 
-              <Button size="lg" className="w-full sm:w-auto px-12 bg-primary hover:bg-primary/90 text-white font-bold h-14">
+              <Button disabled={loading} onClick={handleSpin} size="lg" className="w-full sm:w-auto px-12 bg-primary hover:bg-primary/90 text-white font-bold h-14">
                 Spin The Wheel
               </Button>
               <p className="text-xs text-foreground/40 mt-4 font-mono">Next spin available in 19:15:32</p>
@@ -95,7 +141,7 @@ export default function RewardsPage() {
                 <span className="font-semibold text-foreground/80">Reward Amount</span>
                 <span className="text-xl font-black text-success flex items-center gap-1"><Coins className="w-5 h-5" /> 1.5</span>
               </div>
-              <Button size="lg" className="w-full bg-success hover:bg-success/90 text-white font-bold shadow-lg shadow-success/20">
+              <Button disabled={loading} onClick={handleHourly} size="lg" className="w-full bg-success hover:bg-success/90 text-white font-bold shadow-lg shadow-success/20">
                 Claim Reward
               </Button>
             </CardContent>
@@ -110,18 +156,18 @@ export default function RewardsPage() {
             </CardHeader>
             <CardContent>
               <div className="space-y-4 pt-2">
-                {claimHistory.map((claim) => (
+                {history.length === 0 ? <p className="text-sm text-foreground/50 text-center">No recent claims</p> : history.map((claim) => (
                   <div key={claim.id} className="flex items-center justify-between">
                     <div className="flex items-center gap-3">
                       <div className="w-8 h-8 rounded-full bg-background flex items-center justify-center border border-border/50 text-success">
                         <CheckCircle2 className="w-4 h-4" />
                       </div>
                       <div>
-                        <p className="font-medium text-sm">{claim.action}</p>
-                        <p className="text-xs text-foreground/50">{claim.time}</p>
+                        <p className="font-medium text-sm">{claim.source}</p>
+                        <p className="text-xs text-foreground/50">{new Date(claim.createdAt).toLocaleString()}</p>
                       </div>
                     </div>
-                    <span className="font-bold text-success text-sm">{claim.amount}</span>
+                    <span className="font-bold text-success text-sm">+{claim.amount}</span>
                   </div>
                 ))}
               </div>

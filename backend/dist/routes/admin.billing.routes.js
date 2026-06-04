@@ -1,0 +1,13 @@
+"use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
+const express_1 = require("express");
+const admin_billing_controller_1 = require("../controllers/admin.billing.controller");
+const auth_1 = require("../middleware/auth");
+const admin_1 = require("../middleware/admin");
+const router = (0, express_1.Router)();
+router.use(auth_1.requireAuth, admin_1.requireAdmin);
+router.get('/logs', admin_billing_controller_1.AdminBillingController.getLogs);
+router.get('/running-servers', admin_billing_controller_1.AdminBillingController.getRunningServers);
+router.get('/auto-stopped', admin_billing_controller_1.AdminBillingController.getAutoStopped);
+router.get('/stats', admin_billing_controller_1.AdminBillingController.getStats);
+exports.default = router;

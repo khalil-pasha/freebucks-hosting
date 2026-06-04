@@ -1,0 +1,14 @@
+"use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
+const express_1 = require("express");
+const admin_queue_controller_1 = require("../controllers/admin.queue.controller");
+const auth_1 = require("../middleware/auth");
+const admin_1 = require("../middleware/admin");
+const router = (0, express_1.Router)();
+router.use(auth_1.requireAuth, admin_1.requireAdmin);
+router.post('/pause', admin_queue_controller_1.AdminQueueController.pause);
+router.post('/resume', admin_queue_controller_1.AdminQueueController.resume);
+router.post('/cancel', admin_queue_controller_1.AdminQueueController.cancel);
+router.post('/retry', admin_queue_controller_1.AdminQueueController.retry);
+router.get('/active', admin_queue_controller_1.AdminQueueController.activeSlots);
+exports.default = router;

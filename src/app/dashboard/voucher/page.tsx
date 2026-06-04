@@ -5,13 +5,44 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Gift, CheckCircle2, History, XCircle } from "lucide-react"
 
-const voucherHistory = [
-  { id: 1, code: "WELCOME2026", amount: "+500 Credits", status: "Success", date: "May 15, 2026" },
-  { id: 2, code: "DISCORD10K", amount: "+250 Credits", status: "Success", date: "May 01, 2026" },
-  { id: 3, code: "EXPIREDCODE", amount: "—", status: "Failed", date: "April 20, 2026" },
-]
-
+import { useEffect, useState } from "react"
+import api from "@/lib/api"
+import { useAuth } from "@/components/AuthProvider"
 export default function VoucherPage() {
+  const { user } = useAuth()
+  const [code, setCode] = useState("")
+  const [history, setHistory] = useState<any[]>([])
+  const [loading, setLoading] = useState(false)
+
+  const fetchHistory = async () => {
+    try {
+      const res = await api.get('/credits/history')
+      // Only show voucher claims
+      setHistory(res.data.filter((tx: any) => tx.source === 'VOUCHER').slice(0, 10))
+    } catch (err) {
+      console.error(err)
+    }
+  }
+
+  useEffect(() => {
+    fetchHistory()
+  }, [])
+
+  const handleRedeem = async () => {
+    if (!code) return
+    setLoading(true)
+    try {
+      const res = await api.post('/vouchers/redeem', { code })
+      alert(`Success! You redeemed ${res.data.amount} credits.`)
+      setCode("")
+      fetchHistory()
+    } catch (err: any) {
+      alert(err.response?.data?.error || err.message)
+    } finally {
+      setLoading(false)
+    }
+  }
+
   return (
     <div className="space-y-8 max-w-4xl mx-auto">
       <div className="text-center">
@@ -28,10 +59,12 @@ export default function VoucherPage() {
             
             <div className="w-full max-w-md space-y-4">
               <Input 
+                value={code}
+                onChange={(e) => setCode(e.target.value)}
                 placeholder="Enter your voucher code..." 
                 className="h-14 text-center text-lg font-mono tracking-widest bg-background/80 backdrop-blur border-purple-500/50 focus-visible:ring-purple-500 uppercase"
               />
-              <Button size="lg" className="w-full h-14 text-lg bg-purple-600 hover:bg-purple-700 text-white font-bold shadow-lg shadow-purple-500/20 transition-all hover:scale-[1.02]">
+              <Button disabled={loading || !code} onClick={handleRedeem} size="lg" className="w-full h-14 text-lg bg-purple-600 hover:bg-purple-700 text-white font-bold shadow-lg shadow-purple-500/20 transition-all hover:scale-[1.02]">
                 Claim Reward
               </Button>
             </div>
@@ -48,21 +81,19 @@ export default function VoucherPage() {
           </CardHeader>
           <CardContent>
             <div className="space-y-3">
-              {voucherHistory.map((item) => (
+              {history.length === 0 ? (
+                <p className="text-center text-foreground/50 py-4">No vouchers redeemed yet.</p>
+              ) : history.map((item) => (
                 <div key={item.id} className="flex items-center justify-between p-4 bg-background border border-border/50 rounded-xl hover:border-foreground/20 transition-colors">
                   <div className="flex items-center gap-4">
-                    {item.status === "Success" ? (
-                      <CheckCircle2 className="w-6 h-6 text-success flex-shrink-0" />
-                    ) : (
-                      <XCircle className="w-6 h-6 text-red-500 flex-shrink-0" />
-                    )}
+                    <CheckCircle2 className="w-6 h-6 text-success flex-shrink-0" />
                     <div>
-                      <p className="font-mono font-bold tracking-wider">{item.code}</p>
-                      <p className="text-xs text-foreground/50">{item.date}</p>
+                      <p className="font-mono font-bold tracking-wider">VOUCHER</p>
+                      <p className="text-xs text-foreground/50">{new Date(item.createdAt).toLocaleString()}</p>
                     </div>
                   </div>
-                  <div className={`font-bold ${item.status === "Success" ? "text-success" : "text-foreground/30"}`}>
-                    {item.amount}
+                  <div className="font-bold text-success">
+                    +{item.amount} Credits
                   </div>
                 </div>
               ))}

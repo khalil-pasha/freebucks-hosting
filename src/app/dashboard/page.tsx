@@ -5,14 +5,41 @@ import { Button } from "@/components/ui/button"
 import { Server, Coins, Activity, Clock, Plus, Zap, ChevronRight, Dices, Gift } from "lucide-react"
 import Link from "next/link"
 
-const recentActivity = [
-  { id: 1, action: "Claimed Hourly Reward", detail: "+1.5 Credits", time: "10 mins ago", type: "credit" },
-  { id: 2, action: "Server Started", detail: "Survival SMP (India)", time: "1 hour ago", type: "server" },
-  { id: 3, action: "Daily Spin Won", detail: "+15 Credits", time: "5 hours ago", type: "credit" },
-  { id: 4, action: "Server Upgraded", detail: "4GB -> 6GB RAM", time: "2 days ago", type: "server" },
-]
+import { useEffect, useState } from "react"
+import { useAuth } from "@/components/AuthProvider"
+import api from "@/lib/api"
 
 export default function DashboardOverview() {
+  const { user, loading: userLoading } = useAuth()
+  const [balance, setBalance] = useState<number>(0)
+  const [activeServers, setActiveServers] = useState<number>(0)
+  const [totalServers, setTotalServers] = useState<number>(0)
+  const [history, setHistory] = useState<any[]>([])
+  const [loading, setLoading] = useState(true)
+
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        const [balRes, serverRes, histRes] = await Promise.all([
+          api.get('/credits/balance'),
+          api.get('/servers/my-servers'),
+          api.get('/credits/history')
+        ])
+        
+        setBalance(balRes.data.balance)
+        const servers = serverRes.data
+        setTotalServers(servers.length)
+        setActiveServers(servers.filter((s: any) => s.status === 'RUNNING' || s.status === 'STARTING').length)
+        setHistory(histRes.data.slice(0, 4))
+      } catch (err) {
+        console.error(err)
+      } finally {
+        setLoading(false)
+      }
+    }
+    
+    if (!userLoading && user) fetchData()
+  }, [user, userLoading])
   const containerVariants = {
     hidden: { opacity: 0 },
     visible: { opacity: 1, transition: { staggerChildren: 0.1 } }
@@ -28,7 +55,7 @@ export default function DashboardOverview() {
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div>
           <h1 className="text-3xl font-bold tracking-tight">Dashboard Overview</h1>
-          <p className="text-foreground/60 mt-1">Welcome back, _NightBlade_. Here's what's happening with your servers.</p>
+          <p className="text-foreground/60 mt-1">Welcome back, {user?.username || 'User'}. Here's what's happening with your servers.</p>
         </div>
         <div className="flex gap-3">
           <Link href="/dashboard/spin">
@@ -60,8 +87,8 @@ export default function DashboardOverview() {
               </CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="text-3xl font-bold text-foreground">12.5 <span className="text-sm text-foreground/50 font-normal">Credits</span></div>
-              <p className="text-xs text-foreground/50 mt-1">Sufficient for ~2 hours (6GB Server)</p>
+              <div className="text-3xl font-bold text-foreground">{loading ? '...' : balance} <span className="text-sm text-foreground/50 font-normal">Credits</span></div>
+              <p className="text-xs text-foreground/50 mt-1">Spend wisely on your servers</p>
             </CardContent>
           </Card>
         </motion.div>
@@ -97,8 +124,8 @@ export default function DashboardOverview() {
               </CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="text-3xl font-bold">1 <span className="text-sm text-foreground/50 font-normal">/ 3 Slots</span></div>
-              <p className="text-xs text-foreground/50 mt-1">Currently burning 6 credits/hour</p>
+              <div className="text-3xl font-bold">{loading ? '...' : activeServers} <span className="text-sm text-foreground/50 font-normal">/ {loading ? '...' : totalServers} Total</span></div>
+              <p className="text-xs text-foreground/50 mt-1">Servers currently running or starting</p>
             </CardContent>
           </Card>
         </motion.div>
@@ -173,22 +200,22 @@ export default function DashboardOverview() {
             </CardHeader>
             <CardContent>
               <div className="space-y-4 mt-4">
-                {recentActivity.map((activity) => (
+                {loading ? <p className="text-sm text-foreground/50">Loading activity...</p> : history.map((activity) => (
                   <div key={activity.id} className="flex items-start gap-4 p-3 rounded-lg hover:bg-background/50 transition-colors border border-transparent hover:border-border/50">
                     <div className={`w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0 ${
-                      activity.type === 'credit' ? 'bg-success/10 text-success' : 'bg-primary/10 text-primary'
+                      activity.type === 'EARNED' ? 'bg-success/10 text-success' : 'bg-primary/10 text-primary'
                     }`}>
-                      {activity.type === 'credit' ? <Coins className="w-5 h-5" /> : <Server className="w-5 h-5" />}
+                      {activity.type === 'EARNED' ? <Coins className="w-5 h-5" /> : <Server className="w-5 h-5" />}
                     </div>
                     <div className="flex-1 flex flex-col sm:flex-row sm:items-center justify-between gap-1">
                       <div>
-                        <p className="font-medium text-sm">{activity.action}</p>
-                        <p className="text-xs text-foreground/50">{activity.time}</p>
+                        <p className="font-medium text-sm">{activity.source}</p>
+                        <p className="text-xs text-foreground/50">{new Date(activity.createdAt).toLocaleString()}</p>
                       </div>
                       <div className={`text-sm font-semibold ${
-                        activity.type === 'credit' ? 'text-success' : 'text-foreground'
+                        activity.type === 'EARNED' ? 'text-success' : 'text-foreground'
                       }`}>
-                        {activity.detail}
+                        {activity.type === 'EARNED' ? '+' : '-'}{activity.amount}
                       </div>
                     </div>
                   </div>
