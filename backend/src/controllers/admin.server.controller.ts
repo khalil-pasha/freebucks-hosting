@@ -1,6 +1,7 @@
 import { Request, Response } from 'express';
 import { db } from '../utils/db';
 import { PterodactylService } from '../services/pterodactyl.service';
+import { AuditService } from '../services/audit.service';
 
 export class AdminServerController {
   public static async suspendServer(req: Request, res: Response) {
@@ -15,6 +16,8 @@ export class AdminServerController {
         where: { id: serverId },
         data: { status: 'ARCHIVED' }
       });
+
+      await AuditService.logAction(req, 'ADMIN_SUSPEND_SERVER', serverId, req.user!.id);
 
       res.json({ success: true });
     } catch (error: any) {
@@ -31,6 +34,8 @@ export class AdminServerController {
       await PterodactylService.deleteServer(server.pterodactylServerId);
       
       await db.server.delete({ where: { id: serverId } });
+
+      await AuditService.logAction(req, 'ADMIN_DELETE_SERVER', serverId, req.user!.id);
 
       res.json({ success: true });
     } catch (error: any) {
@@ -50,6 +55,8 @@ export class AdminServerController {
         where: { id: serverId },
         data: { status: 'STOPPED' }
       });
+
+      await AuditService.logAction(req, 'ADMIN_FORCE_STOP_SERVER', serverId, req.user!.id);
 
       res.json({ success: true });
     } catch (error: any) {

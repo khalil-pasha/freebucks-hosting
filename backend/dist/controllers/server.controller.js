@@ -3,6 +3,7 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.ServerController = void 0;
 const db_1 = require("../utils/db");
 const pterodactyl_service_1 = require("../services/pterodactyl.service");
+const audit_service_1 = require("../services/audit.service");
 class ServerController {
     static async createServer(req, res) {
         try {
@@ -49,6 +50,7 @@ class ServerController {
                     pterodactylIdentifier: pteroData.identifier,
                 }
             });
+            await audit_service_1.AuditService.logAction(req, 'SERVER_CREATE', server.id, userId);
             res.status(201).json(server);
         }
         catch (error) {

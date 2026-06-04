@@ -1,0 +1,14 @@
+"use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
+const express_1 = require("express");
+const admin_support_controller_1 = require("../controllers/admin.support.controller");
+const auth_1 = require("../middleware/auth");
+const admin_1 = require("../middleware/admin");
+const router = (0, express_1.Router)();
+router.use(auth_1.requireAuth, admin_1.requireAdmin);
+router.get('/', admin_support_controller_1.AdminSupportController.getAllTickets);
+router.get('/:id', admin_support_controller_1.AdminSupportController.getTicketById);
+router.post('/:id/reply', admin_support_controller_1.AdminSupportController.reply);
+router.post('/:id/close', admin_support_controller_1.AdminSupportController.closeTicket);
+router.post('/:id/reopen', admin_support_controller_1.AdminSupportController.reopenTicket);
+exports.default = router;

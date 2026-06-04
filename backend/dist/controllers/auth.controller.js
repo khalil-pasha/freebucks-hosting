@@ -7,6 +7,7 @@ exports.AuthController = void 0;
 const auth_service_1 = require("../services/auth.service");
 const db_1 = require("../utils/db");
 const crypto_1 = __importDefault(require("crypto"));
+const audit_service_1 = require("../services/audit.service");
 // Basic in-memory store for states (for development). 
 // In prod, use Redis or signed cookies.
 const stateStore = new Set();
@@ -37,6 +38,7 @@ class AuthController {
             const user = await auth_service_1.AuthService.processDiscordLogin(discordUser);
             // Generate JWT
             const token = auth_service_1.AuthService.generateJwt(user);
+            await audit_service_1.AuditService.logAction(req, 'LOGIN', undefined, user.id);
             // Redirect to frontend with token
             const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:3000';
             res.redirect(`${frontendUrl}/dashboard?token=${token}`);

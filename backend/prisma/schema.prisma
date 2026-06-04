@@ -37,8 +37,7 @@ enum QueueStatus {
 
 enum TicketStatus {
   OPEN
-  IN_PROGRESS
-  RESOLVED
+  PENDING
   CLOSED
 }
 
@@ -59,6 +58,7 @@ enum NotificationType {
   QUEUE_UPDATE
   ADMIN_ADJUSTMENT
   SYSTEM
+  TICKET_UPDATE
 }
 
 model User {
@@ -79,6 +79,7 @@ model User {
   voucherClaims     VoucherClaim[]
   queueJobs         QueueJob[]
   supportTickets    SupportTicket[]
+  ticketMessages    TicketMessage[]
   premiumOrders     PremiumOrder[]
   notifications     Notification[]
 }
@@ -184,6 +185,19 @@ model SupportTicket {
   status    TicketStatus @default(OPEN)
   createdAt DateTime     @default(now())
   updatedAt DateTime     @updatedAt
+
+  messages  TicketMessage[]
+}
+
+model TicketMessage {
+  id           String        @id @default(uuid())
+  ticketId     String
+  ticket       SupportTicket @relation(fields: [ticketId], references: [id])
+  userId       String
+  user         User          @relation(fields: [userId], references: [id])
+  message      String
+  isStaffReply Boolean       @default(false)
+  createdAt    DateTime      @default(now())
 }
 
 model PremiumOrder {
@@ -221,4 +235,14 @@ model SettingAuditLog {
   oldValue  String?
   newValue  String
   timestamp DateTime @default(now())
+}
+
+model AuditLog {
+  id         String   @id @default(uuid())
+  userId     String?  // Optional for unauthenticated actions
+  action     String
+  resource   String?
+  ipAddress  String?
+  userAgent  String?
+  timestamp  DateTime @default(now())
 }

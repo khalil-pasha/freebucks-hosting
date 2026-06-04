@@ -3,6 +3,7 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.AdminSettingsController = void 0;
 const settings_service_1 = require("../services/settings.service");
 const db_1 = require("../utils/db");
+const audit_service_1 = require("../services/audit.service");
 class AdminSettingsController {
     static async getAllSettings(req, res) {
         try {
@@ -21,6 +22,7 @@ class AdminSettingsController {
                 return res.status(400).json({ error: 'Key and value are required.' });
             }
             const updatedValue = await settings_service_1.SettingsService.update(adminId, key, value);
+            await audit_service_1.AuditService.logAction(req, 'SETTINGS_UPDATE', key, adminId);
             res.json({ success: true, key, value: updatedValue });
         }
         catch (error) {

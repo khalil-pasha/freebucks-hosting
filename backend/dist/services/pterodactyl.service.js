@@ -114,5 +114,19 @@ class PterodactylService {
         await axios_1.default.delete(url, { headers: this.getAppHeaders() });
         return true;
     }
+    static async checkConnection() {
+        if (!this.isConfigured()) {
+            return { status: 'simulation_mode' };
+        }
+        try {
+            const url = `${process.env.PTERODACTYL_PANEL_URL}/api/application/users`;
+            await axios_1.default.get(url, { headers: this.getAppHeaders() });
+            return { status: 'ok' };
+        }
+        catch (error) {
+            console.error('Pterodactyl Check Connection Error:', error.message);
+            return { status: 'error', message: error.message };
+        }
+    }
 }
 exports.PterodactylService = PterodactylService;

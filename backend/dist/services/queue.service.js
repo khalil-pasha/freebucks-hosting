@@ -210,5 +210,14 @@ class AdminQueueService {
             priority: job.opts.priority
         }));
     }
+    static async checkHealth() {
+        try {
+            await connection.ping();
+            return { redis: 'ok', queue: 'ok' }; // BullMQ will fail if Redis fails
+        }
+        catch (error) {
+            return { redis: 'error', queue: 'error', message: error.message };
+        }
+    }
 }
 exports.AdminQueueService = AdminQueueService;

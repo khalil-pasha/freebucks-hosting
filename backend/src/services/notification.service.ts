@@ -10,7 +10,8 @@ export type NotificationTypeEnum =
   'SERVER_AUTO_STOP' | 
   'QUEUE_UPDATE' | 
   'ADMIN_ADJUSTMENT' | 
-  'SYSTEM';
+  'SYSTEM' |
+  'TICKET_UPDATE';
 
 export class NotificationService {
   public static async createNotification(userId: string, title: string, message: string, type: NotificationTypeEnum) {

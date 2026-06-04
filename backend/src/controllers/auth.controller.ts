@@ -2,6 +2,7 @@ import { Request, Response } from 'express';
 import { AuthService } from '../services/auth.service';
 import { db } from '../utils/db';
 import crypto from 'crypto';
+import { AuditService } from '../services/audit.service';
 
 // Basic in-memory store for states (for development). 
 // In prod, use Redis or signed cookies.
@@ -45,6 +46,8 @@ export class AuthController {
       // Generate JWT
       const token = AuthService.generateJwt(user);
       
+      await AuditService.logAction(req, 'LOGIN', undefined, user.id);
+
       // Redirect to frontend with token
       const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:3000';
       res.redirect(`${frontendUrl}/dashboard?token=${token}`);

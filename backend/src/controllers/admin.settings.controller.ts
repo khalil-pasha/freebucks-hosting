@@ -1,6 +1,7 @@
 import { Request, Response } from 'express';
 import { SettingsService } from '../services/settings.service';
 import { db } from '../utils/db';
+import { AuditService } from '../services/audit.service';
 
 export class AdminSettingsController {
   public static async getAllSettings(req: Request, res: Response) {
@@ -22,6 +23,7 @@ export class AdminSettingsController {
       }
 
       const updatedValue = await SettingsService.update(adminId, key, value);
+      await AuditService.logAction(req, 'SETTINGS_UPDATE', key, adminId);
       res.json({ success: true, key, value: updatedValue });
     } catch (error: any) {
       res.status(400).json({ error: error.message });

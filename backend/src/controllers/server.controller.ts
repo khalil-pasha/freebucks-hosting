@@ -1,6 +1,7 @@
 import { Request, Response } from 'express';
 import { db } from '../utils/db';
 import { PterodactylService } from '../services/pterodactyl.service';
+import { AuditService } from '../services/audit.service';
 
 export class ServerController {
   public static async createServer(req: Request, res: Response) {
@@ -50,6 +51,8 @@ export class ServerController {
           pterodactylIdentifier: pteroData.identifier,
         }
       });
+
+      await AuditService.logAction(req, 'SERVER_CREATE', server.id, userId);
 
       res.status(201).json(server);
     } catch (error: any) {
