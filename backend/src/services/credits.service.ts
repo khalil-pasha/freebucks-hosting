@@ -1,10 +1,10 @@
 import { db } from '../utils/db';
 import { toZonedTime, fromZonedTime, format } from 'date-fns-tz';
 import { startOfDay, addHours } from 'date-fns';
+import { SettingsService } from './settings.service';
+import { NotificationService } from './notification.service';
 
 const TIMEZONE = 'Asia/Kolkata';
-const DAILY_LIMIT = 35;
-const HOURLY_REWARD = 1.5;
 
 export class CreditsService {
   /**
@@ -43,12 +43,13 @@ export class CreditsService {
     const user = await db.user.findUnique({ where: { id: userId }, select: { balance: true } });
     if (!user) throw new Error('User not found');
 
+    const dailyLimit = await SettingsService.getNumber('dailyCreditCap');
     const dailyEarned = await this.getDailyEarned(userId);
     return {
       balance: user.balance,
       dailyEarned,
-      dailyLimit: DAILY_LIMIT,
-      remainingDailyCap: Math.max(0, DAILY_LIMIT - dailyEarned)
+      dailyLimit,
+      remainingDailyCap: Math.max(0, dailyLimit - dailyEarned)
     };
   }
 
@@ -64,14 +65,17 @@ export class CreditsService {
         throw new Error('You must wait 1 hour between claims.');
       }
 
+      const dailyLimit = await SettingsService.getNumber('dailyCreditCap');
+      const hourlyReward = await SettingsService.getNumber('hourlyClaimReward');
+
       const dailyEarned = await this.getDailyEarned(userId);
-      const remainingCap = Math.max(0, DAILY_LIMIT - dailyEarned);
+      const remainingCap = Math.max(0, dailyLimit - dailyEarned);
 
       if (remainingCap <= 0) {
         throw new Error('Daily earning limit reached. Come back tomorrow!');
       }
 
-      const rewardAmount = Math.min(HOURLY_REWARD, remainingCap);
+      const rewardAmount = Math.min(hourlyReward, remainingCap);
 
       await tx.user.update({
         where: { id: userId },
@@ -86,6 +90,13 @@ export class CreditsService {
           source: 'HOURLY_CLAIM',
         },
       });
+
+      await NotificationService.createNotification(
+        userId,
+        'Hourly Claim Successful',
+        `You have received ${rewardAmount} credits from your hourly claim.`,
+        'CREDIT_CLAIM'
+      );
 
       return {
         amount: rewardAmount,
@@ -106,8 +117,9 @@ export class CreditsService {
         throw new Error('You must wait 24 hours between spins.');
       }
 
+      const dailyLimit = await SettingsService.getNumber('dailyCreditCap');
       const dailyEarned = await this.getDailyEarned(userId);
-      const remainingCap = Math.max(0, DAILY_LIMIT - dailyEarned);
+      const remainingCap = Math.max(0, dailyLimit - dailyEarned);
 
       if (remainingCap <= 0) {
         throw new Error('Daily earning limit reached. You cannot spin today.');
@@ -129,6 +141,13 @@ export class CreditsService {
           source: 'DAILY_SPIN',
         },
       });
+
+      await NotificationService.createNotification(
+        userId,
+        'Daily Spin Successful',
+        `You won ${rewardAmount} credits from the daily spin!`,
+        'CREDIT_CLAIM'
+      );
 
       return {
         originalRoll: rolledAmount,

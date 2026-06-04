@@ -2,6 +2,7 @@
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.BillingService = void 0;
 const db_1 = require("../utils/db");
+const notification_service_1 = require("./notification.service");
 class BillingService {
     /**
      * Attempts to deduct the hourly cost for a server.
@@ -32,6 +33,7 @@ class BillingService {
                         reason: 'INSUFFICIENT_CREDITS_STOP'
                     }
                 });
+                await notification_service_1.NotificationService.createNotification(server.userId, 'Server Auto-Stopped', `Your server '${server.name}' was automatically stopped due to insufficient credits.`, 'SERVER_AUTO_STOP');
                 return false;
             }
             // Sufficient funds -> Deduct and Log

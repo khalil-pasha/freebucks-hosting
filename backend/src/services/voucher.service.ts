@@ -1,4 +1,5 @@
 import { db } from '../utils/db';
+import { NotificationService } from './notification.service';
 
 export class VoucherService {
   public static async redeemVoucher(userId: string, code: string) {
@@ -61,6 +62,13 @@ export class VoucherService {
           source: 'VOUCHER',
         },
       });
+
+      await NotificationService.createNotification(
+        userId,
+        'Voucher Redeemed',
+        `You successfully redeemed voucher ${code} for ${voucher.rewardAmount} credits.`,
+        'VOUCHER'
+      );
 
       return {
         amount: voucher.rewardAmount,

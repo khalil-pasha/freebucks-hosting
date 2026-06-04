@@ -1,4 +1,6 @@
 import { db } from '../utils/db';
+import { SettingsService } from './settings.service';
+import { NotificationService } from './notification.service';
 
 export class ReferralService {
   public static async claimReferralReward(referrerId: string, referredId: string) {
@@ -21,8 +23,8 @@ export class ReferralService {
       // if (servers === 0) throw new Error('Referred user must create a server first.');
 
       // Rewards (bypasses daily limit)
-      const referrerReward = 25;
-      const referredReward = 50;
+      const referrerReward = await SettingsService.getNumber('referralSenderReward');
+      const referredReward = await SettingsService.getNumber('referralReceiverReward');
 
       // Update Referrer
       await tx.user.update({
@@ -57,6 +59,20 @@ export class ReferralService {
         where: { id: referral.id },
         data: { status: 'COMPLETED' },
       });
+
+      await NotificationService.createNotification(
+        referrerId,
+        'Referral Reward Received',
+        `You received ${referrerReward} credits for referring a user!`,
+        'REFERRAL'
+      );
+
+      await NotificationService.createNotification(
+        referredId,
+        'Welcome Bonus Received',
+        `You received ${referredReward} credits as a welcome bonus!`,
+        'REFERRAL'
+      );
 
       return {
         success: true,

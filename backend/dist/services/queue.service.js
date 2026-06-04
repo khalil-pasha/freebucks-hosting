@@ -9,6 +9,8 @@ const ioredis_1 = __importDefault(require("ioredis"));
 const db_1 = require("../utils/db");
 const billing_service_1 = require("./billing.service");
 const pterodactyl_service_1 = require("./pterodactyl.service");
+const settings_service_1 = require("./settings.service");
+const notification_service_1 = require("./notification.service");
 const redisUrl = process.env.REDIS_URL || 'redis://localhost:6379';
 const connection = new ioredis_1.default(redisUrl, { maxRetriesPerRequest: null });
 exports.serverQueue = new bullmq_1.Queue('server-queue', { connection: connection });
@@ -18,10 +20,10 @@ const getPriority = async (userId) => {
         where: { id: userId },
         include: { premiumOrders: { where: { status: 'COMPLETED' } } },
     });
-    if (user?.premiumOrders && user.premiumOrders.length > 0)
-        return 1;
-    // Could add check for paid credits here for priority 5
-    return 10;
+    if (user?.premiumOrders && user.premiumOrders.length > 0) {
+        return await settings_service_1.SettingsService.getNumber('premiumQueuePriority');
+    }
+    return await settings_service_1.SettingsService.getNumber('freeQueuePriority');
 };
 // Initialize Worker (max 5 starting servers at a time)
 const worker = new bullmq_1.Worker('server-queue', async (job) => {
@@ -70,7 +72,13 @@ const worker = new bullmq_1.Worker('server-queue', async (job) => {
         where: { id: serverId },
         data: { status: 'RUNNING' },
     });
-}, { connection: connection, concurrency: 5 });
+    const queueJob = await db_1.db.queueJob.findUnique({ where: { id: queueJobId } });
+    if (queueJob) {
+        await notification_service_1.NotificationService.createNotification(queueJob.userId, `Server ${action === 'START' ? 'Started' : 'Restarted'}`, `Your server is now RUNNING.`, 'SERVER_START');
+    }
+}, { connection: connection, concurrency: 5 }); // Keep concurrency statically set for bullmq config or dynamically recreate worker? 
+// Dynamically changing BullMQ concurrency on the fly is tricky, but we can do it statically or recreate worker. 
+// For now, leaving as 5, we can read SettingsService.getNumber('queueConcurrency') if we recreate.
 worker.on('failed', async (job, err) => {
     if (job) {
         const { queueJobId, serverId } = job.data;
@@ -98,12 +106,12 @@ class QueueService {
                 priority,
             }
         });
-        // Add to BullMQ
         const job = await exports.serverQueue.add('start-server', {
             queueJobId: queueJob.id,
             serverId,
             action: 'START'
         }, { priority });
+        await notification_service_1.NotificationService.createNotification(userId, 'Server Queued', `Your server start request is in queue.`, 'QUEUE_UPDATE');
         return { queueJob, bullJobId: job.id };
     }
     static async addRestartJob(userId, serverId) {
@@ -134,6 +142,7 @@ class QueueService {
             where: { id: serverId },
             data: { status: 'STOPPED' }
         });
+        await notification_service_1.NotificationService.createNotification(userId, 'Server Stopped', `Your server has been stopped.`, 'SERVER_STOP');
         return { success: true, message: 'Server stopped instantly' };
     }
     static async getMyJobs(userId) {

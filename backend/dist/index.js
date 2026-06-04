@@ -20,6 +20,8 @@ const admin_server_routes_1 = __importDefault(require("./routes/admin.server.rou
 const queue_routes_1 = __importDefault(require("./routes/queue.routes"));
 const admin_queue_routes_1 = __importDefault(require("./routes/admin.queue.routes"));
 const admin_billing_routes_1 = __importDefault(require("./routes/admin.billing.routes"));
+const notification_routes_1 = __importDefault(require("./routes/notification.routes"));
+const admin_settings_routes_1 = __importDefault(require("./routes/admin.settings.routes"));
 app.use('/auth', auth_routes_1.default);
 app.use('/servers', server_routes_1.default);
 app.use('/admin/servers', admin_server_routes_1.default);
@@ -29,15 +31,23 @@ app.use('/referrals', referral_routes_1.default);
 app.use('/queue', queue_routes_1.default);
 app.use('/admin/queue', admin_queue_routes_1.default);
 app.use('/admin/billing', admin_billing_routes_1.default);
+app.use('/notifications', notification_routes_1.default);
+app.use('/admin/settings', admin_settings_routes_1.default);
 app.get('/health', (req, res) => {
     res.json({ status: 'ok', timestamp: new Date().toISOString() });
 });
 const node_cron_1 = __importDefault(require("node-cron"));
 const billing_service_1 = require("./services/billing.service");
+const settings_service_1 = require("./services/settings.service");
 // Start hourly billing cron job (runs every minute to check timestamps)
 node_cron_1.default.schedule('* * * * *', () => {
     billing_service_1.BillingService.processHourlyBilling();
 });
-app.listen(port, () => {
-    console.log(`Server is running on port ${port}`);
-});
+const startServer = async () => {
+    await settings_service_1.SettingsService.initDefaultSettings();
+    console.log('Settings initialized.');
+    app.listen(port, () => {
+        console.log(`Server is running on port ${port}`);
+    });
+};
+startServer();

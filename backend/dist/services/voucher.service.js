@@ -2,6 +2,7 @@
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.VoucherService = void 0;
 const db_1 = require("../utils/db");
+const notification_service_1 = require("./notification.service");
 class VoucherService {
     static async redeemVoucher(userId, code) {
         return await db_1.db.$transaction(async (tx) => {
@@ -54,6 +55,7 @@ class VoucherService {
                     source: 'VOUCHER',
                 },
             });
+            await notification_service_1.NotificationService.createNotification(userId, 'Voucher Redeemed', `You successfully redeemed voucher ${code} for ${voucher.rewardAmount} credits.`, 'VOUCHER');
             return {
                 amount: voucher.rewardAmount,
                 transaction,

@@ -49,6 +49,18 @@ enum PremiumOrderStatus {
   REFUNDED
 }
 
+enum NotificationType {
+  CREDIT_CLAIM
+  VOUCHER
+  REFERRAL
+  SERVER_START
+  SERVER_STOP
+  SERVER_AUTO_STOP
+  QUEUE_UPDATE
+  ADMIN_ADJUSTMENT
+  SYSTEM
+}
+
 model User {
   id        String   @id @default(uuid())
   discordId String   @unique
@@ -68,6 +80,7 @@ model User {
   queueJobs         QueueJob[]
   supportTickets    SupportTicket[]
   premiumOrders     PremiumOrder[]
+  notifications     Notification[]
 }
 
 model Admin {
@@ -188,4 +201,24 @@ model Setting {
   value       String
   description String?
   updatedAt   DateTime @updatedAt
+}
+
+model Notification {
+  id        String           @id @default(uuid())
+  userId    String
+  user      User             @relation(fields: [userId], references: [id])
+  title     String
+  message   String
+  type      NotificationType
+  read      Boolean          @default(false)
+  createdAt DateTime         @default(now())
+}
+
+model SettingAuditLog {
+  id        String   @id @default(uuid())
+  adminId   String
+  key       String
+  oldValue  String?
+  newValue  String
+  timestamp DateTime @default(now())
 }

@@ -2,6 +2,8 @@
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.ReferralService = void 0;
 const db_1 = require("../utils/db");
+const settings_service_1 = require("./settings.service");
+const notification_service_1 = require("./notification.service");
 class ReferralService {
     static async claimReferralReward(referrerId, referredId) {
         return await db_1.db.$transaction(async (tx) => {
@@ -20,8 +22,8 @@ class ReferralService {
             // E.g. const servers = await tx.server.count({ where: { userId: referredId } });
             // if (servers === 0) throw new Error('Referred user must create a server first.');
             // Rewards (bypasses daily limit)
-            const referrerReward = 25;
-            const referredReward = 50;
+            const referrerReward = await settings_service_1.SettingsService.getNumber('referralSenderReward');
+            const referredReward = await settings_service_1.SettingsService.getNumber('referralReceiverReward');
             // Update Referrer
             await tx.user.update({
                 where: { id: referrerId },
@@ -53,6 +55,8 @@ class ReferralService {
                 where: { id: referral.id },
                 data: { status: 'COMPLETED' },
             });
+            await notification_service_1.NotificationService.createNotification(referrerId, 'Referral Reward Received', `You received ${referrerReward} credits for referring a user!`, 'REFERRAL');
+            await notification_service_1.NotificationService.createNotification(referredId, 'Welcome Bonus Received', `You received ${referredReward} credits as a welcome bonus!`, 'REFERRAL');
             return {
                 success: true,
                 referrerReward,

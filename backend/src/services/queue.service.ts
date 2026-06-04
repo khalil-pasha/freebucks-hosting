@@ -3,6 +3,8 @@ import IORedis from 'ioredis';
 import { db } from '../utils/db';
 import { BillingService } from './billing.service';
 import { PterodactylService } from './pterodactyl.service';
+import { SettingsService } from './settings.service';
+import { NotificationService } from './notification.service';
 
 const redisUrl = process.env.REDIS_URL || 'redis://localhost:6379';
 const connection = new IORedis(redisUrl, { maxRetriesPerRequest: null });
@@ -16,9 +18,10 @@ const getPriority = async (userId: string) => {
     include: { premiumOrders: { where: { status: 'COMPLETED' } } },
   });
   
-  if (user?.premiumOrders && user.premiumOrders.length > 0) return 1;
-  // Could add check for paid credits here for priority 5
-  return 10;
+  if (user?.premiumOrders && user.premiumOrders.length > 0) {
+    return await SettingsService.getNumber('premiumQueuePriority');
+  }
+  return await SettingsService.getNumber('freeQueuePriority');
 };
 
 // Initialize Worker (max 5 starting servers at a time)
@@ -78,7 +81,19 @@ const worker = new Worker('server-queue', async (job: Job) => {
     data: { status: 'RUNNING' },
   });
 
-}, { connection: connection as any, concurrency: 5 });
+  const queueJob = await db.queueJob.findUnique({ where: { id: queueJobId }});
+  if (queueJob) {
+    await NotificationService.createNotification(
+      queueJob.userId,
+      `Server ${action === 'START' ? 'Started' : 'Restarted'}`,
+      `Your server is now RUNNING.`,
+      'SERVER_START'
+    );
+  }
+
+}, { connection: connection as any, concurrency: 5 }); // Keep concurrency statically set for bullmq config or dynamically recreate worker? 
+// Dynamically changing BullMQ concurrency on the fly is tricky, but we can do it statically or recreate worker. 
+// For now, leaving as 5, we can read SettingsService.getNumber('queueConcurrency') if we recreate.
 
 worker.on('failed', async (job, err) => {
   if (job) {
@@ -110,12 +125,18 @@ export class QueueService {
       }
     });
 
-    // Add to BullMQ
     const job = await serverQueue.add('start-server', {
       queueJobId: queueJob.id,
       serverId,
       action: 'START'
     }, { priority });
+
+    await NotificationService.createNotification(
+      userId,
+      'Server Queued',
+      `Your server start request is in queue.`,
+      'QUEUE_UPDATE'
+    );
 
     return { queueJob, bullJobId: job.id };
   }
@@ -153,6 +174,13 @@ export class QueueService {
       where: { id: serverId },
       data: { status: 'STOPPED' }
     });
+
+    await NotificationService.createNotification(
+      userId,
+      'Server Stopped',
+      `Your server has been stopped.`,
+      'SERVER_STOP'
+    );
 
     return { success: true, message: 'Server stopped instantly' };
   }

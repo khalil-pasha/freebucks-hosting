@@ -1,4 +1,5 @@
 import { db } from '../utils/db';
+import { NotificationService } from './notification.service';
 
 export class BillingService {
   /**
@@ -33,6 +34,13 @@ export class BillingService {
             reason: 'INSUFFICIENT_CREDITS_STOP'
           }
         });
+
+        await NotificationService.createNotification(
+          server.userId,
+          'Server Auto-Stopped',
+          `Your server '${server.name}' was automatically stopped due to insufficient credits.`,
+          'SERVER_AUTO_STOP'
+        );
         
         return false;
       }
