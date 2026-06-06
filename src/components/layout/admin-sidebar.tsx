@@ -40,8 +40,8 @@ export function AdminSidebar() {
     <aside className="hidden md:flex flex-col w-64 bg-card border-r border-border min-h-screen fixed left-0 top-0 z-40 shadow-xl">
       <div className="p-6">
         <Link href="/admin" className="flex items-center gap-3">
-          <div className="relative h-10 w-10 flex-shrink-0">
-            <Image src="/logo.png" alt="Free Bucks Logo" fill className="object-contain" />
+          <div className="relative h-8 w-8">
+            <Image src="/square-logo.jpg" alt="Free Bucks Logo" fill className="object-contain" />
           </div>
           <div className="flex flex-col">
             <span className="font-bold text-lg tracking-tight leading-none truncate text-red-500">ADMIN PANEL</span>

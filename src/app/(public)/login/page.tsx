@@ -16,8 +16,8 @@ export default function LoginPage() {
         <Card className="border-border/50 bg-card/80 backdrop-blur-md shadow-2xl relative overflow-hidden">
           <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-[#5865F2] via-primary to-secondary" />
           <CardHeader className="text-center pb-2 pt-8">
-            <div className="mx-auto mb-4 flex h-20 w-20 items-center justify-center relative">
-              <Image src="/logo.png" alt="Free Bucks Logo" fill className="object-contain" />
+            <div className="relative h-16 w-16 mb-6 mx-auto">
+              <Image src="/square-logo.jpg" alt="Free Bucks Logo" fill className="object-contain" />
             </div>
             <CardTitle className="text-2xl font-bold tracking-tight">Welcome Back</CardTitle>
             <CardDescription className="text-base">
