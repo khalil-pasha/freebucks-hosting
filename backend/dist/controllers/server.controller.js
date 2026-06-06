@@ -54,8 +54,9 @@ class ServerController {
             res.status(201).json(server);
         }
         catch (error) {
-            console.error(error);
-            res.status(500).json({ error: error.message });
+            console.error(error.response?.data || error);
+            const errorMessage = error.response?.data?.errors?.[0]?.detail || error.response?.data?.message || error.message || 'An unknown error occurred while creating the server.';
+            res.status(500).json({ error: errorMessage });
         }
     }
     static async myServers(req, res) {

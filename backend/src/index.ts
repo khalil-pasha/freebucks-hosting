@@ -7,6 +7,7 @@ dotenv.config();
 validateEnv();
 
 const app = express();
+app.set("trust proxy", 1);
 const port = process.env.PORT || 5000;
 
 import { securityHeaders, authLimiter, voucherLimiter, creditsLimiter, ticketLimiter, adminLimiter } from './middleware/security';

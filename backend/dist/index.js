@@ -10,6 +10,7 @@ const env_1 = require("./utils/env");
 dotenv_1.default.config();
 (0, env_1.validateEnv)();
 const app = (0, express_1.default)();
+app.set("trust proxy", 1);
 const port = process.env.PORT || 5000;
 const security_1 = require("./middleware/security");
 const errorHandler_1 = require("./middleware/errorHandler");
