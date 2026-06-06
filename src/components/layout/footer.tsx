@@ -9,13 +9,9 @@ export function Footer() {
         <div className="grid grid-cols-1 md:grid-cols-4 gap-8 lg:gap-12 mb-12">
           
           <div className="md:col-span-1 space-y-4">
-            <Link href="/" className="flex items-center gap-3 group">
-              <div className="relative h-12 w-12 overflow-hidden transition-transform group-hover:scale-105">
-                <Image src="/square-logo.jpg" alt="Free Bucks Logo" fill className="object-contain" />
-              </div>
-              <div className="flex flex-col">
-                <span className="font-bold text-xl tracking-tight leading-none truncate">FREE BUCKS</span>
-                <span className="text-[10px] text-foreground/50 uppercase tracking-widest font-bold mt-1">Minecraft Hosting</span>
+            <Link href="/" className="flex items-center gap-3 group mb-2">
+              <div className="relative h-16 w-32 sm:h-20 sm:w-40 overflow-hidden transition-transform group-hover:scale-105">
+                <Image src="/header-logo.jpg" alt="Free Bucks Logo" fill className="object-contain" />
               </div>
             </Link>
             <p className="text-sm text-foreground/60 leading-relaxed">
