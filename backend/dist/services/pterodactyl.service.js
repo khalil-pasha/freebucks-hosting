@@ -85,6 +85,55 @@ class PterodactylService {
             identifier: response.data.attributes.identifier,
         };
     }
+    static async updateServerBuild(serverId, ramGB, cpu, disk) {
+        if (!this.isConfigured()) {
+            console.log(`[Pterodactyl Sim] Updating build for server ID ${serverId} to ${ramGB}GB RAM, ${cpu}% CPU, ${disk}GB Disk`);
+            return true;
+        }
+        const getUrl = `${process.env.PTERODACTYL_PANEL_URL}/api/application/servers/${serverId}`;
+        const getRes = await axios_1.default.get(getUrl, { headers: this.getAppHeaders() });
+        const allocationId = getRes.data.attributes.allocation;
+        const patchUrl = `${process.env.PTERODACTYL_PANEL_URL}/api/application/servers/${serverId}/build`;
+        const data = {
+            allocation: allocationId,
+            memory: ramGB * 1024,
+            swap: 0,
+            disk: disk * 1024,
+            io: 500,
+            cpu: cpu,
+            threads: null,
+            feature_limits: {
+                databases: 1,
+                allocations: 1,
+                backups: 1
+            }
+        };
+        await axios_1.default.patch(patchUrl, data, { headers: this.getAppHeaders() });
+        return true;
+    }
+    static async getServerAllocation(identifier) {
+        if (!this.isConfigured()) {
+            return { ip: '127.0.0.1', alias: null, port: 25565 };
+        }
+        try {
+            const url = `${process.env.PTERODACTYL_PANEL_URL}/api/client/servers/${identifier}`;
+            const response = await axios_1.default.get(url, { headers: this.getClientHeaders() });
+            const allocs = response.data.attributes.relationships?.allocations?.data;
+            if (allocs && allocs.length > 0) {
+                const primary = allocs.find((a) => a.attributes.is_default) || allocs[0];
+                return {
+                    ip: primary.attributes.ip,
+                    alias: primary.attributes.ip_alias,
+                    port: primary.attributes.port
+                };
+            }
+            return null;
+        }
+        catch (err) {
+            console.error(`[Pterodactyl] Error fetching allocation for ${identifier}: ${err.message}`);
+            return null;
+        }
+    }
     static async startServer(identifier) {
         if (!this.isConfigured()) {
             console.log(`[Pterodactyl Sim] Starting server ${identifier}`);

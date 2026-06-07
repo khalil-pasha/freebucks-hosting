@@ -72,11 +72,61 @@ class ServerController {
             res.status(500).json({ error: errorMessage });
         }
     }
+    static async upgradeServer(req, res) {
+        try {
+            const userId = req.user.id;
+            const serverId = req.params.id;
+            const { ramGB, cpu, disk } = req.body;
+            const server = await db_1.db.server.findFirst({
+                where: { id: serverId, userId }
+            });
+            if (!server) {
+                return res.status(404).json({ error: 'Server not found' });
+            }
+            const user = await db_1.db.user.findUnique({
+                where: { id: userId },
+                include: { premiumOrders: { where: { status: 'COMPLETED' } } }
+            });
+            let costPerHour = 0;
+            if (ramGB === 2 && cpu === 100 && disk === 5)
+                costPerHour = 1.5;
+            else if (ramGB === 4 && cpu === 150 && disk === 10)
+                costPerHour = 3;
+            else if (ramGB === 6 && cpu === 200 && disk === 15)
+                costPerHour = 6;
+            else {
+                if (!user || user.premiumOrders.length === 0) {
+                    return res.status(403).json({ error: '8GB+ or Custom servers require an active Premium Order.' });
+                }
+                costPerHour = 0;
+            }
+            await pterodactyl_service_1.PterodactylService.updateServerBuild(server.pterodactylServerId, ramGB, cpu, disk);
+            const updatedServer = await db_1.db.server.update({
+                where: { id: serverId },
+                data: { ramGB, cpu, disk, costPerHour }
+            });
+            await audit_service_1.AuditService.logAction(req, 'SERVER_UPGRADE', serverId, userId);
+            res.json(updatedServer);
+        }
+        catch (error) {
+            console.error(error.response?.data || error);
+            res.status(500).json({ error: 'Failed to upgrade server' });
+        }
+    }
     static async myServers(req, res) {
         try {
             const userId = req.user.id;
             const servers = await db_1.db.server.findMany({ where: { userId } });
-            res.json(servers);
+            const enrichedServers = await Promise.all(servers.map(async (server) => {
+                const allocation = await pterodactyl_service_1.PterodactylService.getServerAllocation(server.pterodactylIdentifier);
+                return {
+                    ...server,
+                    allocationIp: allocation?.ip || null,
+                    allocationAlias: allocation?.alias || null,
+                    allocationPort: allocation?.port || null,
+                };
+            }));
+            res.json(enrichedServers);
         }
         catch (error) {
             res.status(500).json({ error: error.message });

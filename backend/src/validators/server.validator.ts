@@ -13,3 +13,9 @@ export const createServerSchema = z.object({
     password: z.string().min(8)
   }).optional()
 });
+
+export const upgradeServerSchema = z.object({
+  ramGB: z.number().positive().max(32),
+  cpu: z.number().positive().max(800),
+  disk: z.number().positive().max(100)
+});

@@ -19,6 +19,7 @@ export default function ServersPage() {
   // Modal States
   const [isPlanModalOpen, setIsPlanModalOpen] = useState(false)
   const [selectedPlan, setSelectedPlan] = useState<any>(null)
+  const [upgradeTarget, setUpgradeTarget] = useState<any>(null)
   
   // Custom Plan States
   const [customRAM, setCustomRAM] = useState(1)
@@ -55,8 +56,14 @@ export default function ServersPage() {
 
   const handleAction = async (action: 'start-server' | 'restart-server' | 'cancel', serverId: string) => {
     try {
+      if (action === 'start-server') {
+        setServers(servers.map(s => s.id === serverId ? { ...s, status: 'STARTING' } : s));
+        setTimeout(fetchServers, 2000);
+        setTimeout(fetchServers, 5000);
+        setTimeout(fetchServers, 10000);
+      }
       await api.post(`/queue/${action}`, { serverId })
-      fetchServers()
+      if (action !== 'start-server') fetchServers()
     } catch (err: any) {
       alert(handleApiError(err))
     }
@@ -81,20 +88,25 @@ export default function ServersPage() {
         disk: selectedPlan.disk,
       }
 
-      if (!user?.pterodactylUserId) {
-        payload.pterodactyl = {
-          email: formData.email,
-          username: formData.username,
-          firstName: formData.firstName,
-          lastName: formData.lastName,
-          password: formData.password
+      if (upgradeTarget) {
+        await api.patch(`/servers/${upgradeTarget.id}/upgrade`, payload)
+      } else {
+        if (!user?.pterodactylUserId) {
+          payload.pterodactyl = {
+            email: formData.email,
+            username: formData.username,
+            firstName: formData.firstName,
+            lastName: formData.lastName,
+            password: formData.password
+          }
         }
+        await api.post('/servers/create', payload)
       }
 
-      await api.post('/servers/create', payload)
       fetchServers()
       setIsPlanModalOpen(false)
       setSelectedPlan(null)
+      setUpgradeTarget(null)
     } catch (err: any) {
       alert(handleApiError(err))
     } finally {
@@ -128,7 +140,7 @@ export default function ServersPage() {
           <h1 className="text-3xl font-bold tracking-tight">Your Servers</h1>
           <p className="text-foreground/60 mt-1">Manage your instances and hardware resources.</p>
         </div>
-        <Button onClick={() => setIsPlanModalOpen(true)} className="bg-primary hover:bg-primary/90 text-white shadow-lg shadow-primary/20">
+        <Button onClick={() => { setUpgradeTarget(null); setIsPlanModalOpen(true); }} className="bg-primary hover:bg-primary/90 text-white shadow-lg shadow-primary/20">
           <Plus className="w-4 h-4 mr-2" /> New Server
         </Button>
       </div>
@@ -157,9 +169,11 @@ export default function ServersPage() {
               
               <CardContent className="flex-1 space-y-4">
                 <div className="flex items-center justify-between p-3 rounded-lg bg-background border border-border/50">
-                  <span className="font-mono text-sm text-primary">{server.pterodactylIdentifier ? `${server.nodeLocation}-${server.pterodactylIdentifier.substring(0,8)}.freebucks.host` : 'Pending...'}</span>
+                  <span className="font-mono text-sm text-primary">
+                    {server.allocationAlias ? `${server.allocationAlias}:${server.allocationPort}` : server.allocationIp ? `${server.allocationIp}:${server.allocationPort}` : 'Pending...'}
+                  </span>
                   <div className="flex gap-2">
-                    <Button variant="ghost" size="sm" className="h-6 px-2 text-xs">Copy IP</Button>
+                    <Button variant="ghost" size="sm" className="h-6 px-2 text-xs" onClick={() => navigator.clipboard.writeText(server.allocationAlias ? `${server.allocationAlias}:${server.allocationPort}` : server.allocationIp ? `${server.allocationIp}:${server.allocationPort}` : '')}>Copy IP</Button>
                     <Button variant="outline" size="sm" className="h-6 px-2 text-xs border-primary/50 text-primary hover:bg-primary/10" onClick={() => window.open('https://panel.freebucks.host', '_blank')}>
                       <ExternalLink className="w-3 h-3 mr-1" /> Panel Access
                     </Button>
@@ -213,7 +227,7 @@ export default function ServersPage() {
                     </Button>
                   </>
                 )}
-                <Button size="sm" variant="secondary" className="flex-1 sm:flex-none ml-auto" onClick={() => router.push('/dashboard/premium')}>
+                <Button size="sm" variant="secondary" className="flex-1 sm:flex-none ml-auto" onClick={() => { setUpgradeTarget(server); setIsPlanModalOpen(true); setSelectedPlan(null); }}>
                   <Zap className="w-4 h-4 mr-2" /> Upgrade
                 </Button>
               </CardFooter>
@@ -232,7 +246,7 @@ export default function ServersPage() {
               exit={{ opacity: 0, scale: 0.95 }}
               className="bg-card border border-border/50 rounded-xl w-full max-w-5xl shadow-2xl relative my-8"
             >
-              <Button variant="ghost" size="icon" className="absolute right-4 top-4 z-10" onClick={() => { setIsPlanModalOpen(false); setSelectedPlan(null) }}>
+              <Button variant="ghost" size="icon" className="absolute right-4 top-4 z-10" onClick={() => { setIsPlanModalOpen(false); setSelectedPlan(null); setUpgradeTarget(null); }}>
                 <X className="w-5 h-5" />
               </Button>
 
@@ -240,8 +254,8 @@ export default function ServersPage() {
                 {!selectedPlan ? (
                   <>
                     <div className="text-center mb-8">
-                      <h2 className="text-3xl font-bold tracking-tight">Choose Your Plan</h2>
-                      <p className="text-foreground/60 mt-2">Deploy your Minecraft server instantly.</p>
+                      <h2 className="text-3xl font-bold tracking-tight">{upgradeTarget ? 'Upgrade Your Plan' : 'Choose Your Plan'}</h2>
+                      <p className="text-foreground/60 mt-2">{upgradeTarget ? `Select a new plan for ${upgradeTarget.name}.` : 'Deploy your Minecraft server instantly.'}</p>
                     </div>
 
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-12">
@@ -303,16 +317,16 @@ export default function ServersPage() {
                       ← Back to Plans
                     </Button>
                     
-                    <h2 className="text-2xl font-bold mb-2">Deploy {selectedPlan.name}</h2>
-                    <p className="text-foreground/60 mb-6">Complete the setup to provision your server.</p>
+                    <h2 className="text-2xl font-bold mb-2">{upgradeTarget ? 'Upgrade to' : 'Deploy'} {selectedPlan.name}</h2>
+                    <p className="text-foreground/60 mb-6">{upgradeTarget ? 'Confirm your upgrade details below.' : 'Complete the setup to provision your server.'}</p>
 
                     <div className="space-y-4">
                       <div>
                         <label className="text-sm font-medium mb-1 block">Server Name</label>
-                        <Input required value={formData.serverName} onChange={e => setFormData({...formData, serverName: e.target.value})} placeholder="My Awesome Server" />
+                        <Input required disabled={!!upgradeTarget} value={upgradeTarget ? upgradeTarget.name : formData.serverName} onChange={e => !upgradeTarget && setFormData({...formData, serverName: e.target.value})} placeholder="My Awesome Server" />
                       </div>
 
-                      {!user?.pterodactylUserId && (
+                      {!user?.pterodactylUserId && !upgradeTarget && (
                         <div className="p-4 bg-primary/5 border border-primary/20 rounded-lg space-y-4 mt-6">
                           <h3 className="font-semibold text-primary flex items-center gap-2"><ShieldAlert className="w-4 h-4"/> Game Panel Account Setup</h3>
                           <p className="text-xs text-foreground/60">Since this is your first server, we need to create an account for you on the game panel (Pterodactyl).</p>
@@ -346,7 +360,7 @@ export default function ServersPage() {
                       )}
 
                       <Button type="submit" disabled={isSubmitting} className="w-full bg-primary hover:bg-primary/90 text-white mt-8 h-12 text-lg">
-                        {isSubmitting ? "Deploying..." : "Deploy Server"}
+                        {isSubmitting ? (upgradeTarget ? "Upgrading..." : "Deploying...") : (upgradeTarget ? "Upgrade Server" : "Deploy Server")}
                       </Button>
                     </div>
                   </form>

@@ -24,7 +24,6 @@ const sidebarLinks = [
   { name: "Rewards", href: "/dashboard/spin", icon: <Dices className="w-5 h-5" /> },
   { name: "Referrals", href: "/dashboard/referral", icon: <Users className="w-5 h-5" /> },
   { name: "Vouchers", href: "/dashboard/voucher", icon: <Ticket className="w-5 h-5" /> },
-  { name: "Premium", href: "/dashboard/premium", icon: <Sparkles className="w-5 h-5" /> },
   { name: "Profile", href: "/dashboard/profile", icon: <User className="w-5 h-5" /> },
   { name: "Support", href: "/dashboard/support", icon: <LifeBuoy className="w-5 h-5" /> },
 ]

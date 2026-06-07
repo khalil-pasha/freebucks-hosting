@@ -89,6 +89,58 @@ export class PterodactylService {
     };
   }
 
+  public static async updateServerBuild(serverId: number, ramGB: number, cpu: number, disk: number) {
+    if (!this.isConfigured()) {
+      console.log(`[Pterodactyl Sim] Updating build for server ID ${serverId} to ${ramGB}GB RAM, ${cpu}% CPU, ${disk}GB Disk`);
+      return true;
+    }
+
+    const getUrl = `${process.env.PTERODACTYL_PANEL_URL}/api/application/servers/${serverId}`;
+    const getRes = await axios.get(getUrl, { headers: this.getAppHeaders() });
+    const allocationId = getRes.data.attributes.allocation;
+
+    const patchUrl = `${process.env.PTERODACTYL_PANEL_URL}/api/application/servers/${serverId}/build`;
+    const data = {
+      allocation: allocationId,
+      memory: ramGB * 1024,
+      swap: 0,
+      disk: disk * 1024,
+      io: 500,
+      cpu: cpu,
+      threads: null,
+      feature_limits: {
+        databases: 1,
+        allocations: 1,
+        backups: 1
+      }
+    };
+    await axios.patch(patchUrl, data, { headers: this.getAppHeaders() });
+    return true;
+  }
+
+  public static async getServerAllocation(identifier: string) {
+    if (!this.isConfigured()) {
+      return { ip: '127.0.0.1', alias: null, port: 25565 };
+    }
+    try {
+      const url = `${process.env.PTERODACTYL_PANEL_URL}/api/client/servers/${identifier}`;
+      const response = await axios.get(url, { headers: this.getClientHeaders() });
+      const allocs = response.data.attributes.relationships?.allocations?.data;
+      if (allocs && allocs.length > 0) {
+        const primary = allocs.find((a: any) => a.attributes.is_default) || allocs[0];
+        return {
+          ip: primary.attributes.ip,
+          alias: primary.attributes.ip_alias,
+          port: primary.attributes.port
+        };
+      }
+      return null;
+    } catch (err: any) {
+      console.error(`[Pterodactyl] Error fetching allocation for ${identifier}: ${err.message}`);
+      return null;
+    }
+  }
+
   public static async startServer(identifier: string) {
     if (!this.isConfigured()) {
       console.log(`[Pterodactyl Sim] Starting server ${identifier}`);
