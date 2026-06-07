@@ -21,9 +21,28 @@ export class PterodactylService {
     };
   }
 
-  public static async createServer(name: string, ramGB: number, pteroUserId: number) {
+  public static async createUser(email: string, username: string, first_name: string, last_name: string, password?: string) {
     if (!this.isConfigured()) {
-      console.log(`[Pterodactyl Sim] Created server ${name} with ${ramGB}GB RAM.`);
+      console.log(`[Pterodactyl Sim] Created user ${username} (${email})`);
+      return Math.floor(Math.random() * 10000) + 100;
+    }
+
+    const url = `${process.env.PTERODACTYL_PANEL_URL}/api/application/users`;
+    const data = {
+      email,
+      username,
+      first_name,
+      last_name,
+      password: password || undefined
+    };
+
+    const response = await axios.post(url, data, { headers: this.getAppHeaders() });
+    return response.data.attributes.id as number;
+  }
+
+  public static async createServer(name: string, ramGB: number, cpu: number, disk: number, pteroUserId: number) {
+    if (!this.isConfigured()) {
+      console.log(`[Pterodactyl Sim] Created server ${name} with ${ramGB}GB RAM, ${cpu}% CPU, ${disk}GB Disk.`);
       return { 
         id: Math.floor(Math.random() * 10000), 
         identifier: Math.random().toString(36).substring(7) 
@@ -44,9 +63,9 @@ export class PterodactylService {
       limits: {
         memory: ramGB * 1024,
         swap: 0,
-        disk: 10240,
+        disk: disk * 1024,
         io: 500,
-        cpu: 100
+        cpu: cpu
       },
       feature_limits: {
         databases: 1,

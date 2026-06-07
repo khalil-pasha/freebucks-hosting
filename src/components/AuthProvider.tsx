@@ -12,6 +12,7 @@ interface User {
   email: string;
   role: string;
   balance: number;
+  pterodactylUserId?: number;
 }
 
 interface AuthContextType {

@@ -70,6 +70,7 @@ export class AuthController {
           email: true,
           role: true,
           balance: true,
+          pterodactylUserId: true,
           createdAt: true
         }
       });

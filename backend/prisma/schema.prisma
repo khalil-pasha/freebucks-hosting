@@ -71,6 +71,7 @@ model User {
   balance   Float    @default(12.5) // Realistic starting balance
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+  pterodactylUserId Int?
 
   servers           Server[]
   transactions      CreditsTransaction[]
@@ -97,6 +98,8 @@ model Server {
   user         User         @relation(fields: [userId], references: [id])
   name         String
   ramGB        Float
+  cpu          Float        @default(100)
+  disk         Float        @default(10)
   status       ServerStatus @default(STOPPED)
   nodeLocation String       @default("mumbai") // Indian nodes only
   costPerHour  Float

@@ -7,44 +7,69 @@ export class ServerController {
   public static async createServer(req: Request, res: Response) {
     try {
       const userId = req.user!.id;
-      const { name, ramGB } = req.body;
+      const { name, ramGB, cpu, disk, pterodactyl } = req.body;
 
-      if (!name || !ramGB) {
-        return res.status(400).json({ error: 'Name and ramGB are required' });
+      if (!name || !ramGB || !cpu || !disk) {
+        return res.status(400).json({ error: 'Missing required server parameters' });
       }
 
-      // Validate RAM and set cost
-      let costPerHour = 0;
-      if (ramGB === 2) costPerHour = 1.5;
-      else if (ramGB === 4) costPerHour = 3;
-      else if (ramGB === 6) costPerHour = 6;
-      else if (ramGB >= 8) {
-        // Premium check
-        const user = await db.user.findUnique({
-          where: { id: userId },
-          include: { premiumOrders: { where: { status: 'COMPLETED' } } }
-        });
+      const user = await db.user.findUnique({
+        where: { id: userId },
+        include: { 
+          premiumOrders: { where: { status: 'COMPLETED' } },
+          servers: { where: { status: { notIn: ['ARCHIVED'] } } }
+        }
+      });
 
-        if (!user || user.premiumOrders.length === 0) {
-          return res.status(403).json({ error: '8GB+ servers require an active Premium Order' });
+      if (!user) {
+        return res.status(404).json({ error: 'User not found' });
+      }
+
+      if (user.premiumOrders.length === 0 && user.servers.length >= 1) {
+        return res.status(403).json({ error: 'You already have an active free server. Upgrade to premium to create more servers.' });
+      }
+
+      let costPerHour = 0;
+      if (ramGB === 2 && cpu === 100 && disk === 5) costPerHour = 1.5;
+      else if (ramGB === 4 && cpu === 150 && disk === 10) costPerHour = 3;
+      else if (ramGB === 6 && cpu === 200 && disk === 15) costPerHour = 6;
+      else {
+        if (user.premiumOrders.length === 0) {
+          return res.status(403).json({ error: '8GB+ or Custom servers require an active Premium Order.' });
+        }
+        costPerHour = 0; // Premium users don't burn credits for their allocated limits
+      }
+
+      let pteroUserId = user.pterodactylUserId;
+
+      if (!pteroUserId) {
+        if (!pterodactyl || !pterodactyl.email || !pterodactyl.username || !pterodactyl.firstName || !pterodactyl.lastName || !pterodactyl.password) {
+          return res.status(400).json({ error: 'Pterodactyl user details required for first-time server creation.' });
         }
         
-        // Example premium cost logic
-        costPerHour = ramGB; // 8GB = 8 credits/hr, etc.
-      } else {
-        return res.status(400).json({ error: 'Invalid RAM plan' });
+        pteroUserId = await PterodactylService.createUser(
+          pterodactyl.email,
+          pterodactyl.username,
+          pterodactyl.firstName,
+          pterodactyl.lastName,
+          pterodactyl.password
+        );
+
+        await db.user.update({
+          where: { id: userId },
+          data: { pterodactylUserId: pteroUserId }
+        });
       }
 
-      // Create Pterodactyl Server
-      // Mocking Ptero user ID as 1 for now, in a real app you'd create a Ptero user first and store it
-      const pteroData = await PterodactylService.createServer(name, ramGB, 1);
+      const pteroData = await PterodactylService.createServer(name, ramGB, cpu, disk, pteroUserId);
 
-      // Save in DB
       const server = await db.server.create({
         data: {
           userId,
           name,
           ramGB,
+          cpu,
+          disk,
           costPerHour,
           status: 'STOPPED',
           pterodactylServerId: pteroData.id,
