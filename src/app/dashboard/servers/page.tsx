@@ -119,7 +119,7 @@ export default function ServersPage() {
     { name: "Premium", ram: 8, cpu: 300, disk: 30, cost: "₹499/month", isPremium: true, desc: "Dedicated CPU & NVMe" },
   ]
 
-  const customPrice = (customRAM * 20) + ((customCPU / 50) * 30) + ((customDisk / 5) * 10)
+  const customPrice = (customRAM * 30) + ((customCPU / 50) * 30) + ((customDisk / 5) * 10)
 
   return (
     <div className="space-y-8 relative">
