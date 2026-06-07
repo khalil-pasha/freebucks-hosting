@@ -7,6 +7,6 @@ const validate_1 = require("../middleware/validate");
 const server_validator_1 = require("../validators/server.validator");
 const router = (0, express_1.Router)();
 router.use(auth_1.requireAuth);
-router.post('/', (0, validate_1.validate)(server_validator_1.createServerSchema), server_controller_1.ServerController.createServer);
-router.get('/', server_controller_1.ServerController.myServers);
+router.post('/create', (0, validate_1.validate)(server_validator_1.createServerSchema), server_controller_1.ServerController.createServer);
+router.get('/my-servers', server_controller_1.ServerController.myServers);
 exports.default = router;

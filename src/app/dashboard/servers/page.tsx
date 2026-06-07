@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button"
 import { Server, Power, RefreshCw, Zap, Clock, Coins, MapPin, CheckCircle2, ShieldAlert, Activity } from "lucide-react"
 
 import { useEffect, useState } from "react"
-import api from "@/lib/api"
+import api, { handleApiError } from "@/lib/api"
 import { useAuth } from "@/components/AuthProvider"
 
 export default function ServersPage() {
@@ -40,7 +40,7 @@ export default function ServersPage() {
       await api.post('/servers/create', { name, ramGB: parseInt(ram) })
       fetchServers()
     } catch (err: any) {
-      alert(err.response?.data?.error || err.message)
+      alert(handleApiError(err))
     }
   }
 
@@ -49,7 +49,7 @@ export default function ServersPage() {
       await api.post(`/queue/${action}`, { serverId })
       fetchServers()
     } catch (err: any) {
-      alert(err.response?.data?.error || err.message)
+      alert(handleApiError(err))
     }
   }
   const containerVariants = {

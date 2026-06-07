@@ -15,6 +15,10 @@ api.interceptors.request.use((config) => {
 });
 
 export const handleApiError = (error: any) => {
+  if (error.response?.data?.details) {
+    const detailString = error.response.data.details.map((d: any) => `${d.path}: ${d.message}`).join(', ');
+    return `${error.response.data.error} - ${detailString}`;
+  }
   if (error.response?.data?.error) {
     return error.response.data.error;
   }
