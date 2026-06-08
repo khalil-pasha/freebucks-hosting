@@ -44,12 +44,27 @@ export class CreditsService {
     if (!user) throw new Error('User not found');
 
     const dailyLimit = await SettingsService.getNumber('dailyCreditCap');
-    const dailyEarned = await this.getDailyEarned(userId);
+    const dailyEarnedFree = await this.getDailyEarned(userId);
+    
+    const startOfDayUTC = this.getStartOfDayIST();
+
+    const allEarnedTransactions = await db.creditsTransaction.findMany({
+      where: { userId, type: 'EARNED', timestamp: { gte: startOfDayUTC } },
+    });
+    const dailyEarnedTotal = allEarnedTransactions.reduce((acc: number, tx: any) => acc + tx.amount, 0);
+
+    const allSpentTransactions = await db.creditsTransaction.findMany({
+      where: { userId, type: 'SPENT', timestamp: { gte: startOfDayUTC } },
+    });
+    const dailySpent = allSpentTransactions.reduce((acc: number, tx: any) => acc + tx.amount, 0);
+
     return {
       balance: user.balance,
-      dailyEarned,
+      dailyEarnedTotal,
+      dailyEarnedFree,
+      dailySpent,
       dailyLimit,
-      remainingDailyCap: Math.max(0, dailyLimit - dailyEarned)
+      remainingDailyCap: Math.max(0, dailyLimit - dailyEarnedFree)
     };
   }
 

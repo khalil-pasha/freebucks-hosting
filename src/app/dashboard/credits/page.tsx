@@ -10,18 +10,26 @@ import api from "@/lib/api"
 
 export default function CreditsPage() {
   const [balance, setBalance] = useState<number>(0)
+  const [dailyData, setDailyData] = useState<any>({ dailyEarnedTotal: 0, dailySpent: 0, dailyEarnedFree: 0, dailyLimit: 35 })
+  const [burnRate, setBurnRate] = useState<number>(0)
   const [transactions, setTransactions] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const [balRes, histRes] = await Promise.all([
+        const [balRes, histRes, serverRes] = await Promise.all([
           api.get('/credits/balance'),
-          api.get('/credits/history')
+          api.get('/credits/history'),
+          api.get('/servers/my-servers')
         ])
         setBalance(balRes.data.balance)
+        setDailyData(balRes.data)
         setTransactions(histRes.data)
+
+        const activeServers = serverRes.data.filter((s: any) => s.status === 'RUNNING' || s.status === 'STARTING')
+        const calculatedBurn = activeServers.reduce((acc: number, s: any) => acc + s.costPerHour, 0)
+        setBurnRate(calculatedBurn)
       } catch (err) {
         console.error(err)
       } finally {
@@ -84,16 +92,16 @@ export default function CreditsPage() {
               </CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="text-3xl font-bold text-secondary mt-2">Tracking... <span className="text-sm text-foreground/50 font-normal"></span></div>
+              <div className="text-3xl font-bold text-secondary mt-2">{loading ? '...' : `+${dailyData.dailyEarnedTotal}`} <span className="text-sm text-foreground/50 font-normal"></span></div>
               
               {/* Daily Cap Progress */}
               <div className="mt-4">
                 <div className="flex justify-between text-xs mb-1">
                   <span className="text-foreground/60 font-medium">Daily Free Cap</span>
-                  <span className="font-bold">-- / 35</span>
+                  <span className="font-bold">{loading ? '--' : dailyData.dailyEarnedFree} / {dailyData.dailyLimit}</span>
                 </div>
                 <div className="w-full bg-background rounded-full h-1.5 border border-border/50 overflow-hidden">
-                  <div className="bg-secondary h-full rounded-full w-[0%]" />
+                  <div className="bg-secondary h-full rounded-full" style={{ width: `${Math.min(100, (dailyData.dailyEarnedFree / dailyData.dailyLimit) * 100)}%` }} />
                 </div>
               </div>
             </CardContent>
@@ -109,9 +117,9 @@ export default function CreditsPage() {
               </CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="text-3xl font-bold text-red-500 mt-2">Tracking... <span className="text-sm text-foreground/50 font-normal"></span></div>
+              <div className="text-3xl font-bold text-red-500 mt-2">{loading ? '...' : `-${dailyData.dailySpent}`} <span className="text-sm text-foreground/50 font-normal"></span></div>
               <p className="text-xs text-foreground/50 mt-4 flex items-center gap-1">
-                <Server className="w-3 h-3" /> Server Burn Rate: 6/hr
+                <Server className="w-3 h-3" /> Server Burn Rate: {loading ? '...' : burnRate}/hr
               </p>
             </CardContent>
           </Card>
@@ -150,7 +158,7 @@ export default function CreditsPage() {
                     <tr key={tx.id} className="hover:bg-background/50 transition-colors">
                       <td className="px-4 py-4 font-mono text-xs text-foreground/70">{tx.id.substring(0,8)}</td>
                       <td className="px-4 py-4 text-foreground/80 flex items-center gap-2">
-                        <Clock className="w-3 h-3 text-foreground/40" /> {new Date(tx.createdAt).toLocaleString()}
+                        <Clock className="w-3 h-3 text-foreground/40" /> {new Date(tx.timestamp).toLocaleString()}
                       </td>
                       <td className="px-4 py-4 font-medium">{tx.source}</td>
                       <td className={`px-4 py-4 text-right font-bold ${tx.type === 'EARNED' ? 'text-success' : 'text-red-500'}`}>
