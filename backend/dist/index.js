@@ -21,7 +21,9 @@ const pterodactyl_service_1 = require("./services/pterodactyl.service");
 app.use(security_1.securityHeaders);
 app.use(logger_1.requestLogger);
 app.use((0, cors_1.default)());
-app.use(express_1.default.json());
+app.use(express_1.default.json({ limit: '10mb' }));
+const path_1 = __importDefault(require("path"));
+app.use('/uploads', express_1.default.static(path_1.default.join(__dirname, '../public/uploads')));
 const credits_routes_1 = __importDefault(require("./routes/credits.routes"));
 const voucher_routes_1 = __importDefault(require("./routes/voucher.routes"));
 const referral_routes_1 = __importDefault(require("./routes/referral.routes"));
@@ -35,6 +37,7 @@ const notification_routes_1 = __importDefault(require("./routes/notification.rou
 const admin_settings_routes_1 = __importDefault(require("./routes/admin.settings.routes"));
 const support_routes_1 = __importDefault(require("./routes/support.routes"));
 const admin_support_routes_1 = __importDefault(require("./routes/admin.support.routes"));
+const profile_routes_1 = __importDefault(require("./routes/profile.routes"));
 app.use('/auth', security_1.authLimiter, auth_routes_1.default);
 app.use('/servers', server_routes_1.default);
 app.use('/admin/servers', security_1.adminLimiter, admin_server_routes_1.default);
@@ -48,6 +51,7 @@ app.use('/notifications', notification_routes_1.default);
 app.use('/admin/settings', security_1.adminLimiter, admin_settings_routes_1.default);
 app.use('/support/tickets', security_1.ticketLimiter, support_routes_1.default);
 app.use('/admin/support/tickets', security_1.adminLimiter, admin_support_routes_1.default);
+app.use('/profile', profile_routes_1.default);
 app.get('/health', async (req, res) => {
     try {
         // Check Database

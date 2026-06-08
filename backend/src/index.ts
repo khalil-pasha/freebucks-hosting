@@ -20,7 +20,10 @@ import { PterodactylService } from './services/pterodactyl.service';
 app.use(securityHeaders);
 app.use(requestLogger);
 app.use(cors());
-app.use(express.json());
+app.use(express.json({ limit: '10mb' }));
+
+import path from 'path';
+app.use('/uploads', express.static(path.join(__dirname, '../public/uploads')));
 
 import creditsRoutes from './routes/credits.routes';
 import voucherRoutes from './routes/voucher.routes';
@@ -35,6 +38,7 @@ import notificationRoutes from './routes/notification.routes';
 import adminSettingsRoutes from './routes/admin.settings.routes';
 import supportRoutes from './routes/support.routes';
 import adminSupportRoutes from './routes/admin.support.routes';
+import profileRoutes from './routes/profile.routes';
 
 app.use('/auth', authLimiter, authRoutes);
 app.use('/servers', serverRoutes);
@@ -49,6 +53,7 @@ app.use('/notifications', notificationRoutes);
 app.use('/admin/settings', adminLimiter, adminSettingsRoutes);
 app.use('/support/tickets', ticketLimiter, supportRoutes);
 app.use('/admin/support/tickets', adminLimiter, adminSupportRoutes);
+app.use('/profile', profileRoutes);
 
 app.get('/health', async (req: Request, res: Response) => {
   try {

@@ -1,0 +1,11 @@
+"use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
+const express_1 = require("express");
+const profile_controller_1 = require("../controllers/profile.controller");
+const auth_1 = require("../middleware/auth");
+const router = (0, express_1.Router)();
+router.use(auth_1.requireAuth);
+router.post('/avatar', profile_controller_1.ProfileController.uploadAvatar);
+router.post('/send-password-otp', profile_controller_1.ProfileController.sendPasswordOtp);
+router.post('/reset-panel-password', profile_controller_1.ProfileController.resetPanelPassword);
+exports.default = router;

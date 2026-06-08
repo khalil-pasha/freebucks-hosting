@@ -40,6 +40,25 @@ export class PterodactylService {
     return response.data.attributes.id as number;
   }
 
+  public static async updateUserPassword(pteroUserId: number, email: string, username: string, first_name: string, last_name: string, password?: string) {
+    if (!this.isConfigured()) {
+      console.log(`[Pterodactyl Sim] Updated password for user ID ${pteroUserId}`);
+      return true;
+    }
+
+    const url = `${process.env.PTERODACTYL_PANEL_URL}/api/application/users/${pteroUserId}`;
+    const data = {
+      email,
+      username,
+      first_name,
+      last_name,
+      password: password || undefined
+    };
+
+    await axios.patch(url, data, { headers: this.getAppHeaders() });
+    return true;
+  }
+
   public static async createServer(name: string, ramGB: number, cpu: number, disk: number, pteroUserId: number) {
     if (!this.isConfigured()) {
       console.log(`[Pterodactyl Sim] Created server ${name} with ${ramGB}GB RAM, ${cpu}% CPU, ${disk}GB Disk.`);
