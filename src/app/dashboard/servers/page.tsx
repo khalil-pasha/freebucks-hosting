@@ -224,6 +224,7 @@ export default function ServersPage() {
           const isLocallyStarting = !!startingTimers[server.id];
           const displayStatus = isLocallyStarting && server.status !== 'RUNNING' ? 'STARTING' : server.status;
           const elapsedSecs = isLocallyStarting ? Math.floor((now - startingTimers[server.id]) / 1000) : 0;
+          const remainingSecs = Math.max(0, 60 - elapsedSecs);
 
           return (
           <motion.div key={server.id} initial={{ y: 20, opacity: 0 }} animate={{ y: 0, opacity: 1 }}>
@@ -269,20 +270,18 @@ export default function ServersPage() {
                          <RefreshCw className="w-5 h-5 text-orange-500 animate-spin" />
                          <div>
                            <p className="text-sm font-bold text-orange-500">
-                             {elapsedSecs > 120 
-                               ? "Startup is taking longer than expected. Please check console or try again."
-                               : elapsedSecs > 30 
-                               ? "Server is still starting. This may take up to 2 minutes." 
-                               : "Server is starting... Please wait..."}
+                             {remainingSecs === 0 
+                               ? "Still starting... this may take a little longer."
+                               : "Server is starting..."}
                            </p>
-                           <p className="text-xs text-orange-500/80 mt-0.5">Estimated wait time: Calculating...</p>
+                           <p className="text-xs text-orange-500/80 mt-0.5">Please wait while your server comes online.</p>
                          </div>
                        </div>
                        <span className="text-[10px] font-black text-orange-500 uppercase px-2 py-1 bg-orange-500/20 rounded shadow-sm">QUEUED</span>
                      </div>
                      <div className="bg-background/50 rounded p-2 text-center border border-orange-500/10">
-                       <span className="text-xs font-medium text-orange-500/70 mr-2 uppercase tracking-wider">Starting for:</span>
-                       <span className="font-mono font-bold text-orange-500 text-sm">{formatTime(elapsedSecs * 1000)}</span>
+                       <span className="text-xs font-medium text-orange-500/70 mr-2 uppercase tracking-wider">Estimated time remaining:</span>
+                       <span className="font-mono font-bold text-orange-500 text-sm">00:{remainingSecs.toString().padStart(2, '0')}</span>
                      </div>
                   </div>
                 )}
