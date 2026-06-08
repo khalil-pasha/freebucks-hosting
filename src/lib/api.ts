@@ -5,6 +5,7 @@ const baseURL = isProd ? 'https://api.freebucks.host' : (process.env.NEXT_PUBLIC
 
 const api = axios.create({
   baseURL,
+  withCredentials: true,
 });
 
 api.interceptors.request.use((config) => {

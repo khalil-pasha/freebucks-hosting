@@ -87,7 +87,9 @@ model User {
 
 model Admin {
   id        String   @id @default(uuid())
-  discordId String   @unique // For linking to user or separate admin accounts
+  username  String   @unique
+  password  String
+  discordId String?  @unique // Optional now
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 }

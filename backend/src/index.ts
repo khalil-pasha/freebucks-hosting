@@ -25,10 +25,14 @@ app.use(express.json({ limit: '10mb' }));
 import path from 'path';
 app.use('/uploads', express.static(path.join(__dirname, '../public/uploads')));
 
+import cookieParser from 'cookie-parser';
+app.use(cookieParser());
+
 import creditsRoutes from './routes/credits.routes';
 import voucherRoutes from './routes/voucher.routes';
 import referralRoutes from './routes/referral.routes';
 import authRoutes from './routes/auth.routes';
+import adminAuthRoutes from './routes/admin.auth.routes';
 import serverRoutes from './routes/server.routes';
 import adminServerRoutes from './routes/admin.server.routes';
 import queueRoutes from './routes/queue.routes';
@@ -42,6 +46,7 @@ import profileRoutes from './routes/profile.routes';
 import adminCoreRoutes from './routes/admin.core.routes';
 
 app.use('/auth', authRoutes);
+app.use('/admin/auth', adminAuthRoutes);
 app.use('/servers', serverRoutes);
 app.use('/admin/servers', adminServerRoutes);
 app.use('/credits', creditsLimiter, creditsRoutes);

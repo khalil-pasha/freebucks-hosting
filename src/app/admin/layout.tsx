@@ -1,8 +1,9 @@
 import { AdminSidebar } from "@/components/layout/admin-sidebar"
 import { Bell, Search, UserCircle, Menu } from "lucide-react"
 import { Button } from "@/components/ui/button"
-import AuthProvider from "@/components/AuthProvider"
+import AdminAuthProvider from "@/components/AdminAuthProvider"
 import { Suspense } from "react"
+import { AdminName } from "@/components/admin/admin-name"
 
 export default function AdminLayout({
   children,
@@ -11,7 +12,7 @@ export default function AdminLayout({
 }) {
   return (
     <Suspense fallback={<div className="min-h-screen flex items-center justify-center">Loading...</div>}>
-      <AuthProvider>
+      <AdminAuthProvider>
         <div className="min-h-screen bg-background flex">
           <AdminSidebar />
           <div className="flex-1 flex flex-col md:ml-64">
@@ -39,8 +40,7 @@ export default function AdminLayout({
                 <div className="flex items-center gap-2 border-l border-border/50 pl-4">
                   <UserCircle className="w-8 h-8 text-red-500" />
                   <div className="hidden sm:flex flex-col">
-                    <span className="text-sm font-bold leading-none">SuperAdmin</span>
-                    <span className="text-[10px] text-foreground/50 uppercase tracking-widest mt-1">System</span>
+                    <AdminName />
                   </div>
                 </div>
               </div>
@@ -52,7 +52,7 @@ export default function AdminLayout({
             </main>
           </div>
         </div>
-      </AuthProvider>
+      </AdminAuthProvider>
     </Suspense>
   )
 }

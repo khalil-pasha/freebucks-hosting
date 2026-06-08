@@ -19,6 +19,8 @@ import {
   LogOut
 } from "lucide-react"
 
+import { useAdminAuth } from "@/components/AdminAuthProvider"
+
 const adminLinks = [
   { name: "Dashboard", href: "/admin", icon: <LayoutDashboard className="w-5 h-5" /> },
   { name: "Users", href: "/admin/users", icon: <Users className="w-5 h-5" /> },
@@ -35,6 +37,7 @@ const adminLinks = [
 
 export function AdminSidebar() {
   const pathname = usePathname()
+  const { logout } = useAdminAuth()
 
   return (
     <aside className="hidden md:flex flex-col w-64 bg-card border-r border-border min-h-screen fixed left-0 top-0 z-40 shadow-xl">
@@ -71,13 +74,13 @@ export function AdminSidebar() {
       </div>
 
       <div className="p-4 border-t border-border mt-auto">
-        <Link 
-          href="/dashboard"
-          className="flex items-center gap-3 px-3 py-2.5 rounded-md transition-colors font-medium text-sm text-foreground/70 hover:bg-card-foreground/10"
+        <button 
+          onClick={logout}
+          className="w-full flex items-center gap-3 px-3 py-2.5 rounded-md transition-colors font-medium text-sm text-foreground/70 hover:bg-card-foreground/10"
         >
           <LogOut className="w-5 h-5" />
-          Exit Admin
-        </Link>
+          Logout Admin
+        </button>
       </div>
     </aside>
   )
