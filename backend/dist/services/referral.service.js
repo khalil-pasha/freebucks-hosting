@@ -64,5 +64,26 @@ class ReferralService {
             };
         });
     }
+    static async getStats(userId) {
+        const totalInvited = await db_1.db.referral.count({
+            where: { referrerId: userId }
+        });
+        const pendingInstalls = await db_1.db.referral.count({
+            where: { referrerId: userId, status: 'PENDING' }
+        });
+        const earnedTransactions = await db_1.db.creditsTransaction.findMany({
+            where: { userId, source: 'REFERRAL_REWARD' }
+        });
+        const totalEarned = earnedTransactions.reduce((acc, tx) => acc + tx.amount, 0);
+        const senderReward = await settings_service_1.SettingsService.getNumber('referralSenderReward');
+        const receiverReward = await settings_service_1.SettingsService.getNumber('referralReceiverReward');
+        return {
+            totalInvited,
+            totalEarned,
+            pendingInstalls,
+            senderReward,
+            receiverReward
+        };
+    }
 }
 exports.ReferralService = ReferralService;

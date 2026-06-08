@@ -81,4 +81,31 @@ export class ReferralService {
       };
     });
   }
+
+  public static async getStats(userId: string) {
+    const totalInvited = await db.referral.count({
+      where: { referrerId: userId }
+    });
+
+    const pendingInstalls = await db.referral.count({
+      where: { referrerId: userId, status: 'PENDING' }
+    });
+
+    const earnedTransactions = await db.creditsTransaction.findMany({
+      where: { userId, source: 'REFERRAL_REWARD' }
+    });
+
+    const totalEarned = earnedTransactions.reduce((acc: number, tx: any) => acc + tx.amount, 0);
+
+    const senderReward = await SettingsService.getNumber('referralSenderReward');
+    const receiverReward = await SettingsService.getNumber('referralReceiverReward');
+
+    return {
+      totalInvited,
+      totalEarned,
+      pendingInstalls,
+      senderReward,
+      receiverReward
+    };
+  }
 }

@@ -19,5 +19,15 @@ class ReferralController {
             res.status(400).json({ error: error.message });
         }
     }
+    static async getStats(req, res) {
+        try {
+            const userId = req.user.id;
+            const stats = await referral_service_1.ReferralService.getStats(userId);
+            res.json(stats);
+        }
+        catch (error) {
+            res.status(400).json({ error: error.message });
+        }
+    }
 }
 exports.ReferralController = ReferralController;

@@ -5,7 +5,26 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Users, Copy, Coins, ArrowRight, UserPlus, TrendingUp } from "lucide-react"
 
+import { useEffect, useState } from "react"
+import api from "@/lib/api"
+import { useAuth } from "@/components/AuthProvider"
+
 export default function ReferralPage() {
+  const { user } = useAuth()
+  const [stats, setStats] = useState<any>(null)
+
+  useEffect(() => {
+    const fetchStats = async () => {
+      try {
+        const res = await api.get('/referrals/stats')
+        setStats(res.data)
+      } catch (err) {
+        console.error(err)
+      }
+    }
+    fetchStats()
+  }, [])
+
   const containerVariants = {
     hidden: { opacity: 0 },
     visible: { opacity: 1, transition: { staggerChildren: 0.1 } }
@@ -40,7 +59,7 @@ export default function ReferralPage() {
               <div className="flex gap-2">
                 <Input 
                   readOnly 
-                  value="https://freebucks.host/r/Steve123" 
+                  value={user ? `https://app.freebucks.host/login?ref=${user.id}` : "Loading..."} 
                   className="bg-background font-mono text-sm h-12"
                 />
                 <Button className="h-12 px-6 bg-secondary hover:bg-secondary/90 text-white flex-shrink-0">
@@ -55,7 +74,7 @@ export default function ReferralPage() {
                   </div>
                   <div>
                     <p className="text-xs text-foreground/60 font-medium uppercase tracking-wider">You Receive</p>
-                    <p className="text-xl font-black text-primary flex items-center gap-1 mt-0.5"><Coins className="w-4 h-4"/> 25 Credits</p>
+                    <p className="text-xl font-black text-primary flex items-center gap-1 mt-0.5"><Coins className="w-4 h-4"/> {stats ? stats.senderReward : '...'} Credits</p>
                   </div>
                 </div>
                 
@@ -65,7 +84,7 @@ export default function ReferralPage() {
                   </div>
                   <div>
                     <p className="text-xs text-foreground/60 font-medium uppercase tracking-wider">Friend Receives</p>
-                    <p className="text-xl font-black text-secondary flex items-center gap-1 mt-0.5"><Coins className="w-4 h-4"/> 50 Credits</p>
+                    <p className="text-xl font-black text-secondary flex items-center gap-1 mt-0.5"><Coins className="w-4 h-4"/> {stats ? stats.receiverReward : '...'} Credits</p>
                   </div>
                 </div>
               </div>
@@ -98,17 +117,17 @@ export default function ReferralPage() {
             <CardContent className="space-y-6">
               <div className="p-4 bg-background border border-border/50 rounded-xl text-center">
                 <p className="text-xs text-foreground/60 uppercase tracking-wider font-medium mb-1">Total Invited</p>
-                <div className="text-4xl font-black text-foreground">12</div>
+                <div className="text-4xl font-black text-foreground">{stats ? stats.totalInvited : '...'}</div>
               </div>
               <div className="p-4 bg-background border border-border/50 rounded-xl text-center">
                 <p className="text-xs text-foreground/60 uppercase tracking-wider font-medium mb-1">Total Earned</p>
                 <div className="text-4xl font-black text-success flex items-center justify-center gap-2">
-                  <Coins className="w-6 h-6" /> 300
+                  <Coins className="w-6 h-6" /> {stats ? stats.totalEarned : '...'}
                 </div>
               </div>
               <div className="p-4 bg-background border border-border/50 rounded-xl text-center">
                 <p className="text-xs text-foreground/60 uppercase tracking-wider font-medium mb-1">Pending Installs</p>
-                <div className="text-2xl font-bold text-foreground/70">3</div>
+                <div className="text-2xl font-bold text-foreground/70">{stats ? stats.pendingInstalls : '...'}</div>
                 <p className="text-[10px] text-foreground/50 mt-1">Users signed up but haven't created a server yet.</p>
               </div>
             </CardContent>
