@@ -12,6 +12,14 @@ api.interceptors.request.use((config) => {
   if (token && config.headers) {
     config.headers.Authorization = `Bearer ${token}`;
   }
+  
+  // Prevent browser caching for all API requests
+  if (config.headers) {
+    config.headers['Cache-Control'] = 'no-cache';
+    config.headers['Pragma'] = 'no-cache';
+    config.headers['Expires'] = '0';
+  }
+  
   return config;
 });
 

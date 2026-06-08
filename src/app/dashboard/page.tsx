@@ -11,34 +11,58 @@ import api from "@/lib/api"
 
 export default function DashboardOverview() {
   const { user, loading: userLoading } = useAuth()
-  const [balance, setBalance] = useState<number>(0)
-  const [activeServers, setActiveServers] = useState<number>(0)
-  const [totalServers, setTotalServers] = useState<number>(0)
+  const [activeServers, setActiveServers] = useState<number | null>(null)
+  const [totalServers, setTotalServers] = useState<number | null>(null)
+  const [dailyEarned, setDailyEarned] = useState<number | null>(null)
+  const [dailyLimit, setDailyLimit] = useState<number | null>(null)
   const [history, setHistory] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const [balRes, serverRes, histRes] = await Promise.all([
-          api.get('/credits/balance'),
-          api.get('/servers/my-servers'),
-          api.get('/credits/history')
-        ])
-        
-        setBalance(balRes.data.balance)
-        const servers = serverRes.data
-        setTotalServers(servers.length)
-        setActiveServers(servers.filter((s: any) => s.status === 'RUNNING' || s.status === 'STARTING').length)
-        setHistory(histRes.data.slice(0, 4))
-      } catch (err) {
-        console.error(err)
+        // Fetch balance independently
+        api.get('/credits/balance').then(balRes => {
+          setDailyEarned(balRes.data.dailyEarnedFree)
+          setDailyLimit(balRes.data.dailyLimit)
+        }).catch(err => {
+          console.error("Failed to fetch balance:", err)
+          setDailyEarned(0)
+          setDailyLimit(35)
+        })
+
+        // Fetch servers independently
+        api.get('/servers/my-servers').then(serverRes => {
+          const servers = serverRes.data
+          setTotalServers(servers.length)
+          setActiveServers(servers.filter((s: any) => s.status === 'RUNNING' || s.status === 'STARTING').length)
+        }).catch(err => {
+          console.error("Failed to fetch servers:", err)
+          setTotalServers(0)
+          setActiveServers(0)
+        })
+
+        // Fetch history independently
+        api.get('/credits/history').then(histRes => {
+          setHistory(histRes.data.slice(0, 4))
+        }).catch(err => {
+          console.error("Failed to fetch history:", err)
+          setHistory([])
+        })
+
       } finally {
         setLoading(false)
       }
     }
     
-    if (!userLoading && user) fetchData()
+    if (!userLoading && user) {
+      fetchData()
+    } else if (!userLoading && !user) {
+      // Safe fallback if user failed to load
+      setLoading(false)
+      setTotalServers(0)
+      setActiveServers(0)
+    }
   }, [user, userLoading])
   const containerVariants = {
     hidden: { opacity: 0 },
@@ -87,7 +111,9 @@ export default function DashboardOverview() {
               </CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="text-3xl font-bold text-foreground">{loading ? '...' : balance} <span className="text-sm text-foreground/50 font-normal">Credits</span></div>
+              <div className="text-3xl font-bold text-foreground">
+                {userLoading ? '...' : (user?.balance ?? 0)} <span className="text-sm text-foreground/50 font-normal">Credits</span>
+              </div>
               <p className="text-xs text-foreground/50 mt-1">Spend wisely on your servers</p>
             </CardContent>
           </Card>
@@ -102,14 +128,23 @@ export default function DashboardOverview() {
                 <div className="flex items-center gap-2">
                   <Activity className="w-4 h-4 text-secondary" /> Daily Earning Cap
                 </div>
-                <span className="text-xs font-bold text-secondary">20 / 35</span>
+                <span className="text-xs font-bold text-secondary">
+                  {dailyEarned !== null && dailyLimit !== null ? `${dailyEarned} / ${dailyLimit}` : '...'}
+                </span>
               </CardTitle>
             </CardHeader>
             <CardContent>
               <div className="w-full bg-background rounded-full h-2.5 mb-2 mt-2 border border-border/50 overflow-hidden">
-                <div className="bg-secondary h-2.5 rounded-full w-[57%]" />
+                <div 
+                  className="bg-secondary h-2.5 rounded-full transition-all duration-500" 
+                  style={{ width: dailyEarned !== null && dailyLimit !== null ? `${Math.min(100, (dailyEarned / dailyLimit) * 100)}%` : '0%' }}
+                />
               </div>
-              <p className="text-xs text-foreground/50">You can still earn 15 free credits today.</p>
+              <p className="text-xs text-foreground/50">
+                {dailyEarned !== null && dailyLimit !== null 
+                  ? `You can still earn ${Math.max(0, dailyLimit - dailyEarned)} free credits today.`
+                  : 'Loading...'}
+              </p>
             </CardContent>
           </Card>
         </motion.div>
@@ -124,7 +159,9 @@ export default function DashboardOverview() {
               </CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="text-3xl font-bold">{loading ? '...' : activeServers} <span className="text-sm text-foreground/50 font-normal">/ {loading ? '...' : totalServers} Total</span></div>
+              <div className="text-3xl font-bold">
+                {activeServers !== null ? activeServers : '...'} <span className="text-sm text-foreground/50 font-normal">/ {totalServers !== null ? totalServers : '...'} Total</span>
+              </div>
               <p className="text-xs text-foreground/50 mt-1">Servers currently running or starting</p>
             </CardContent>
           </Card>

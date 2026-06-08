@@ -42,11 +42,17 @@ export default function AuthProvider({ children }: { children: React.ReactNode }
 
   const fetchUser = async () => {
     try {
-      const res = await api.get('/auth/me');
+      const res = await api.get(`/auth/me?t=${Date.now()}`);
       setUser(res.data);
-    } catch (error) {
+    } catch (error: any) {
       console.error('Failed to fetch user:', error);
       setUser(null);
+      if (error.response?.status === 401) {
+        localStorage.removeItem('freebucks_token');
+        if (pathname.startsWith('/dashboard') || pathname.startsWith('/admin')) {
+          router.push('/');
+        }
+      }
     } finally {
       setLoading(false);
     }

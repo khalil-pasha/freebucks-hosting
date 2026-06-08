@@ -11,7 +11,7 @@ import api, { handleApiError } from "@/lib/api"
 import { useAuth } from "@/components/AuthProvider"
 
 export default function ServersPage() {
-  const { user } = useAuth()
+  const { user, refetchUser } = useAuth()
   const router = useRouter()
   const [servers, setServers] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
@@ -90,6 +90,7 @@ export default function ServersPage() {
 
       if (upgradeTarget) {
         await api.patch(`/servers/${upgradeTarget.id}/upgrade`, payload)
+        alert("Server upgraded successfully!")
       } else {
         if (!user?.pterodactylUserId) {
           payload.pterodactyl = {
@@ -102,7 +103,8 @@ export default function ServersPage() {
         }
         await api.post('/servers/create', payload)
       }
-
+      
+      await refetchUser()
       fetchServers()
       setIsPlanModalOpen(false)
       setSelectedPlan(null)

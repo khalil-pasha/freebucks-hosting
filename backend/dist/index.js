@@ -38,7 +38,7 @@ const admin_settings_routes_1 = __importDefault(require("./routes/admin.settings
 const support_routes_1 = __importDefault(require("./routes/support.routes"));
 const admin_support_routes_1 = __importDefault(require("./routes/admin.support.routes"));
 const profile_routes_1 = __importDefault(require("./routes/profile.routes"));
-app.use('/auth', security_1.authLimiter, auth_routes_1.default);
+app.use('/auth', auth_routes_1.default);
 app.use('/servers', server_routes_1.default);
 app.use('/admin/servers', security_1.adminLimiter, admin_server_routes_1.default);
 app.use('/credits', security_1.creditsLimiter, credits_routes_1.default);

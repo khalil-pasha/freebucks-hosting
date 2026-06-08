@@ -9,7 +9,7 @@ import api from "@/lib/api"
 import { useAuth } from "@/components/AuthProvider"
 
 export default function RewardsPage() {
-  const { user } = useAuth()
+  const { user, refetchUser } = useAuth()
   const [balanceData, setBalanceData] = useState<any>(null)
   const [history, setHistory] = useState<any[]>([])
   const [rewardStatus, setRewardStatus] = useState<any>(null)
@@ -60,7 +60,8 @@ export default function RewardsPage() {
     try {
       const rolledAmount = Math.floor(Math.random() * (50 - 5 + 1) + 5)
       const res = await api.post('/credits/daily-spin', { rolledAmount })
-      alert(`You spun and won ${res.data.actualReward} credits!`)
+      await refetchUser()
+      alert(res.data.message || `You won ${res.data.actualReward} credits!`)
       fetchRewardsData()
     } catch (err: any) {
       alert(err.response?.data?.error || err.message)
@@ -73,7 +74,8 @@ export default function RewardsPage() {
     setLoading(true)
     try {
       const res = await api.post('/credits/hourly-claim')
-      alert(`You claimed ${res.data.amount} hourly credits!`)
+      await refetchUser()
+      alert(`Claimed ${res.data.amount} credits!`)
       fetchRewardsData()
     } catch (err: any) {
       alert(err.response?.data?.error || err.message)

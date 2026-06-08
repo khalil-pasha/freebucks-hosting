@@ -10,7 +10,7 @@ const app = express();
 app.set("trust proxy", 1);
 const port = process.env.PORT || 5000;
 
-import { securityHeaders, authLimiter, voucherLimiter, creditsLimiter, ticketLimiter, adminLimiter } from './middleware/security';
+import { securityHeaders, voucherLimiter, creditsLimiter, ticketLimiter, adminLimiter } from './middleware/security';
 import { globalErrorHandler } from './middleware/errorHandler';
 import { requestLogger } from './middleware/logger';
 import { db } from './utils/db';
@@ -40,7 +40,7 @@ import supportRoutes from './routes/support.routes';
 import adminSupportRoutes from './routes/admin.support.routes';
 import profileRoutes from './routes/profile.routes';
 
-app.use('/auth', authLimiter, authRoutes);
+app.use('/auth', authRoutes);
 app.use('/servers', serverRoutes);
 app.use('/admin/servers', adminLimiter, adminServerRoutes);
 app.use('/credits', creditsLimiter, creditsRoutes);

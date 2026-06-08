@@ -3,6 +3,7 @@ import * as React from "react"
 import Link from "next/link"
 import Image from "next/image"
 import { usePathname } from "next/navigation"
+import { useAuth } from "@/components/AuthProvider"
 import { cn } from "@/lib/utils"
 import { 
   LayoutDashboard, 
@@ -30,6 +31,7 @@ const sidebarLinks = [
 
 export function DashboardSidebar() {
   const pathname = usePathname()
+  const { user, loading } = useAuth()
 
   return (
     <aside className="hidden md:flex flex-col w-64 bg-card border-r border-border min-h-screen fixed left-0 top-0 z-40 shadow-xl">
@@ -70,7 +72,7 @@ export function DashboardSidebar() {
           <div className="flex flex-col">
             <span className="text-xs text-foreground/50 font-medium uppercase">Balance</span>
             <span className="text-lg font-bold text-success flex items-center gap-1">
-              <Coins className="w-4 h-4" /> 12.5
+              <Coins className="w-4 h-4" /> {loading ? "..." : (user?.balance ?? 0)}
             </span>
           </div>
         </div>

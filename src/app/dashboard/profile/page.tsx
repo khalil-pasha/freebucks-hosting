@@ -15,7 +15,7 @@ const loginHistory = [
 ]
 
 export default function ProfilePage() {
-  const { user, logout, refetchUser } = useAuth()
+  const { user, loading, logout, refetchUser } = useAuth()
   
   const [isUploading, setIsUploading] = useState(false)
   const fileInputRef = useRef<HTMLInputElement>(null)
@@ -176,7 +176,7 @@ export default function ProfilePage() {
                 accept="image/png, image/jpeg, image/jpg, image/webp"
                 onChange={handleFileChange}
               />
-              <h2 className="text-xl font-bold mt-4 mb-2">{user?.username || "Loading..."}</h2>
+              <h2 className="text-xl font-bold mt-4 mb-2">{loading ? "..." : (user?.username || "Guest")}</h2>
               
               {isEditingEmail ? (
                 <div className="flex flex-col gap-2 w-full max-w-xs mb-6 mx-auto">
@@ -195,7 +195,7 @@ export default function ProfilePage() {
                 </div>
               ) : (
                 <div className="flex items-center gap-2 mb-6 justify-center">
-                  <p className="text-sm text-foreground/50">{user?.email || "No email linked"}</p>
+                  <p className="text-sm text-foreground/50">{loading ? "..." : (user?.email || "No email linked")}</p>
                   <button onClick={() => { setNewEmail(user?.email || ""); setIsEditingEmail(true); }} className="text-foreground/50 hover:text-foreground">
                     <Edit2 className="w-3 h-3" />
                   </button>
