@@ -72,7 +72,7 @@ export default function AdminCreditsPage() {
           <CardContent className="space-y-4">
              <div className="space-y-2">
                <label className="text-sm font-medium">Discord ID or Username</label>
-               <Input placeholder="e.g. 123456789 or _NightBlade_" className="bg-background" />
+               <Input placeholder="e.g. 123456789 or username" className="bg-background" />
              </div>
              <div className="space-y-2">
                <label className="text-sm font-medium">Amount</label>

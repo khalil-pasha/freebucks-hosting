@@ -16,5 +16,6 @@ router.get('/referrals', AdminCoreController.getReferrals);
 router.get('/premium', AdminCoreController.getPremiumOrders);
 router.get('/logs', AdminCoreController.getLogs);
 router.get('/tickets', AdminCoreController.getTickets);
+router.get('/users/:id', AdminCoreController.getUser);
 
 export default router;

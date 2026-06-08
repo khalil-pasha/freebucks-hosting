@@ -177,4 +177,24 @@ export class AdminCoreController {
       res.status(500).json({ error: error.message });
     }
   }
+
+  public static async getUser(req: Request, res: Response) {
+    try {
+      const id = req.params.id as string;
+      const user = await db.user.findUnique({
+        where: { id },
+        include: {
+          servers: true,
+          transactions: {
+            orderBy: { timestamp: 'desc' },
+            take: 10
+          }
+        }
+      });
+      if (!user) return res.status(404).json({ error: 'User not found' });
+      res.json(user);
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  }
 }
