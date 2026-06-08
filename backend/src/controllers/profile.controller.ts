@@ -51,7 +51,8 @@ export class ProfileController {
       fs.writeFileSync(filePath, buffer);
 
       // We'll serve this via static route: /uploads/avatars/filename
-      const avatarUrl = `${process.env.NEXT_PUBLIC_API_URL || 'https://api.freebucks.host'}/uploads/avatars/${filename}`;
+      const baseUrl = process.env.API_URL || `${req.protocol}://${req.get('host')}`;
+      const avatarUrl = `${baseUrl}/uploads/avatars/${filename}`;
 
       await db.user.update({
         where: { id: userId },

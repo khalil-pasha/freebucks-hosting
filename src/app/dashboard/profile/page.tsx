@@ -153,7 +153,14 @@ export default function ProfilePage() {
                      </div>
                    ) : (
                      <>
-                       <img src={user?.avatar || `https://api.dicebear.com/7.x/avataaars/svg?seed=${user?.username || 'Steve'}`} alt="Avatar" className="w-full h-full object-cover" />
+                       <img 
+                         src={user?.avatar || `https://api.dicebear.com/7.x/avataaars/svg?seed=${user?.username || 'Steve'}`} 
+                         alt="Avatar" 
+                         className="w-full h-full object-cover" 
+                         onError={(e) => {
+                           e.currentTarget.src = `https://api.dicebear.com/7.x/avataaars/svg?seed=${user?.username || 'Steve'}`
+                         }}
+                       />
                        <div className="absolute inset-0 bg-black/50 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
                          <Edit2 className="w-6 h-6 text-white" />
                        </div>
