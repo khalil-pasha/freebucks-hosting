@@ -17,7 +17,7 @@ export default function ServersPage() {
   const [loading, setLoading] = useState(true)
   const [actionLoading, setActionLoading] = useState<string | null>(null)
   const [toastMessage, setToastMessage] = useState<string | null>(null)
-  const [startingTimers, setStartingTimers] = useState<Record<string, number>>({})
+  const [startingServers, setStartingServers] = useState<Record<string, { startedAt: number, isStarting: boolean }>>({})
   const [now, setNow] = useState(Date.now())
 
   // Modal States
@@ -64,38 +64,21 @@ export default function ServersPage() {
   }, [])
 
   useEffect(() => {
-    setStartingTimers(prev => {
-      const newTimers = { ...prev }
+    setStartingServers(prev => {
+      const newState = { ...prev }
       let changed = false
       servers.forEach(s => {
-        const isStartingAPI = ['STARTING', 'starting', 'installing', 'suspended', 'RESTARTING'].includes(s.status)
         const isRunning = s.status === 'RUNNING' || s.status === 'running'
+        const local = newState[s.id]
         
-        if (isRunning) {
-          if (newTimers[s.id]) {
-            setToastMessage("Server started successfully")
-            setTimeout(() => setToastMessage(null), 4000)
-            delete newTimers[s.id]
-            changed = true
-          }
-        } else if (isStartingAPI) {
-          if (!newTimers[s.id]) {
-            newTimers[s.id] = Date.now()
-            changed = true
-          }
-        } else {
-          // If status becomes STOPPED but we are locally starting, keep it for 60 seconds
-          // to avoid clearing UI due to stale Pterodactyl state during boot.
-          if (newTimers[s.id]) {
-            const elapsed = Date.now() - newTimers[s.id]
-            if (elapsed > 60000) {
-              delete newTimers[s.id]
-              changed = true
-            }
-          }
+        if (isRunning && local?.isStarting) {
+          setToastMessage("Server started successfully")
+          setTimeout(() => setToastMessage(null), 4000)
+          delete newState[s.id]
+          changed = true
         }
       })
-      return changed ? newTimers : prev
+      return changed ? newState : prev
     })
   }, [servers])
 
@@ -109,15 +92,23 @@ export default function ServersPage() {
   const handleAction = async (action: 'start-server' | 'restart-server' | 'cancel', serverId: string) => {
     try {
       setActionLoading(serverId)
+      
+      // Instantly trigger local UI state
       if (action === 'start-server' || action === 'restart-server') {
-        setStartingTimers(prev => ({ ...prev, [serverId]: Date.now() }))
+        setStartingServers(prev => ({ 
+          ...prev, 
+          [serverId]: { startedAt: Date.now(), isStarting: true } 
+        }))
+        // Optimistically update the servers array to prevent stale flashes
+        setServers(prev => prev.map(s => s.id === serverId ? { ...s, status: 'STARTING' } : s))
       } else if (action === 'cancel') {
-        setStartingTimers(prev => {
-          const newTimers = { ...prev }
-          delete newTimers[serverId]
-          return newTimers
+        setStartingServers(prev => {
+          const newState = { ...prev }
+          delete newState[serverId]
+          return newState
         })
       }
+      
       await api.post(`/queue/${action}`, { serverId })
       fetchServers()
     } catch (err: any) {
@@ -221,9 +212,10 @@ export default function ServersPage() {
 
       <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
         {servers.map((server, i) => {
-          const isLocallyStarting = !!startingTimers[server.id];
+          const localState = startingServers[server.id];
+          const isLocallyStarting = !!localState?.isStarting;
           const displayStatus = isLocallyStarting && server.status !== 'RUNNING' ? 'STARTING' : server.status;
-          const elapsedSecs = isLocallyStarting ? Math.floor((now - startingTimers[server.id]) / 1000) : 0;
+          const elapsedSecs = isLocallyStarting ? Math.floor((now - localState.startedAt) / 1000) : 0;
           const remainingSecs = Math.max(0, 60 - elapsedSecs);
 
           return (
@@ -271,13 +263,15 @@ export default function ServersPage() {
                          <div>
                            <p className="text-sm font-bold text-orange-500">
                              {remainingSecs === 0 
-                               ? "Still starting... this may take a little longer."
+                               ? "Still starting... please wait."
                                : "Server is starting..."}
                            </p>
-                           <p className="text-xs text-orange-500/80 mt-0.5">Please wait while your server comes online.</p>
+                           <p className="text-xs text-orange-500/80 mt-0.5">
+                             {remainingSecs === 0 ? "This may take a little longer." : "Estimated wait: 60 seconds"}
+                           </p>
                          </div>
                        </div>
-                       <span className="text-[10px] font-black text-orange-500 uppercase px-2 py-1 bg-orange-500/20 rounded shadow-sm">QUEUED</span>
+                       <span className="text-[10px] font-black text-orange-500 uppercase px-2 py-1 bg-orange-500/20 rounded shadow-sm">STARTING</span>
                      </div>
                      <div className="bg-background/50 rounded p-2 text-center border border-orange-500/10">
                        <span className="text-xs font-medium text-orange-500/70 mr-2 uppercase tracking-wider">Estimated time remaining:</span>
