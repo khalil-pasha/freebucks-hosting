@@ -1,0 +1,18 @@
+"use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
+const express_1 = require("express");
+const admin_core_controller_1 = require("../controllers/admin.core.controller");
+const auth_1 = require("../middleware/auth");
+const admin_1 = require("../middleware/admin");
+const router = (0, express_1.Router)();
+router.use(auth_1.requireAuth, admin_1.requireAdmin);
+router.get('/stats', admin_core_controller_1.AdminCoreController.getDashboardStats);
+router.get('/users', admin_core_controller_1.AdminCoreController.getUsers);
+router.get('/servers', admin_core_controller_1.AdminCoreController.getServers);
+router.get('/credits', admin_core_controller_1.AdminCoreController.getCredits);
+router.get('/vouchers', admin_core_controller_1.AdminCoreController.getVouchers);
+router.get('/referrals', admin_core_controller_1.AdminCoreController.getReferrals);
+router.get('/premium', admin_core_controller_1.AdminCoreController.getPremiumOrders);
+router.get('/logs', admin_core_controller_1.AdminCoreController.getLogs);
+router.get('/tickets', admin_core_controller_1.AdminCoreController.getTickets);
+exports.default = router;

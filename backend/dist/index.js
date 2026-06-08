@@ -38,6 +38,7 @@ const admin_settings_routes_1 = __importDefault(require("./routes/admin.settings
 const support_routes_1 = __importDefault(require("./routes/support.routes"));
 const admin_support_routes_1 = __importDefault(require("./routes/admin.support.routes"));
 const profile_routes_1 = __importDefault(require("./routes/profile.routes"));
+const admin_core_routes_1 = __importDefault(require("./routes/admin.core.routes"));
 app.use('/auth', auth_routes_1.default);
 app.use('/servers', server_routes_1.default);
 app.use('/admin/servers', security_1.adminLimiter, admin_server_routes_1.default);
@@ -52,6 +53,7 @@ app.use('/admin/settings', security_1.adminLimiter, admin_settings_routes_1.defa
 app.use('/support/tickets', security_1.ticketLimiter, support_routes_1.default);
 app.use('/admin/support/tickets', security_1.adminLimiter, admin_support_routes_1.default);
 app.use('/profile', profile_routes_1.default);
+app.use('/admin/core', security_1.adminLimiter, admin_core_routes_1.default);
 app.get('/health', async (req, res) => {
     try {
         // Check Database

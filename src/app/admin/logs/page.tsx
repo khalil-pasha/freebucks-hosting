@@ -1,19 +1,37 @@
 "use client"
+import { useEffect, useState } from "react"
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
-import { Search, ScrollText, Filter } from "lucide-react"
-
-const logs = [
-  { id: "L-9921", time: "2026-06-03 10:22:15", type: "ADMIN_ACTION", actor: "SuperAdmin", target: "_NightBlade_", action: "Killed stuck server process & granted 5 Credits", ip: "192.168.1.1" },
-  { id: "L-9920", time: "2026-06-03 10:15:02", type: "QUEUE_EVENT", actor: "System", target: "Node-Mumbai-03", action: "Node locked up due to IO wait", ip: "Internal" },
-  { id: "L-9919", time: "2026-06-03 10:12:44", type: "CREDIT_GRANT", actor: "System", target: "PvP_Master99", action: "Hourly claim (+1.5 Credits)", ip: "Internal" },
-  { id: "L-9918", time: "2026-06-03 09:55:10", type: "VOUCHER_CLAIM", actor: "SteveNew", target: "DISCORD10K", action: "Successfully claimed voucher (+250 Credits)", ip: "45.22.11.9" },
-  { id: "L-9917", time: "2026-06-03 09:30:00", type: "SERVER_START", actor: "MinecraftPro", target: "srv-002", action: "Started server Create Modpack", ip: "104.28.1.1" },
-  { id: "L-9916", time: "2026-06-03 09:00:05", type: "ADMIN_LOGIN", actor: "SuperAdmin", target: "System", action: "Successful admin dashboard authentication", ip: "192.168.1.1" },
-  { id: "L-9915", time: "2026-06-03 08:45:22", type: "USER_BAN", actor: "SupportMod", target: "Scammer123", action: "Banned user for abusing referral system", ip: "10.0.0.5" },
-]
+import { Search, ScrollText, Filter, RefreshCw } from "lucide-react"
+import api from "@/lib/api"
 
 export default function AdminLogsPage() {
+  const [logs, setLogs] = useState<any[]>([])
+  const [loading, setLoading] = useState(true)
+  const [searchTerm, setSearchTerm] = useState("")
+
+  const fetchLogs = async () => {
+    try {
+      const res = await api.get('/admin/core/logs')
+      setLogs(res.data)
+    } catch (err) {
+      console.error(err)
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  useEffect(() => {
+    fetchLogs()
+  }, [])
+
+  const filteredLogs = logs.filter(log => 
+    log.action.toLowerCase().includes(searchTerm.toLowerCase()) || 
+    log.targetId?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    log.actorId?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    log.type.toLowerCase().includes(searchTerm.toLowerCase())
+  )
+
   return (
     <div className="max-w-7xl mx-auto space-y-8">
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
@@ -27,11 +45,13 @@ export default function AdminLogsPage() {
             <input 
               type="text" 
               placeholder="Search logs..." 
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
               className="bg-transparent border-none outline-none text-sm w-full"
             />
           </div>
-          <button className="p-2 bg-card border border-border/50 rounded-lg hover:bg-foreground/5 text-foreground/70">
-            <Filter className="w-5 h-5" />
+          <button onClick={fetchLogs} className="p-2 bg-card border border-border/50 rounded-lg hover:bg-foreground/5 text-foreground/70" title="Refresh">
+            <RefreshCw className="w-5 h-5" />
           </button>
         </div>
       </div>
@@ -47,16 +67,27 @@ export default function AdminLogsPage() {
                 <th className="px-6 py-4 font-medium">Log ID</th>
                 <th className="px-6 py-4 font-medium">Timestamp</th>
                 <th className="px-6 py-4 font-medium">Event Type</th>
-                <th className="px-6 py-4 font-medium">Actor</th>
+                <th className="px-6 py-4 font-medium">Actor ID</th>
                 <th className="px-6 py-4 font-medium w-1/3">Action Details</th>
                 <th className="px-6 py-4 font-medium">IP Address</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-border/50">
-              {logs.map((log) => (
+              {loading ? (
+                 <tr>
+                   <td colSpan={6} className="px-6 py-8 text-center text-foreground/50">
+                     <RefreshCw className="w-6 h-6 animate-spin mx-auto mb-2" />
+                     Loading logs...
+                   </td>
+                 </tr>
+              ) : filteredLogs.length === 0 ? (
+                 <tr>
+                   <td colSpan={6} className="px-6 py-8 text-center text-foreground/50">No logs found.</td>
+                 </tr>
+              ) : filteredLogs.map((log) => (
                 <tr key={log.id} className="hover:bg-foreground/5 transition-colors font-mono text-[13px]">
-                  <td className="px-6 py-4 text-foreground/50">{log.id}</td>
-                  <td className="px-6 py-4 text-foreground/70">{log.time}</td>
+                  <td className="px-6 py-4 text-foreground/50">{log.id.slice(0, 8)}</td>
+                  <td className="px-6 py-4 text-foreground/70">{new Date(log.timestamp).toLocaleString()}</td>
                   <td className="px-6 py-4">
                     <span className={`px-2 py-1 rounded text-[10px] font-bold tracking-wide ${
                       log.type.includes('ADMIN') ? 'bg-red-500/20 text-red-500' :
@@ -67,9 +98,9 @@ export default function AdminLogsPage() {
                       {log.type}
                     </span>
                   </td>
-                  <td className="px-6 py-4 font-bold">{log.actor}</td>
-                  <td className="px-6 py-4 text-foreground/90 font-sans">{log.action}</td>
-                  <td className="px-6 py-4 text-foreground/50">{log.ip}</td>
+                  <td className="px-6 py-4 font-bold">{log.actorId || 'System'}</td>
+                  <td className="px-6 py-4 text-foreground/90 font-sans">{log.action} {log.targetId ? `(Target: ${log.targetId})` : ''}</td>
+                  <td className="px-6 py-4 text-foreground/50">{log.ipAddress || '-'}</td>
                 </tr>
               ))}
             </tbody>

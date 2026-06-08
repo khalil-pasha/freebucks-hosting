@@ -10,6 +10,10 @@ export default function AdminDashboardPage() {
   const [runningServers, setRunningServers] = useState(0)
   const [queuedServers, setQueuedServers] = useState(0)
   const [creditsBurned, setCreditsBurned] = useState(0)
+  const [creditsEarned, setCreditsEarned] = useState(0)
+  const [totalUsers, setTotalUsers] = useState(0)
+  const [activeUsers, setActiveUsers] = useState(0)
+  const [newUsersHistory, setNewUsersHistory] = useState<number[]>([0, 0, 0, 0, 0, 0, 0])
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
@@ -18,11 +22,19 @@ export default function AdminDashboardPage() {
         const [serversRes, queueRes, statsRes] = await Promise.all([
           api.get('/admin/billing/running-servers'),
           api.get('/admin/queue/active'),
-          api.get('/admin/billing/stats')
+          api.get('/admin/core/stats')
         ])
         setRunningServers(serversRes.data.length)
         setQueuedServers(queueRes.data.waiting?.length || 0)
-        setCreditsBurned(statsRes.data.totalCreditsBurned || 0)
+        
+        const stats = statsRes.data;
+        setCreditsBurned(stats.totalCreditsBurned || 0)
+        setCreditsEarned(stats.totalCreditsEarned || 0)
+        setTotalUsers(stats.totalUsers || 0)
+        setActiveUsers(stats.activeUsers || 0)
+        if (stats.newUsersHistory) {
+          setNewUsersHistory(stats.newUsersHistory)
+        }
       } catch (err) {
         console.error(err)
       } finally {
@@ -63,8 +75,8 @@ export default function AdminDashboardPage() {
               </CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="text-3xl font-black">85,241</div>
-              <p className="text-xs text-success mt-1">+1,240 this week</p>
+              <div className="text-3xl font-black">{loading ? '...' : totalUsers.toLocaleString()}</div>
+              <p className="text-xs text-success mt-1">Registered accounts</p>
             </CardContent>
           </Card>
         </motion.div>
@@ -78,8 +90,8 @@ export default function AdminDashboardPage() {
               </CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="text-3xl font-black">12,405</div>
-              <p className="text-xs text-foreground/50 mt-1">15% of total</p>
+              <div className="text-3xl font-black">{loading ? '...' : activeUsers.toLocaleString()}</div>
+              <p className="text-xs text-foreground/50 mt-1">Logged in recently</p>
             </CardContent>
           </Card>
         </motion.div>
@@ -142,21 +154,24 @@ export default function AdminDashboardPage() {
               <CardTitle className="text-lg">New Users (Last 7 Days)</CardTitle>
             </CardHeader>
             <CardContent className="flex items-end justify-between h-64 pt-6 gap-2">
-              {[40, 60, 45, 80, 55, 90, 75].map((val, i) => (
+              {newUsersHistory.map((val, i) => {
+                const maxVal = Math.max(...newUsersHistory, 10); // Minimum scale 10
+                const percentage = (val / maxVal) * 100;
+                return (
                 <div key={i} className="w-full flex flex-col items-center gap-2 group">
                   <motion.div 
                     initial={{ height: 0 }}
-                    animate={{ height: `${val}%` }}
+                    animate={{ height: `${percentage}%` }}
                     transition={{ duration: 1, delay: i * 0.1 }}
                     className="w-full bg-primary/20 rounded-t-sm group-hover:bg-primary transition-colors relative"
                   >
                      <div className="absolute -top-8 left-1/2 -translate-x-1/2 opacity-0 group-hover:opacity-100 bg-background border border-border text-xs py-1 px-2 rounded font-bold transition-opacity">
-                       {val * 10}
+                       {val}
                      </div>
                   </motion.div>
                   <span className="text-xs text-foreground/50 font-medium">Day {i+1}</span>
                 </div>
-              ))}
+              )})}
             </CardContent>
           </Card>
         </motion.div>
@@ -165,33 +180,36 @@ export default function AdminDashboardPage() {
         <motion.div variants={itemVariants}>
           <Card className="bg-card border-border/50 h-full">
             <CardHeader>
-              <CardTitle className="text-lg">Credits Economy (Earned vs Spent)</CardTitle>
+              <CardTitle className="text-lg">Credits Economy (All Time)</CardTitle>
             </CardHeader>
-            <CardContent className="flex items-end justify-between h-64 pt-6 gap-4">
-              {[
-                { e: 60, s: 50 },
-                { e: 80, s: 70 },
-                { e: 40, s: 90 },
-                { e: 100, s: 85 },
-                { e: 70, s: 60 },
-              ].map((data, i) => (
-                <div key={i} className="w-full flex justify-center items-end gap-1">
+            <CardContent className="flex items-end justify-center h-64 pt-6 gap-12">
+                <div className="w-1/3 flex flex-col items-center gap-2 group">
                   <motion.div 
                     initial={{ height: 0 }}
-                    animate={{ height: `${data.e}%` }}
-                    transition={{ duration: 1, delay: i * 0.1 }}
-                    className="w-1/2 bg-success/60 rounded-t-sm hover:bg-success cursor-pointer"
-                    title={`Earned: ${data.e}k`}
-                  />
-                  <motion.div 
-                    initial={{ height: 0 }}
-                    animate={{ height: `${data.s}%` }}
-                    transition={{ duration: 1, delay: i * 0.1 + 0.2 }}
-                    className="w-1/2 bg-red-500/60 rounded-t-sm hover:bg-red-500 cursor-pointer"
-                    title={`Spent: ${data.s}k`}
-                  />
+                    animate={{ height: `${Math.min(100, Math.max(10, (creditsEarned / Math.max(creditsEarned, creditsBurned, 1)) * 100))}%` }}
+                    transition={{ duration: 1 }}
+                    className="w-full bg-success/60 rounded-t-sm hover:bg-success relative"
+                  >
+                     <div className="absolute -top-8 left-1/2 -translate-x-1/2 opacity-0 group-hover:opacity-100 bg-background border border-border text-xs py-1 px-2 rounded font-bold transition-opacity z-10">
+                       {creditsEarned.toLocaleString()}
+                     </div>
+                  </motion.div>
+                  <span className="text-xs text-foreground/50 font-medium">Earned</span>
                 </div>
-              ))}
+                
+                <div className="w-1/3 flex flex-col items-center gap-2 group">
+                  <motion.div 
+                    initial={{ height: 0 }}
+                    animate={{ height: `${Math.min(100, Math.max(10, (creditsBurned / Math.max(creditsEarned, creditsBurned, 1)) * 100))}%` }}
+                    transition={{ duration: 1, delay: 0.2 }}
+                    className="w-full bg-red-500/60 rounded-t-sm hover:bg-red-500 relative"
+                  >
+                     <div className="absolute -top-8 left-1/2 -translate-x-1/2 opacity-0 group-hover:opacity-100 bg-background border border-border text-xs py-1 px-2 rounded font-bold transition-opacity z-10">
+                       {creditsBurned.toLocaleString()}
+                     </div>
+                  </motion.div>
+                  <span className="text-xs text-foreground/50 font-medium">Spent</span>
+                </div>
             </CardContent>
           </Card>
         </motion.div>

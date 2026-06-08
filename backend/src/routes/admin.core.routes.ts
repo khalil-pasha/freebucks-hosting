@@ -1,0 +1,20 @@
+import { Router } from 'express';
+import { AdminCoreController } from '../controllers/admin.core.controller';
+import { requireAuth } from '../middleware/auth';
+import { requireAdmin } from '../middleware/admin';
+
+const router = Router();
+
+router.use(requireAuth, requireAdmin);
+
+router.get('/stats', AdminCoreController.getDashboardStats);
+router.get('/users', AdminCoreController.getUsers);
+router.get('/servers', AdminCoreController.getServers);
+router.get('/credits', AdminCoreController.getCredits);
+router.get('/vouchers', AdminCoreController.getVouchers);
+router.get('/referrals', AdminCoreController.getReferrals);
+router.get('/premium', AdminCoreController.getPremiumOrders);
+router.get('/logs', AdminCoreController.getLogs);
+router.get('/tickets', AdminCoreController.getTickets);
+
+export default router;

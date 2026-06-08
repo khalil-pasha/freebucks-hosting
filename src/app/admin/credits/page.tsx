@@ -1,10 +1,35 @@
 "use client"
+import { useEffect, useState } from "react"
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
-import { Coins, PlusCircle, MinusCircle, History, RotateCcw } from "lucide-react"
+import { Coins, PlusCircle, MinusCircle, History, RotateCcw, RefreshCw } from "lucide-react"
+import api from "@/lib/api"
 
 export default function AdminCreditsPage() {
+  const [transactions, setTransactions] = useState<any[]>([])
+  const [stats, setStats] = useState<any>({ totalCreditsEarned: 0, totalCreditsBurned: 0 })
+  const [loading, setLoading] = useState(true)
+
+  const fetchData = async () => {
+    try {
+      const [transRes, statsRes] = await Promise.all([
+        api.get('/admin/core/credits'),
+        api.get('/admin/core/stats')
+      ])
+      setTransactions(transRes.data)
+      setStats(statsRes.data)
+    } catch (err) {
+      console.error(err)
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  useEffect(() => {
+    fetchData()
+  }, [])
+
   return (
     <div className="max-w-7xl mx-auto space-y-8">
       <div>
@@ -18,7 +43,7 @@ export default function AdminCreditsPage() {
             <CardTitle className="text-sm text-foreground/60">Total Credits Created</CardTitle>
           </CardHeader>
           <CardContent>
-             <div className="text-3xl font-black text-success">5,240,500</div>
+             <div className="text-3xl font-black text-success">{loading ? '...' : stats.totalCreditsEarned?.toLocaleString() || 0}</div>
           </CardContent>
         </Card>
         <Card className="bg-card border-red-500/30">
@@ -26,7 +51,7 @@ export default function AdminCreditsPage() {
             <CardTitle className="text-sm text-foreground/60">Total Credits Spent</CardTitle>
           </CardHeader>
           <CardContent>
-             <div className="text-3xl font-black text-red-500">2,740,500</div>
+             <div className="text-3xl font-black text-red-500">{loading ? '...' : stats.totalCreditsBurned?.toLocaleString() || 0}</div>
           </CardContent>
         </Card>
         <Card className="bg-card border-primary/30">
@@ -34,7 +59,7 @@ export default function AdminCreditsPage() {
             <CardTitle className="text-sm text-foreground/60">Net Circulation</CardTitle>
           </CardHeader>
           <CardContent>
-             <div className="text-3xl font-black text-primary">2,500,000</div>
+             <div className="text-3xl font-black text-primary">{loading ? '...' : ((stats.totalCreditsEarned || 0) - (stats.totalCreditsBurned || 0)).toLocaleString()}</div>
           </CardContent>
         </Card>
       </div>
@@ -67,33 +92,40 @@ export default function AdminCreditsPage() {
         </Card>
 
         <Card className="bg-card border-border/50 lg:col-span-2">
-          <CardHeader>
-            <CardTitle className="text-lg flex items-center gap-2"><History className="w-5 h-5 text-primary" /> Admin Transaction Log</CardTitle>
+          <CardHeader className="flex flex-row items-center justify-between">
+            <CardTitle className="text-lg flex items-center gap-2"><History className="w-5 h-5 text-primary" /> Global Transaction Log</CardTitle>
+            <Button variant="ghost" size="icon" onClick={fetchData}><RefreshCw className="w-4 h-4" /></Button>
           </CardHeader>
           <CardContent>
              <table className="w-full text-sm text-left">
                <thead className="text-xs text-foreground/50 uppercase bg-background/50 border-b border-border/50">
                  <tr>
                    <th className="px-4 py-3 font-medium">Date</th>
-                   <th className="px-4 py-3 font-medium">Admin</th>
                    <th className="px-4 py-3 font-medium">User</th>
-                   <th className="px-4 py-3 font-medium">Action</th>
+                   <th className="px-4 py-3 font-medium">Source / Action</th>
                    <th className="px-4 py-3 font-medium text-right">Amount</th>
                  </tr>
                </thead>
                <tbody className="divide-y divide-border/50">
-                 {[
-                   { date: "May 25, 2026", admin: "SuperAdmin", user: "_NightBlade_", action: "Bug bounty", amt: "+500", color: "text-success" },
-                   { date: "May 25, 2026", admin: "SuperAdmin", user: "BadUser99", action: "Exploit rollback", amt: "-1500", color: "text-red-500" },
-                   { date: "May 24, 2026", admin: "SupportMod", user: "Steve123", action: "Server crash comp", amt: "+50", color: "text-success" },
-                   { date: "May 23, 2026", admin: "SuperAdmin", user: "PvP_Master99", action: "Reset balance", amt: "-142", color: "text-orange-500" },
-                 ].map((log, i) => (
-                   <tr key={i} className="hover:bg-foreground/5 transition-colors">
-                     <td className="px-4 py-3 text-foreground/60">{log.date}</td>
-                     <td className="px-4 py-3 font-medium text-primary">{log.admin}</td>
-                     <td className="px-4 py-3 font-medium">{log.user}</td>
-                     <td className="px-4 py-3 text-foreground/70">{log.action}</td>
-                     <td className={`px-4 py-3 text-right font-bold ${log.color}`}>{log.amt}</td>
+                 {loading ? (
+                    <tr>
+                      <td colSpan={4} className="px-4 py-8 text-center text-foreground/50">
+                        <RefreshCw className="w-6 h-6 animate-spin mx-auto mb-2" />
+                        Loading logs...
+                      </td>
+                    </tr>
+                 ) : transactions.length === 0 ? (
+                    <tr>
+                      <td colSpan={4} className="px-4 py-8 text-center text-foreground/50">No logs found.</td>
+                    </tr>
+                 ) : transactions.map((log) => (
+                   <tr key={log.id} className="hover:bg-foreground/5 transition-colors">
+                     <td className="px-4 py-3 text-foreground/60">{new Date(log.timestamp).toLocaleString()}</td>
+                     <td className="px-4 py-3 font-medium">{log.user?.username}</td>
+                     <td className="px-4 py-3 text-foreground/70">{log.source}</td>
+                     <td className={`px-4 py-3 text-right font-bold ${log.type === 'EARNED' ? 'text-success' : 'text-red-500'}`}>
+                       {log.type === 'EARNED' ? '+' : '-'}{log.amount.toFixed(2)}
+                     </td>
                    </tr>
                  ))}
                </tbody>

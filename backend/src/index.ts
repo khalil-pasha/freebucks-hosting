@@ -39,6 +39,7 @@ import adminSettingsRoutes from './routes/admin.settings.routes';
 import supportRoutes from './routes/support.routes';
 import adminSupportRoutes from './routes/admin.support.routes';
 import profileRoutes from './routes/profile.routes';
+import adminCoreRoutes from './routes/admin.core.routes';
 
 app.use('/auth', authRoutes);
 app.use('/servers', serverRoutes);
@@ -54,6 +55,7 @@ app.use('/admin/settings', adminLimiter, adminSettingsRoutes);
 app.use('/support/tickets', ticketLimiter, supportRoutes);
 app.use('/admin/support/tickets', adminLimiter, adminSupportRoutes);
 app.use('/profile', profileRoutes);
+app.use('/admin/core', adminLimiter, adminCoreRoutes);
 
 app.get('/health', async (req: Request, res: Response) => {
   try {

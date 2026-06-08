@@ -1,8 +1,28 @@
 "use client"
+import { useEffect, useState } from "react"
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card"
-import { Users, Coins, TrendingUp } from "lucide-react"
+import { Users, Coins, TrendingUp, RefreshCw } from "lucide-react"
+import api from "@/lib/api"
 
 export default function AdminReferralsPage() {
+  const [referrals, setReferrals] = useState<any[]>([])
+  const [loading, setLoading] = useState(true)
+
+  const fetchReferrals = async () => {
+    try {
+      const res = await api.get('/admin/core/referrals')
+      setReferrals(res.data)
+    } catch (err) {
+      console.error(err)
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  useEffect(() => {
+    fetchReferrals()
+  }, [])
+
   return (
     <div className="max-w-7xl mx-auto space-y-8">
       <div>
@@ -18,7 +38,7 @@ export default function AdminReferralsPage() {
             </CardTitle>
           </CardHeader>
           <CardContent>
-             <div className="text-3xl font-black">12,450</div>
+             <div className="text-3xl font-black">{loading ? '...' : referrals.length.toLocaleString()}</div>
           </CardContent>
         </Card>
         <Card className="bg-card border-border/50">
@@ -28,8 +48,7 @@ export default function AdminReferralsPage() {
             </CardTitle>
           </CardHeader>
           <CardContent>
-             <div className="text-3xl font-black text-success">933,750</div>
-             <p className="text-xs text-foreground/50 mt-1">25 Sender + 50 Receiver</p>
+             <div className="text-3xl font-black text-success">{loading ? '...' : referrals.reduce((sum, r) => sum + (r.rewardAmount || 0), 0).toLocaleString()}</div>
           </CardContent>
         </Card>
         <Card className="bg-card border-border/50">
@@ -39,8 +58,7 @@ export default function AdminReferralsPage() {
             </CardTitle>
           </CardHeader>
           <CardContent>
-             <div className="text-3xl font-black text-secondary">68.4%</div>
-             <p className="text-xs text-foreground/50 mt-1">Invites that reached 24h playtime</p>
+             <div className="text-3xl font-black text-secondary">{loading ? '...' : (referrals.length > 0 ? ((referrals.filter(r => r.status === 'COMPLETED').length / referrals.length) * 100).toFixed(1) : 0)}%</div>
           </CardContent>
         </Card>
       </div>
@@ -62,20 +80,26 @@ export default function AdminReferralsPage() {
                 </tr>
               </thead>
               <tbody className="divide-y divide-border/50">
-                {[
-                  { sender: "_NightBlade_", receiver: "NewGuy123", date: "May 25, 2026", reward: "75 Credits", status: "Successful" },
-                  { sender: "MinecraftPro", receiver: "BobBuilder", date: "May 25, 2026", reward: "75 Credits", status: "Successful" },
-                  { sender: "SteveNew", receiver: "Alex12", date: "May 24, 2026", reward: "0 Credits", status: "Pending Verification" },
-                  { sender: "PvP_Master99", receiver: "NoobMaster", date: "May 24, 2026", reward: "75 Credits", status: "Successful" },
-                ].map((ref, i) => (
-                  <tr key={i} className="hover:bg-foreground/5 transition-colors">
-                    <td className="px-6 py-4 font-medium text-primary">{ref.sender}</td>
-                    <td className="px-6 py-4 font-medium">{ref.receiver}</td>
-                    <td className="px-6 py-4 text-foreground/70">{ref.date}</td>
-                    <td className="px-6 py-4 font-bold text-success flex items-center gap-1 mt-0.5"><Coins className="w-3 h-3"/> {ref.reward}</td>
+                {loading ? (
+                   <tr>
+                     <td colSpan={5} className="px-6 py-8 text-center text-foreground/50">
+                       <RefreshCw className="w-6 h-6 animate-spin mx-auto mb-2" />
+                       Loading referrals...
+                     </td>
+                   </tr>
+                ) : referrals.length === 0 ? (
+                   <tr>
+                     <td colSpan={5} className="px-6 py-8 text-center text-foreground/50">No referrals found.</td>
+                   </tr>
+                ) : referrals.map((ref) => (
+                  <tr key={ref.id} className="hover:bg-foreground/5 transition-colors">
+                    <td className="px-6 py-4 font-medium text-primary">{ref.referrer?.username}</td>
+                    <td className="px-6 py-4 font-medium">{ref.referred?.username}</td>
+                    <td className="px-6 py-4 text-foreground/70">{new Date(ref.createdAt).toLocaleDateString()}</td>
+                    <td className="px-6 py-4 font-bold text-success flex items-center gap-1 mt-0.5"><Coins className="w-3 h-3"/> {ref.rewardAmount} Credits</td>
                     <td className="px-6 py-4">
                       <span className={`px-2 py-1 rounded text-[10px] font-bold uppercase tracking-wider ${
-                        ref.status === 'Successful' ? 'bg-success/20 text-success' : 'bg-orange-500/20 text-orange-500'
+                        ref.status === 'COMPLETED' ? 'bg-success/20 text-success' : 'bg-orange-500/20 text-orange-500'
                       }`}>
                         {ref.status}
                       </span>

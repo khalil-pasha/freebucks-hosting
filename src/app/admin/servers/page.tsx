@@ -1,17 +1,52 @@
 "use client"
+import { useEffect, useState } from "react"
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Search, Power, Trash2, RefreshCw, StopCircle } from "lucide-react"
-
-const servers = [
-  { id: "srv-001", name: "Survival SMP", owner: "_NightBlade_", ram: "6GB", location: "Mumbai, India", status: "Online", burn: "6.0", uptime: "4d 12h" },
-  { id: "srv-002", name: "Create Modpack", owner: "MinecraftPro", ram: "8GB Premium", location: "Mumbai, India", status: "Starting", burn: "Free", uptime: "—" },
-  { id: "srv-003", name: "Test Lobby", owner: "_NightBlade_", ram: "2GB", location: "Mumbai, India", status: "Offline", burn: "1.5", uptime: "—" },
-  { id: "srv-004", name: "Pixelmon Hub", owner: "RedstoneGenius", ram: "4GB", location: "Mumbai, India", status: "In Queue", burn: "3.0", uptime: "—" },
-  { id: "srv-005", name: "Vanilla 1.20", owner: "PvP_Master99", ram: "2GB", location: "Mumbai, India", status: "Online", burn: "1.5", uptime: "12d 1h" },
-]
+import api from "@/lib/api"
 
 export default function AdminServersPage() {
+  const [servers, setServers] = useState<any[]>([])
+  const [loading, setLoading] = useState(true)
+  const [searchTerm, setSearchTerm] = useState("")
+
+  const fetchServers = async () => {
+    try {
+      const res = await api.get('/admin/core/servers')
+      setServers(res.data)
+    } catch (err) {
+      console.error(err)
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  useEffect(() => {
+    fetchServers()
+  }, [])
+
+  const handleAction = async (serverId: string, action: 'stop' | 'suspend' | 'delete') => {
+    if (!confirm(`Are you sure you want to ${action} this server?`)) return;
+    try {
+      let endpoint = '';
+      if (action === 'stop') endpoint = '/admin/servers/force-stop';
+      if (action === 'suspend') endpoint = '/admin/servers/suspend';
+      if (action === 'delete') endpoint = '/admin/servers/delete';
+      
+      await api.post(endpoint, { serverId });
+      fetchServers();
+    } catch (err) {
+      console.error(err)
+      alert(`Failed to ${action} server.`)
+    }
+  }
+
+  const filteredServers = servers.filter(server => 
+    server.name.toLowerCase().includes(searchTerm.toLowerCase()) || 
+    server.id.includes(searchTerm) ||
+    server.user?.username?.toLowerCase().includes(searchTerm.toLowerCase())
+  )
+
   return (
     <div className="max-w-7xl mx-auto space-y-8">
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
@@ -24,6 +59,8 @@ export default function AdminServersPage() {
           <input 
             type="text" 
             placeholder="Search servers..." 
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
             className="bg-transparent border-none outline-none text-sm w-full"
           />
         </div>
@@ -39,43 +76,54 @@ export default function AdminServersPage() {
                 <th className="px-6 py-4 font-medium">RAM / Location</th>
                 <th className="px-6 py-4 font-medium">Status</th>
                 <th className="px-6 py-4 font-medium">Burn Rate</th>
-                <th className="px-6 py-4 font-medium">Uptime</th>
+                <th className="px-6 py-4 font-medium">Created</th>
                 <th className="px-6 py-4 font-medium text-right">Actions</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-border/50">
-              {servers.map((server) => (
+              {loading ? (
+                <tr>
+                  <td colSpan={7} className="px-6 py-8 text-center text-foreground/50">
+                    <RefreshCw className="w-6 h-6 animate-spin mx-auto mb-2" />
+                    Loading servers...
+                  </td>
+                </tr>
+              ) : filteredServers.length === 0 ? (
+                <tr>
+                  <td colSpan={7} className="px-6 py-8 text-center text-foreground/50">
+                    No servers found.
+                  </td>
+                </tr>
+              ) : filteredServers.map((server) => (
                 <tr key={server.id} className="hover:bg-foreground/5 transition-colors">
                   <td className="px-6 py-4">
                     <div className="font-bold">{server.name}</div>
                     <div className="font-mono text-[10px] text-foreground/50">{server.id}</div>
                   </td>
-                  <td className="px-6 py-4 font-medium">{server.owner}</td>
+                  <td className="px-6 py-4 font-medium">{server.user?.username || 'Unknown'}</td>
                   <td className="px-6 py-4">
-                    <div>{server.ram}</div>
-                    <div className="text-xs text-foreground/50">{server.location}</div>
+                    <div>{server.ramGB}GB</div>
+                    <div className="text-xs text-foreground/50">{server.nodeLocation}</div>
                   </td>
                   <td className="px-6 py-4">
                     <span className={`flex items-center gap-1.5 font-bold text-xs uppercase tracking-wide ${
-                      server.status === "Online" ? "text-success" :
-                      server.status === "Offline" ? "text-foreground/50" :
-                      server.status === "Starting" ? "text-orange-500 animate-pulse" :
+                      server.status === "RUNNING" ? "text-success" :
+                      server.status === "STOPPED" ? "text-foreground/50" :
+                      server.status === "STARTING" ? "text-orange-500 animate-pulse" :
                       "text-yellow-500"
                     }`}>
-                      {server.status === "Online" && <div className="w-2 h-2 rounded-full bg-success shadow-[0_0_10px_#00AA00]" />}
+                      {server.status === "RUNNING" && <div className="w-2 h-2 rounded-full bg-success shadow-[0_0_10px_#00AA00]" />}
                       {server.status}
                     </span>
                   </td>
-                  <td className="px-6 py-4 text-foreground/70">{server.burn} cr/hr</td>
-                  <td className="px-6 py-4 text-foreground/70">{server.uptime}</td>
+                  <td className="px-6 py-4 text-foreground/70">{server.costPerHour} cr/hr</td>
+                  <td className="px-6 py-4 text-foreground/70">{new Date(server.createdAt).toLocaleDateString()}</td>
                   <td className="px-6 py-4 text-right flex justify-end gap-2">
-                    {server.status === 'Offline' ? (
-                       <Button variant="outline" size="sm" className="h-8 border-success/50 text-success hover:bg-success/10"><Power className="w-3 h-3 mr-1"/> Start</Button>
-                    ) : (
-                       <Button variant="outline" size="sm" className="h-8 border-red-500/50 text-red-500 hover:bg-red-500/10"><StopCircle className="w-3 h-3 mr-1"/> Stop</Button>
+                    {server.status === 'RUNNING' && (
+                       <Button onClick={() => handleAction(server.id, 'stop')} variant="outline" size="sm" className="h-8 border-red-500/50 text-red-500 hover:bg-red-500/10"><StopCircle className="w-3 h-3 mr-1"/> Force Stop</Button>
                     )}
-                    <Button variant="outline" size="icon" className="h-8 w-8"><RefreshCw className="w-3 h-3" /></Button>
-                    <Button variant="outline" size="icon" className="h-8 w-8 border-red-500/50 text-red-500 hover:bg-red-500 hover:text-white"><Trash2 className="w-3 h-3" /></Button>
+                    <Button onClick={() => handleAction(server.id, 'suspend')} variant="outline" size="icon" className="h-8 w-8 text-orange-500 hover:text-white hover:bg-orange-500" title="Suspend"><Power className="w-3 h-3" /></Button>
+                    <Button onClick={() => handleAction(server.id, 'delete')} variant="outline" size="icon" className="h-8 w-8 border-red-500/50 text-red-500 hover:bg-red-500 hover:text-white" title="Delete"><Trash2 className="w-3 h-3" /></Button>
                   </td>
                 </tr>
               ))}
