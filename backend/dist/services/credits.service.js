@@ -142,5 +142,42 @@ class CreditsService {
             take: 50
         });
     }
+    static async getRewardStatus(userId) {
+        const lastSpin = await db_1.db.creditsTransaction.findFirst({
+            where: { userId, source: 'DAILY_SPIN' },
+            orderBy: { timestamp: 'desc' },
+        });
+        const lastHourly = await db_1.db.creditsTransaction.findFirst({
+            where: { userId, source: 'HOURLY_CLAIM' },
+            orderBy: { timestamp: 'desc' },
+        });
+        const now = new Date().getTime();
+        let nextDailySpinAt = null;
+        let dailySpinCooldown = 0;
+        if (lastSpin) {
+            const nextTime = lastSpin.timestamp.getTime() + 24 * 60 * 60 * 1000;
+            if (nextTime > now) {
+                nextDailySpinAt = new Date(nextTime);
+                dailySpinCooldown = nextTime - now;
+            }
+        }
+        let nextHourlyClaimAt = null;
+        let hourlyClaimCooldown = 0;
+        if (lastHourly) {
+            const nextTime = lastHourly.timestamp.getTime() + 60 * 60 * 1000;
+            if (nextTime > now) {
+                nextHourlyClaimAt = new Date(nextTime);
+                hourlyClaimCooldown = nextTime - now;
+            }
+        }
+        return {
+            lastDailySpinAt: lastSpin?.timestamp || null,
+            nextDailySpinAt,
+            dailySpinCooldown,
+            lastHourlyClaimAt: lastHourly?.timestamp || null,
+            nextHourlyClaimAt,
+            hourlyClaimCooldown
+        };
+    }
 }
 exports.CreditsService = CreditsService;

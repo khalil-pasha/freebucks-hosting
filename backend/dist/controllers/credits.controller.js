@@ -47,5 +47,15 @@ class CreditsController {
             res.status(400).json({ error: error.message });
         }
     }
+    static async getRewardStatus(req, res) {
+        try {
+            const userId = req.user.id;
+            const status = await credits_service_1.CreditsService.getRewardStatus(userId);
+            res.json(status);
+        }
+        catch (error) {
+            res.status(400).json({ error: error.message });
+        }
+    }
 }
 exports.CreditsController = CreditsController;

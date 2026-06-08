@@ -47,4 +47,14 @@ export class CreditsController {
       res.status(400).json({ error: error.message });
     }
   }
+
+  public static async getRewardStatus(req: Request, res: Response) {
+    try {
+      const userId = req.user!.id;
+      const status = await CreditsService.getRewardStatus(userId);
+      res.json(status);
+    } catch (error: any) {
+      res.status(400).json({ error: error.message });
+    }
+  }
 }

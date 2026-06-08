@@ -12,16 +12,20 @@ export default function RewardsPage() {
   const { user } = useAuth()
   const [balanceData, setBalanceData] = useState<any>(null)
   const [history, setHistory] = useState<any[]>([])
+  const [rewardStatus, setRewardStatus] = useState<any>(null)
+  const [now, setNow] = useState<number>(Date.now())
   const [loading, setLoading] = useState(false)
   
   const fetchRewardsData = async () => {
     try {
-      const [balRes, histRes] = await Promise.all([
+      const [balRes, histRes, statusRes] = await Promise.all([
         api.get('/credits/balance'),
-        api.get('/credits/history')
+        api.get('/credits/history'),
+        api.get('/credits/rewards/status')
       ])
       setBalanceData(balRes.data)
       setHistory(histRes.data.filter((tx: any) => tx.source === 'HOURLY_CLAIM' || tx.source === 'DAILY_SPIN').slice(0, 10))
+      setRewardStatus(statusRes.data)
     } catch (err) {
       console.error(err)
     }
@@ -29,7 +33,27 @@ export default function RewardsPage() {
 
   useEffect(() => {
     fetchRewardsData()
+    const interval = setInterval(() => {
+      setNow(Date.now())
+    }, 1000)
+    return () => clearInterval(interval)
   }, [])
+
+  const formatCooldown = (nextTimeStr: string | null) => {
+    if (!nextTimeStr) return null;
+    const nextTime = new Date(nextTimeStr).getTime();
+    const diff = nextTime - now;
+    if (diff <= 0) return null;
+
+    const h = Math.floor(diff / (1000 * 60 * 60));
+    const m = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
+    const s = Math.floor((diff % (1000 * 60)) / 1000);
+    
+    return `${h.toString().padStart(2, '0')}:${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`;
+  }
+
+  const dailyCooldown = rewardStatus ? formatCooldown(rewardStatus.nextDailySpinAt) : null;
+  const hourlyCooldown = rewardStatus ? formatCooldown(rewardStatus.nextHourlyClaimAt) : null;
 
   const handleSpin = async () => {
     setLoading(true)
@@ -114,10 +138,12 @@ export default function RewardsPage() {
                 <div className="text-3xl font-black text-primary">SPIN</div>
               </div>
 
-              <Button disabled={loading} onClick={handleSpin} size="lg" className="w-full sm:w-auto px-12 bg-primary hover:bg-primary/90 text-white font-bold h-14">
+              <Button disabled={loading || !!dailyCooldown} onClick={handleSpin} size="lg" className="w-full sm:w-auto px-12 bg-primary hover:bg-primary/90 text-white font-bold h-14">
                 Spin The Wheel
               </Button>
-              <p className="text-xs text-foreground/40 mt-4 font-mono">Next spin available in 19:15:32</p>
+              <p className="text-xs text-foreground/40 mt-4 font-mono">
+                {dailyCooldown ? `Next spin available in ${dailyCooldown}` : 'Ready to spin!'}
+              </p>
             </CardContent>
           </Card>
         </motion.div>
@@ -131,8 +157,8 @@ export default function RewardsPage() {
                   <Timer className="w-5 h-5 text-success" /> Hourly Claim
                 </CardTitle>
               </div>
-              <div className="px-3 py-1 bg-success/10 text-success rounded-full text-xs font-bold uppercase border border-success/20 animate-pulse">
-                Ready
+              <div className={`px-3 py-1 ${hourlyCooldown ? 'bg-background text-foreground/50 border-border' : 'bg-success/10 text-success border-success/20 animate-pulse'} rounded-full text-xs font-bold uppercase border`}>
+                {hourlyCooldown ? hourlyCooldown : 'Ready'}
               </div>
             </CardHeader>
             <CardContent className="pt-4">
@@ -141,8 +167,8 @@ export default function RewardsPage() {
                 <span className="font-semibold text-foreground/80">Reward Amount</span>
                 <span className="text-xl font-black text-success flex items-center gap-1"><Coins className="w-5 h-5" /> 1.5</span>
               </div>
-              <Button disabled={loading} onClick={handleHourly} size="lg" className="w-full bg-success hover:bg-success/90 text-white font-bold shadow-lg shadow-success/20">
-                Claim Reward
+              <Button disabled={loading || !!hourlyCooldown} onClick={handleHourly} size="lg" className="w-full bg-success hover:bg-success/90 text-white font-bold shadow-lg shadow-success/20">
+                {hourlyCooldown ? "Cooldown Active" : "Claim Reward"}
               </Button>
             </CardContent>
           </Card>
@@ -164,7 +190,7 @@ export default function RewardsPage() {
                       </div>
                       <div>
                         <p className="font-medium text-sm">{claim.source}</p>
-                        <p className="text-xs text-foreground/50">{new Date(claim.createdAt).toLocaleString()}</p>
+                        <p className="text-xs text-foreground/50">{new Date(claim.timestamp).toLocaleString()}</p>
                       </div>
                     </div>
                     <span className="font-bold text-success text-sm">+{claim.amount}</span>
