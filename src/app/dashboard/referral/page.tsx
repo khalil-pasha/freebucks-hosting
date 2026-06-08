@@ -12,6 +12,51 @@ import { useAuth } from "@/components/AuthProvider"
 export default function ReferralPage() {
   const { user } = useAuth()
   const [stats, setStats] = useState<any>(null)
+  const [copied, setCopied] = useState(false)
+
+  const handleCopy = () => {
+    const link = user ? `https://app.freebucks.host/login?ref=${user.id}` : "";
+    if (!link) return;
+
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText(link).then(() => {
+        setCopied(true);
+        setTimeout(() => setCopied(false), 2000);
+      }).catch(err => {
+        console.error("Failed to copy:", err);
+        fallbackCopy(link);
+      });
+    } else {
+      fallbackCopy(link);
+    }
+  }
+
+  const fallbackCopy = (text: string) => {
+    try {
+      const textArea = document.createElement("textarea");
+      textArea.value = text;
+      
+      // Avoid scrolling to bottom
+      textArea.style.top = "0";
+      textArea.style.left = "0";
+      textArea.style.position = "fixed";
+
+      document.body.appendChild(textArea);
+      textArea.focus();
+      textArea.select();
+
+      const successful = document.execCommand('copy');
+      if (successful) {
+        setCopied(true);
+        setTimeout(() => setCopied(false), 2000);
+      } else {
+        alert("Failed to copy link. Please select the text and copy manually.");
+      }
+      document.body.removeChild(textArea);
+    } catch (err) {
+      alert("Failed to copy link. Please select the text and copy manually.");
+    }
+  }
 
   useEffect(() => {
     const fetchStats = async () => {
@@ -62,8 +107,8 @@ export default function ReferralPage() {
                   value={user ? `https://app.freebucks.host/login?ref=${user.id}` : "Loading..."} 
                   className="bg-background font-mono text-sm h-12"
                 />
-                <Button className="h-12 px-6 bg-secondary hover:bg-secondary/90 text-white flex-shrink-0">
-                  <Copy className="w-4 h-4 mr-2" /> Copy
+                <Button onClick={handleCopy} className={`h-12 px-6 ${copied ? 'bg-success hover:bg-success/90' : 'bg-secondary hover:bg-secondary/90'} text-white flex-shrink-0 transition-colors`}>
+                  {copied ? "Copied!" : <><Copy className="w-4 h-4 mr-2" /> Copy</>}
                 </Button>
               </div>
 
