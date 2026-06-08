@@ -125,5 +125,27 @@ class ProfileController {
             res.status(400).json({ error: error.message || 'Failed to update panel password.' });
         }
     }
+    static async updateEmail(req, res) {
+        try {
+            const userId = req.user.id;
+            const { email } = req.body;
+            if (!email || !email.includes('@')) {
+                return res.status(400).json({ error: 'Valid email is required.' });
+            }
+            const existing = await db_1.db.user.findFirst({ where: { email, id: { not: userId } } });
+            if (existing) {
+                return res.status(400).json({ error: 'Email is already in use by another account.' });
+            }
+            await db_1.db.user.update({
+                where: { id: userId },
+                data: { email }
+            });
+            res.json({ success: true, message: 'Email updated successfully.' });
+        }
+        catch (error) {
+            console.error('Update email error:', error);
+            res.status(500).json({ error: 'Failed to update email.' });
+        }
+    }
 }
 exports.ProfileController = ProfileController;

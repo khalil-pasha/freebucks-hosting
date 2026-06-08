@@ -7,6 +7,7 @@ const router = Router();
 router.use(requireAuth);
 
 router.post('/avatar', ProfileController.uploadAvatar);
+router.patch('/email', ProfileController.updateEmail);
 router.post('/send-password-otp', ProfileController.sendPasswordOtp);
 router.post('/reset-panel-password', ProfileController.resetPanelPassword);
 

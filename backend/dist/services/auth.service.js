@@ -40,16 +40,19 @@ class AuthService {
     static async processDiscordLogin(discordUser) {
         const { id: discordId, username, global_name, avatar, email } = discordUser;
         const finalUsername = global_name || username;
+        const discordAvatarUrl = avatar ? `https://cdn.discordapp.com/avatars/${discordId}/${avatar}.png` : null;
         // Check if user exists
         let user = await db_1.db.user.findUnique({ where: { discordId } });
         if (user) {
             // Update info just in case they changed it
+            // Only overwrite avatar if current is not custom
+            const isCustomAvatar = user.avatar && user.avatar.includes('/uploads/avatars/');
             user = await db_1.db.user.update({
                 where: { id: user.id },
                 data: {
                     username: finalUsername,
-                    avatar,
-                    email,
+                    ...(isCustomAvatar ? {} : { avatar: discordAvatarUrl }),
+                    ...(email ? { email } : {}), // only update if discord provides email, do not overwrite with null
                 },
             });
         }
@@ -59,7 +62,7 @@ class AuthService {
                 data: {
                     discordId,
                     username: finalUsername,
-                    avatar,
+                    avatar: discordAvatarUrl,
                     email,
                     role: 'USER',
                 },

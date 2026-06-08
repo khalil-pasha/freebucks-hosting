@@ -28,6 +28,10 @@ export default function ProfilePage() {
   const [isSendingOtp, setIsSendingOtp] = useState(false)
   const [isResetting, setIsResetting] = useState(false)
 
+  const [isEditingEmail, setIsEditingEmail] = useState(false)
+  const [newEmail, setNewEmail] = useState("")
+  const [isSavingEmail, setIsSavingEmail] = useState(false)
+
   const handleAvatarClick = () => {
     fileInputRef.current?.click()
   }
@@ -64,6 +68,23 @@ export default function ProfilePage() {
       }
     }
     reader.readAsDataURL(file)
+  }
+
+  const handleSaveEmail = async () => {
+    if (!newEmail || !newEmail.includes('@')) {
+      return alert("Please enter a valid email.")
+    }
+    try {
+      setIsSavingEmail(true)
+      await api.patch('/profile/email', { email: newEmail })
+      await refetchUser()
+      setIsEditingEmail(false)
+      alert("Email updated successfully.")
+    } catch (error: any) {
+      alert(error.response?.data?.error || "Failed to update email.")
+    } finally {
+      setIsSavingEmail(false)
+    }
   }
 
   const handleSendOtp = async () => {
@@ -148,8 +169,31 @@ export default function ProfilePage() {
                 accept="image/png, image/jpeg, image/jpg, image/webp"
                 onChange={handleFileChange}
               />
-              <h2 className="text-xl font-bold mt-4">{user?.username || "Loading..."}</h2>
-              <p className="text-sm text-foreground/50 mb-6">{user?.email || "No email linked"}</p>
+              <h2 className="text-xl font-bold mt-4 mb-2">{user?.username || "Loading..."}</h2>
+              
+              {isEditingEmail ? (
+                <div className="flex flex-col gap-2 w-full max-w-xs mb-6 mx-auto">
+                  <Input 
+                    value={newEmail} 
+                    onChange={(e) => setNewEmail(e.target.value)} 
+                    placeholder="Email address" 
+                    className="h-8 text-sm" 
+                  />
+                  <div className="flex gap-2 justify-center">
+                    <Button size="sm" onClick={handleSaveEmail} disabled={isSavingEmail}>
+                      {isSavingEmail ? <Loader2 className="w-3 h-3 animate-spin mr-1" /> : null} Save
+                    </Button>
+                    <Button size="sm" variant="ghost" onClick={() => setIsEditingEmail(false)}>Cancel</Button>
+                  </div>
+                </div>
+              ) : (
+                <div className="flex items-center gap-2 mb-6 justify-center">
+                  <p className="text-sm text-foreground/50">{user?.email || "No email linked"}</p>
+                  <button onClick={() => { setNewEmail(user?.email || ""); setIsEditingEmail(true); }} className="text-foreground/50 hover:text-foreground">
+                    <Edit2 className="w-3 h-3" />
+                  </button>
+                </div>
+              )}
               
               <div className="w-full space-y-3">
                 <div className="flex justify-between text-sm p-3 bg-background rounded-lg border border-border/50">
@@ -277,9 +321,15 @@ export default function ProfilePage() {
 
               {resetStep === 1 ? (
                 <div className="py-2">
-                  <p className="text-sm text-foreground/80">
-                    Email: <strong className="text-foreground">{user?.email || "No email linked"}</strong>
-                  </p>
+                  {user?.email ? (
+                    <p className="text-sm text-foreground/80">
+                      Email: <strong className="text-foreground">{user?.email}</strong>
+                    </p>
+                  ) : (
+                    <p className="text-sm text-red-500 font-medium">
+                      Please add your email before resetting panel password.
+                    </p>
+                  )}
                 </div>
               ) : (
                 <div className="space-y-4 py-2">
@@ -322,7 +372,7 @@ export default function ProfilePage() {
                 Cancel
               </Button>
               {resetStep === 1 ? (
-                <Button onClick={handleSendOtp} disabled={isSendingOtp}>
+                <Button onClick={handleSendOtp} disabled={isSendingOtp || !user?.email}>
                   {isSendingOtp ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : null}
                   Send OTP
                 </Button>

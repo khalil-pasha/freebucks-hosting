@@ -6,6 +6,7 @@ const auth_1 = require("../middleware/auth");
 const router = (0, express_1.Router)();
 router.use(auth_1.requireAuth);
 router.post('/avatar', profile_controller_1.ProfileController.uploadAvatar);
+router.patch('/email', profile_controller_1.ProfileController.updateEmail);
 router.post('/send-password-otp', profile_controller_1.ProfileController.sendPasswordOtp);
 router.post('/reset-panel-password', profile_controller_1.ProfileController.resetPanelPassword);
 exports.default = router;
