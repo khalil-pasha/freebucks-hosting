@@ -15,6 +15,10 @@ export default function ServersPage() {
   const router = useRouter()
   const [servers, setServers] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
+  const [actionLoading, setActionLoading] = useState<string | null>(null)
+  const [toastMessage, setToastMessage] = useState<string | null>(null)
+  const [startingTimers, setStartingTimers] = useState<Record<string, number>>({})
+  const [now, setNow] = useState(Date.now())
 
   // Modal States
   const [isPlanModalOpen, setIsPlanModalOpen] = useState(false)
@@ -50,22 +54,76 @@ export default function ServersPage() {
 
   useEffect(() => {
     fetchServers()
-    const interval = setInterval(fetchServers, 5000)
+    const interval = setInterval(fetchServers, 3000)
     return () => clearInterval(interval)
   }, [])
 
+  useEffect(() => {
+    const interval = setInterval(() => setNow(Date.now()), 1000)
+    return () => clearInterval(interval)
+  }, [])
+
+  useEffect(() => {
+    setStartingTimers(prev => {
+      const newTimers = { ...prev }
+      let changed = false
+      servers.forEach(s => {
+        const isStartingAPI = ['STARTING', 'starting', 'installing', 'suspended', 'RESTARTING'].includes(s.status)
+        const isRunning = s.status === 'RUNNING' || s.status === 'running'
+        
+        if (isRunning) {
+          if (newTimers[s.id]) {
+            setToastMessage("Server started successfully")
+            setTimeout(() => setToastMessage(null), 4000)
+            delete newTimers[s.id]
+            changed = true
+          }
+        } else if (isStartingAPI) {
+          if (!newTimers[s.id]) {
+            newTimers[s.id] = Date.now()
+            changed = true
+          }
+        } else {
+          // If status becomes STOPPED but we are locally starting, keep it for 60 seconds
+          // to avoid clearing UI due to stale Pterodactyl state during boot.
+          if (newTimers[s.id]) {
+            const elapsed = Date.now() - newTimers[s.id]
+            if (elapsed > 60000) {
+              delete newTimers[s.id]
+              changed = true
+            }
+          }
+        }
+      })
+      return changed ? newTimers : prev
+    })
+  }, [servers])
+
+  const formatTime = (ms: number) => {
+    const totalSeconds = Math.max(0, Math.floor(ms / 1000))
+    const minutes = Math.floor(totalSeconds / 60)
+    const seconds = totalSeconds % 60
+    return `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`
+  }
+
   const handleAction = async (action: 'start-server' | 'restart-server' | 'cancel', serverId: string) => {
     try {
-      if (action === 'start-server') {
-        setServers(servers.map(s => s.id === serverId ? { ...s, status: 'STARTING' } : s));
-        setTimeout(fetchServers, 2000);
-        setTimeout(fetchServers, 5000);
-        setTimeout(fetchServers, 10000);
+      setActionLoading(serverId)
+      if (action === 'start-server' || action === 'restart-server') {
+        setStartingTimers(prev => ({ ...prev, [serverId]: Date.now() }))
+      } else if (action === 'cancel') {
+        setStartingTimers(prev => {
+          const newTimers = { ...prev }
+          delete newTimers[serverId]
+          return newTimers
+        })
       }
       await api.post(`/queue/${action}`, { serverId })
-      if (action !== 'start-server') fetchServers()
+      fetchServers()
     } catch (err: any) {
       alert(handleApiError(err))
+    } finally {
+      setActionLoading(null)
     }
   }
 
@@ -147,8 +205,27 @@ export default function ServersPage() {
         </Button>
       </div>
 
+      <AnimatePresence>
+        {toastMessage && (
+          <motion.div
+            initial={{ opacity: 0, y: 50 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: 50 }}
+            className="fixed bottom-6 right-6 bg-success text-white px-4 py-3 rounded-lg shadow-xl font-bold flex items-center gap-3 z-50 border border-success/50"
+          >
+            <Zap className="w-5 h-5 fill-white" />
+            {toastMessage}
+          </motion.div>
+        )}
+      </AnimatePresence>
+
       <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
-        {servers.map((server, i) => (
+        {servers.map((server, i) => {
+          const isLocallyStarting = !!startingTimers[server.id];
+          const displayStatus = isLocallyStarting && server.status !== 'RUNNING' ? 'STARTING' : server.status;
+          const elapsedSecs = isLocallyStarting ? Math.floor((now - startingTimers[server.id]) / 1000) : 0;
+
+          return (
           <motion.div key={server.id} initial={{ y: 20, opacity: 0 }} animate={{ y: 0, opacity: 1 }}>
             <Card className="bg-card/50 backdrop-blur-sm border-border/50 relative overflow-hidden flex flex-col h-full hover:border-primary/30 transition-colors">
               {server.costPerHour >= 8 && (
@@ -163,8 +240,8 @@ export default function ServersPage() {
                     </CardTitle>
                     <p className="text-sm font-mono text-foreground/50 mt-1">{server.id}</p>
                   </div>
-                  <div className={`px-3 py-1 rounded-full text-xs font-bold uppercase border ${getStatusColor(server.status)}`}>
-                    {server.status}
+                  <div className={`px-3 py-1 rounded-full text-xs font-bold uppercase border ${getStatusColor(displayStatus)}`}>
+                    {displayStatus}
                   </div>
                 </div>
               </CardHeader>
@@ -182,14 +259,30 @@ export default function ServersPage() {
                   </div>
                 </div>
 
-                {(server.status === "STARTING" || server.status === "RESTARTING") && (
-                  <div className="bg-orange-500/10 border border-orange-500/20 rounded-lg p-4 flex items-center justify-between animate-pulse">
-                     <div className="flex items-center gap-3">
-                       <Clock className="w-5 h-5 text-orange-500" />
-                       <div>
-                         <p className="text-sm font-bold text-orange-500">In Queue...</p>
-                         <p className="text-xs text-orange-500/80">Wait for your turn</p>
+                {isLocallyStarting && (
+                  <div className="bg-orange-500/10 border border-orange-500/30 rounded-lg p-4 flex flex-col gap-3 relative overflow-hidden">
+                     <div className="absolute top-0 left-0 w-full h-1 bg-orange-500/20">
+                       <motion.div className="h-full bg-orange-500" initial={{ width: "0%" }} animate={{ width: "100%" }} transition={{ duration: 2, repeat: Infinity }} />
+                     </div>
+                     <div className="flex items-start justify-between">
+                       <div className="flex items-center gap-3">
+                         <RefreshCw className="w-5 h-5 text-orange-500 animate-spin" />
+                         <div>
+                           <p className="text-sm font-bold text-orange-500">
+                             {elapsedSecs > 120 
+                               ? "Startup is taking longer than expected. Please check console or try again."
+                               : elapsedSecs > 30 
+                               ? "Server is still starting. This may take up to 2 minutes." 
+                               : "Server is starting... Please wait..."}
+                           </p>
+                           <p className="text-xs text-orange-500/80 mt-0.5">Estimated wait time: Calculating...</p>
+                         </div>
                        </div>
+                       <span className="text-[10px] font-black text-orange-500 uppercase px-2 py-1 bg-orange-500/20 rounded shadow-sm">QUEUED</span>
+                     </div>
+                     <div className="bg-background/50 rounded p-2 text-center border border-orange-500/10">
+                       <span className="text-xs font-medium text-orange-500/70 mr-2 uppercase tracking-wider">Starting for:</span>
+                       <span className="font-mono font-bold text-orange-500 text-sm">{formatTime(elapsedSecs * 1000)}</span>
                      </div>
                   </div>
                 )}
@@ -215,16 +308,20 @@ export default function ServersPage() {
               </CardContent>
 
               <CardFooter className="pt-4 border-t border-border/50 bg-card/30 flex flex-wrap gap-2">
-                {server.status === "STOPPED" ? (
-                  <Button onClick={() => handleAction('start-server', server.id)} size="sm" className="bg-success hover:bg-success/90 text-white shadow-lg shadow-success/20 flex-1 sm:flex-none">
-                    <Power className="w-4 h-4 mr-2" /> Start
+                {displayStatus === "STOPPED" ? (
+                  <Button disabled={actionLoading === server.id} onClick={() => handleAction('start-server', server.id)} size="sm" className="bg-success hover:bg-success/90 text-white shadow-lg shadow-success/20 flex-1 sm:flex-none">
+                    {actionLoading === server.id ? (
+                      <><RefreshCw className="w-4 h-4 mr-2 animate-spin" /> Starting...</>
+                    ) : (
+                      <><Power className="w-4 h-4 mr-2" /> Start</>
+                    )}
                   </Button>
                 ) : (
                   <>
-                    <Button onClick={() => handleAction('cancel', server.id)} size="sm" className="bg-red-500 hover:bg-red-600 text-white flex-1 sm:flex-none">
+                    <Button disabled={isLocallyStarting && elapsedSecs <= 120} onClick={() => handleAction('cancel', server.id)} size="sm" className="bg-red-500 hover:bg-red-600 text-white flex-1 sm:flex-none">
                       <Power className="w-4 h-4 mr-2" /> Stop
                     </Button>
-                    <Button onClick={() => handleAction('restart-server', server.id)} size="sm" variant="outline" className="flex-1 sm:flex-none border-primary/50 text-primary hover:bg-primary/10">
+                    <Button disabled={isLocallyStarting && elapsedSecs <= 120} onClick={() => handleAction('restart-server', server.id)} size="sm" variant="outline" className="flex-1 sm:flex-none border-primary/50 text-primary hover:bg-primary/10">
                       <RefreshCw className="w-4 h-4 mr-2" /> Restart
                     </Button>
                   </>
@@ -235,7 +332,8 @@ export default function ServersPage() {
               </CardFooter>
             </Card>
           </motion.div>
-        ))}
+          )}
+        )}
       </div>
 
       {/* Plan Selection Modal */}
