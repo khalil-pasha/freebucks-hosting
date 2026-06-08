@@ -41,19 +41,19 @@ const profile_routes_1 = __importDefault(require("./routes/profile.routes"));
 const admin_core_routes_1 = __importDefault(require("./routes/admin.core.routes"));
 app.use('/auth', auth_routes_1.default);
 app.use('/servers', server_routes_1.default);
-app.use('/admin/servers', security_1.adminLimiter, admin_server_routes_1.default);
+app.use('/admin/servers', admin_server_routes_1.default);
 app.use('/credits', security_1.creditsLimiter, credits_routes_1.default);
 app.use('/vouchers', security_1.voucherLimiter, voucher_routes_1.default);
 app.use('/referrals', referral_routes_1.default);
 app.use('/queue', queue_routes_1.default);
-app.use('/admin/queue', security_1.adminLimiter, admin_queue_routes_1.default);
-app.use('/admin/billing', security_1.adminLimiter, admin_billing_routes_1.default);
+app.use('/admin/queue', admin_queue_routes_1.default);
+app.use('/admin/billing', admin_billing_routes_1.default);
 app.use('/notifications', notification_routes_1.default);
-app.use('/admin/settings', security_1.adminLimiter, admin_settings_routes_1.default);
+app.use('/admin/settings', admin_settings_routes_1.default);
 app.use('/support/tickets', security_1.ticketLimiter, support_routes_1.default);
-app.use('/admin/support/tickets', security_1.adminLimiter, admin_support_routes_1.default);
+app.use('/admin/support/tickets', admin_support_routes_1.default);
 app.use('/profile', profile_routes_1.default);
-app.use('/admin/core', security_1.adminLimiter, admin_core_routes_1.default);
+app.use('/admin/core', admin_core_routes_1.default);
 app.get('/health', async (req, res) => {
     try {
         // Check Database

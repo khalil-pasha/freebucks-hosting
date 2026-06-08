@@ -43,19 +43,19 @@ import adminCoreRoutes from './routes/admin.core.routes';
 
 app.use('/auth', authRoutes);
 app.use('/servers', serverRoutes);
-app.use('/admin/servers', adminLimiter, adminServerRoutes);
+app.use('/admin/servers', adminServerRoutes);
 app.use('/credits', creditsLimiter, creditsRoutes);
 app.use('/vouchers', voucherLimiter, voucherRoutes);
 app.use('/referrals', referralRoutes);
 app.use('/queue', queueRoutes);
-app.use('/admin/queue', adminLimiter, adminQueueRoutes);
-app.use('/admin/billing', adminLimiter, adminBillingRoutes);
+app.use('/admin/queue', adminQueueRoutes);
+app.use('/admin/billing', adminBillingRoutes);
 app.use('/notifications', notificationRoutes);
-app.use('/admin/settings', adminLimiter, adminSettingsRoutes);
+app.use('/admin/settings', adminSettingsRoutes);
 app.use('/support/tickets', ticketLimiter, supportRoutes);
-app.use('/admin/support/tickets', adminLimiter, adminSupportRoutes);
+app.use('/admin/support/tickets', adminSupportRoutes);
 app.use('/profile', profileRoutes);
-app.use('/admin/core', adminLimiter, adminCoreRoutes);
+app.use('/admin/core', adminCoreRoutes);
 
 app.get('/health', async (req: Request, res: Response) => {
   try {
