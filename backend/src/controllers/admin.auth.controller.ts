@@ -33,10 +33,12 @@ export class AdminAuthController {
         { expiresIn: '24h' }
       );
 
+      const isProd = process.env.NODE_ENV === 'production';
       res.cookie('admin_token', token, {
         httpOnly: true,
-        secure: process.env.NODE_ENV === 'production',
-        sameSite: 'lax',
+        secure: isProd || true, // sameSite 'none' requires secure: true
+        sameSite: 'none',
+        domain: isProd ? '.freebucks.host' : undefined,
         maxAge: 24 * 60 * 60 * 1000 // 24 hours
       });
 
