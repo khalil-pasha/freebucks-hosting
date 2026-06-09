@@ -19,13 +19,14 @@ import { PterodactylService } from './services/pterodactyl.service';
 
 app.use(securityHeaders);
 app.use(requestLogger);
-const isProd = process.env.NODE_ENV === 'production';
-app.use(cors({
-  origin: isProd 
-    ? ['https://app.freebucks.host', 'https://freebucks.host'] 
-    : 'http://localhost:3000',
-  credentials: true
-}));
+const corsOptions = {
+  origin: "https://app.freebucks.host",
+  credentials: true,
+  methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
+  allowedHeaders: ["Content-Type", "Authorization"]
+};
+app.use(cors(corsOptions));
+app.options("*", cors(corsOptions));
 app.use(express.json({ limit: '10mb' }));
 
 import path from 'path';

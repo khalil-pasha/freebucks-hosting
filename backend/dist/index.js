@@ -20,7 +20,14 @@ const queue_service_1 = require("./services/queue.service");
 const pterodactyl_service_1 = require("./services/pterodactyl.service");
 app.use(security_1.securityHeaders);
 app.use(logger_1.requestLogger);
-app.use((0, cors_1.default)());
+const corsOptions = {
+    origin: "https://app.freebucks.host",
+    credentials: true,
+    methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
+    allowedHeaders: ["Content-Type", "Authorization"]
+};
+app.use((0, cors_1.default)(corsOptions));
+app.options("*", (0, cors_1.default)(corsOptions));
 app.use(express_1.default.json({ limit: '10mb' }));
 const path_1 = __importDefault(require("path"));
 app.use('/uploads', express_1.default.static(path_1.default.join(__dirname, '../public/uploads')));

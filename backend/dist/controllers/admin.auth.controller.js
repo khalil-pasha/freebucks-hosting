@@ -26,10 +26,12 @@ class AdminAuthController {
                 return res.status(401).json({ error: 'Invalid credentials' });
             }
             const token = jsonwebtoken_1.default.sign({ id: admin.id, username: admin.username, role: 'ADMIN' }, JWT_SECRET, { expiresIn: '24h' });
+            const isProd = process.env.NODE_ENV === 'production';
             res.cookie('admin_token', token, {
                 httpOnly: true,
-                secure: process.env.NODE_ENV === 'production',
-                sameSite: 'lax',
+                secure: isProd || true, // sameSite 'none' requires secure: true
+                sameSite: 'none',
+                domain: isProd ? '.freebucks.host' : undefined,
                 maxAge: 24 * 60 * 60 * 1000 // 24 hours
             });
             return res.json({ success: true, message: 'Logged in successfully' });
