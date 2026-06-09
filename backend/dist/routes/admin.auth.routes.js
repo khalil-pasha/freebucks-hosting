@@ -6,4 +6,8 @@ const router = (0, express_1.Router)();
 router.post('/login', admin_auth_controller_1.AdminAuthController.login);
 router.post('/logout', admin_auth_controller_1.AdminAuthController.logout);
 router.get('/me', admin_auth_controller_1.AdminAuthController.me);
+router.post('/change-password', admin_auth_controller_1.AdminAuthController.changePassword);
+router.post('/forgot-password', admin_auth_controller_1.AdminAuthController.forgotPassword);
+router.post('/verify-otp', admin_auth_controller_1.AdminAuthController.verifyOtp);
+router.post('/reset-password', admin_auth_controller_1.AdminAuthController.resetPassword);
 exports.default = router;

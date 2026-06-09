@@ -1,15 +1,30 @@
+"use client";
+
 import { AdminSidebar } from "@/components/layout/admin-sidebar"
 import { Bell, Search, UserCircle, Menu } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import AdminAuthProvider from "@/components/AdminAuthProvider"
 import { Suspense } from "react"
 import { AdminName } from "@/components/admin/admin-name"
+import { usePathname } from "next/navigation"
 
 export default function AdminLayout({
   children,
 }: {
   children: React.ReactNode
 }) {
+  const pathname = usePathname();
+
+  if (pathname === '/admin/login') {
+    return (
+      <Suspense fallback={<div className="min-h-screen flex items-center justify-center">Loading...</div>}>
+        <AdminAuthProvider>
+          {children}
+        </AdminAuthProvider>
+      </Suspense>
+    );
+  }
+
   return (
     <Suspense fallback={<div className="min-h-screen flex items-center justify-center">Loading...</div>}>
       <AdminAuthProvider>

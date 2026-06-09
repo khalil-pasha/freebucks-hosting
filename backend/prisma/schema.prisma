@@ -86,12 +86,15 @@ model User {
 }
 
 model Admin {
-  id        String   @id @default(uuid())
-  username  String   @unique
-  password  String
-  discordId String?  @unique // Optional now
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  id             String    @id @default(uuid())
+  username       String    @unique
+  password       String
+  discordId      String?   @unique // Optional now
+  email          String?   @unique
+  resetOtp       String?
+  resetOtpExpiry DateTime?
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
 }
 
 model Server {

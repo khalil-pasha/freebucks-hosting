@@ -92,6 +92,50 @@ export default function AdminSettingsPage() {
             <Button className="bg-primary hover:bg-primary/90 text-white"><Save className="w-4 h-4 mr-2" /> Save Queue Settings</Button>
           </CardContent>
         </Card>
+        {/* Security Settings */}
+        <Card className="bg-card border-border/50">
+          <CardHeader className="bg-background/50 border-b border-border/50">
+            <CardTitle className="text-lg flex items-center gap-2"><Settings className="w-5 h-5 text-zinc-400" /> Security</CardTitle>
+          </CardHeader>
+          <CardContent className="pt-6 space-y-6">
+            <form onSubmit={async (e) => {
+              e.preventDefault();
+              const form = e.target as HTMLFormElement;
+              const currentPassword = (form.elements.namedItem('currentPassword') as HTMLInputElement).value;
+              const newPassword = (form.elements.namedItem('newPassword') as HTMLInputElement).value;
+              const confirmPassword = (form.elements.namedItem('confirmPassword') as HTMLInputElement).value;
+              
+              if (newPassword !== confirmPassword) {
+                alert("Passwords do not match");
+                return;
+              }
+              try {
+                const api = (await import('@/lib/api')).default;
+                await api.post('/admin/auth/change-password', { currentPassword, newPassword });
+                alert("Password changed successfully");
+                form.reset();
+              } catch(err: any) {
+                alert(err.response?.data?.error || "Failed to change password");
+              }
+            }} className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div className="space-y-2 col-span-full md:col-span-1">
+                <label className="text-sm font-medium">Current Password</label>
+                <Input name="currentPassword" type="password" required className="bg-background" />
+              </div>
+              <div className="space-y-2 col-span-full md:col-span-1">
+                <label className="text-sm font-medium">New Password</label>
+                <Input name="newPassword" type="password" required className="bg-background" />
+              </div>
+              <div className="space-y-2 col-span-full md:col-span-1">
+                <label className="text-sm font-medium">Confirm New Password</label>
+                <Input name="confirmPassword" type="password" required className="bg-background" />
+              </div>
+              <div className="col-span-full">
+                <Button type="submit" className="bg-primary hover:bg-primary/90 text-white"><Save className="w-4 h-4 mr-2" /> Update Password</Button>
+              </div>
+            </form>
+          </CardContent>
+        </Card>
       </div>
     </div>
   )
