@@ -8,9 +8,16 @@ export class AdminServerController {
     try {
       const { serverId } = req.body;
       const server = await db.server.findUnique({ where: { id: serverId } });
-      if (!server || !server.pterodactylServerId) return res.status(404).json({ error: 'Server not found' });
+      if (!server) return res.status(404).json({ error: 'Server not found' });
 
-      await PterodactylService.suspendServer(server.pterodactylServerId);
+      if (server.pterodactylServerId) {
+        try {
+          await PterodactylService.suspendServer(server.pterodactylServerId);
+        } catch (pteroError: any) {
+          console.error('Pterodactyl suspend error:', pteroError.response?.data || pteroError.message);
+          // Continue to sync DB state even if Pterodactyl panel fails
+        }
+      }
       
       await db.server.update({
         where: { id: serverId },
@@ -21,6 +28,7 @@ export class AdminServerController {
 
       res.json({ success: true });
     } catch (error: any) {
+      console.error('Suspend server error:', error);
       res.status(500).json({ error: error.message });
     }
   }
@@ -29,9 +37,21 @@ export class AdminServerController {
     try {
       const { serverId } = req.body;
       const server = await db.server.findUnique({ where: { id: serverId } });
-      if (!server || !server.pterodactylServerId) return res.status(404).json({ error: 'Server not found' });
+      if (!server) return res.status(404).json({ error: 'Server not found' });
 
-      await PterodactylService.deleteServer(server.pterodactylServerId);
+      if (server.pterodactylServerId) {
+        try {
+          // Pterodactyl API requires force=true to delete a running server, 
+          // or we just attempt a delete and catch failure
+          await PterodactylService.deleteServer(server.pterodactylServerId);
+        } catch (pteroError: any) {
+          console.error('Pterodactyl delete error:', pteroError.response?.data || pteroError.message);
+        }
+      }
+      
+      // Cascade delete related records first to prevent foreign key constraint errors
+      await db.serverBillingLog.deleteMany({ where: { serverId } });
+      await db.queueJob.deleteMany({ where: { serverId } });
       
       await db.server.delete({ where: { id: serverId } });
 
@@ -39,6 +59,7 @@ export class AdminServerController {
 
       res.json({ success: true });
     } catch (error: any) {
+      console.error('Delete server error:', error);
       res.status(500).json({ error: error.message });
     }
   }
