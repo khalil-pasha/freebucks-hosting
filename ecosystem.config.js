@@ -2,8 +2,7 @@ module.exports = {
   apps: [
     {
       name: 'freebucks-backend',
-      script: 'node',
-      args: 'dist/index.js',
+      script: '/var/www/freebucks-hosting/backend/dist/index.js',
       cwd: '/var/www/freebucks-hosting/backend',
       instances: 'max',
       exec_mode: 'cluster',

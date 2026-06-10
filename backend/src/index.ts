@@ -34,10 +34,13 @@ const corsOptions = {
   },
   credentials: true,
   methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
-  allowedHeaders: ["Content-Type", "Authorization"]
+  allowedHeaders: ["Content-Type", "Authorization", "Cache-Control", "Pragma", "Expires"]
 };
 app.use(cors(corsOptions));
-app.options("*", cors(corsOptions));
+app.use((req, res, next) => {
+  if (req.method === "OPTIONS") return cors(corsOptions)(req, res, next);
+  next();
+});
 
 app.use(express.json({ limit: '10mb' }));
 

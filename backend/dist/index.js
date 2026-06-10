@@ -35,10 +35,14 @@ const corsOptions = {
     },
     credentials: true,
     methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
-    allowedHeaders: ["Content-Type", "Authorization"]
+    allowedHeaders: ["Content-Type", "Authorization", "Cache-Control", "Pragma", "Expires"]
 };
 app.use((0, cors_1.default)(corsOptions));
-app.options("*", (0, cors_1.default)(corsOptions));
+app.use((req, res, next) => {
+    if (req.method === "OPTIONS")
+        return (0, cors_1.default)(corsOptions)(req, res, next);
+    next();
+});
 app.use(express_1.default.json({ limit: '10mb' }));
 const path_1 = __importDefault(require("path"));
 app.use('/uploads', express_1.default.static(path_1.default.join(__dirname, '../public/uploads')));
