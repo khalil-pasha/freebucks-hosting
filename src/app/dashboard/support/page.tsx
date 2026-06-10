@@ -1,21 +1,20 @@
 "use client"
-import { useState } from "react"
+import { useState, useEffect, useRef } from "react"
 import { motion } from "framer-motion"
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Textarea } from "@/components/ui/textarea"
-import { LifeBuoy, MessageSquare, BookOpen, ExternalLink, HelpCircle, AlertCircle, RefreshCw } from "lucide-react"
+import { LifeBuoy, MessageSquare, BookOpen, ExternalLink, HelpCircle, AlertCircle, RefreshCw, Send, Plus, ChevronLeft } from "lucide-react"
 import Link from "next/link"
 import api from "@/lib/api"
 
-const faqShortcuts = [
-  { q: "How do I install modpacks?", a: "Go to your server panel, navigate to 'Software', select your modpack provider (CurseForge/Modrinth), and click install." },
-  { q: "Why is my server stuck in queue?", a: "We limit concurrent server starts to 5. If it takes longer than 10 minutes, open a ticket on Discord." },
-  { q: "How do I upgrade my RAM?", a: "Stop your server, click the 'Upgrade' button on the Servers page, and select your new tier." },
-]
-
 export default function SupportPage() {
+  const [tickets, setTickets] = useState<any[]>([])
+  const [selectedTicketId, setSelectedTicketId] = useState<string | null>(null)
+  const [selectedTicket, setSelectedTicket] = useState<any>(null)
+  const [isCreating, setIsCreating] = useState(false)
+  
   const [subject, setSubject] = useState("")
   const [serverId, setServerId] = useState("")
   const [message, setMessage] = useState("")
@@ -23,15 +22,59 @@ export default function SupportPage() {
   const [errorMsg, setErrorMsg] = useState("")
   const [successMsg, setSuccessMsg] = useState("")
 
-  const containerVariants = {
-    hidden: { opacity: 0 },
-    visible: { opacity: 1, transition: { staggerChildren: 0.1 } }
+  const [replyText, setReplyText] = useState("")
+  const [replyLoading, setReplyLoading] = useState(false)
+
+  const messagesEndRef = useRef<HTMLDivElement>(null)
+
+  const fetchTickets = async () => {
+    try {
+      const res = await api.get('/support/tickets')
+      setTickets(res.data)
+      if (res.data.length > 0 && !selectedTicketId && !isCreating) {
+        setSelectedTicketId(res.data[0].id)
+      } else if (res.data.length === 0) {
+        setIsCreating(true)
+      }
+    } catch (err) {
+      console.error(err)
+    }
   }
 
-  const itemVariants = {
-    hidden: { y: 20, opacity: 0 },
-    visible: { y: 0, opacity: 1, transition: { duration: 0.4 } }
+  const fetchSelectedTicket = async (id: string) => {
+    try {
+      const res = await api.get(`/support/tickets/${id}`)
+      setSelectedTicket(res.data)
+    } catch (err) {
+      console.error(err)
+    }
   }
+
+  useEffect(() => {
+    fetchTickets()
+    // Poll ticket list every 3 seconds
+    const interval = setInterval(() => {
+      fetchTickets()
+    }, 3000)
+    return () => clearInterval(interval)
+  }, [isCreating, selectedTicketId])
+
+  useEffect(() => {
+    if (selectedTicketId && !isCreating) {
+      fetchSelectedTicket(selectedTicketId)
+      // Poll active ticket every 3 seconds
+      const interval = setInterval(() => {
+        fetchSelectedTicket(selectedTicketId)
+      }, 3000)
+      return () => clearInterval(interval)
+    }
+  }, [selectedTicketId, isCreating])
+
+  useEffect(() => {
+    if (messagesEndRef.current) {
+      messagesEndRef.current.scrollIntoView({ behavior: "smooth" })
+    }
+  }, [selectedTicket?.messages])
 
   const handleSubmit = async () => {
     setErrorMsg("");
@@ -49,14 +92,20 @@ export default function SupportPage() {
     setLoading(true);
     try {
       const fullMessage = serverId ? `Server ID: ${serverId}\n\n${message}` : message;
-      await api.post('/support/tickets', {
+      const res = await api.post('/support/tickets', {
         subject,
         message: fullMessage
       });
-      setSuccessMsg("Ticket submitted successfully! Our team will get back to you soon.");
+      setSuccessMsg("Ticket submitted successfully! Redirecting to chat...");
       setSubject("");
       setServerId("");
       setMessage("");
+      
+      // Auto switch to chat view
+      setTimeout(() => {
+        setIsCreating(false)
+        setSelectedTicketId(res.data.id)
+      }, 1000)
     } catch (err: any) {
       console.error(err);
       setErrorMsg(err.response?.data?.error || "Failed to submit ticket.");
@@ -65,88 +114,90 @@ export default function SupportPage() {
     }
   }
 
+  const handleReply = async () => {
+    if (!replyText || replyText.trim().length === 0 || !selectedTicketId) return;
+    setReplyLoading(true);
+    try {
+      // Optimistic UI update
+      setSelectedTicket((prev: any) => ({
+        ...prev,
+        messages: [...(prev?.messages || []), { id: 'temp', message: replyText, isStaffReply: false, createdAt: new Date().toISOString() }]
+      }))
+      await api.post(`/support/tickets/${selectedTicketId}/reply`, { message: replyText })
+      setReplyText("")
+      await fetchSelectedTicket(selectedTicketId)
+    } catch (err: any) {
+      console.error(err)
+      alert(err.response?.data?.error || "Failed to send reply.")
+    } finally {
+      setReplyLoading(false);
+    }
+  }
+
+  const handleCreateNew = () => {
+    setSelectedTicketId(null)
+    setIsCreating(true)
+  }
+
   return (
-    <div className="space-y-8 max-w-5xl mx-auto pb-10">
-      <div>
-        <h1 className="text-3xl font-bold tracking-tight">Support Center</h1>
-        <p className="text-foreground/60 mt-1">Need help with your server? We've got you covered.</p>
+    <div className="max-w-7xl mx-auto h-[calc(100vh-8rem)] flex flex-col space-y-4">
+      <div className="flex justify-between items-center shrink-0">
+        <div>
+          <h1 className="text-3xl font-bold tracking-tight">Support Center</h1>
+          <p className="text-foreground/60 mt-1">Need help with your server? We've got you covered.</p>
+        </div>
       </div>
 
-      <motion.div 
-        variants={containerVariants}
-        initial="hidden"
-        animate="visible"
-        className="grid grid-cols-1 lg:grid-cols-3 gap-6"
-      >
-        <div className="lg:col-span-1 space-y-6">
-          {/* Discord Support Card */}
-          <motion.div variants={itemVariants}>
-            <Card className="bg-[#5865F2]/10 border-[#5865F2]/30 relative overflow-hidden h-full hover:bg-[#5865F2]/20 transition-colors">
-              <CardHeader className="text-center pb-2 pt-8">
-                <div className="mx-auto w-16 h-16 bg-[#5865F2] rounded-2xl flex items-center justify-center mb-4 text-white shadow-lg shadow-[#5865F2]/20 rotate-3">
-                  <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" fill="currentColor" viewBox="0 0 24 24">
-                    <path d="M20.317 4.3698a19.7913 19.7913 0 00-4.8851-1.5152.0741.0741 0 00-.0785.0371c-.211.3753-.4447.8648-.6083 1.2495-1.8447-.2762-3.68-.2762-5.4868 0-.1636-.3933-.4058-.8742-.6177-1.2495a.077.077 0 00-.0785-.037 19.7363 19.7363 0 00-4.8852 1.515.0699.0699 0 00-.0321.0277C.5334 9.0458-.319 13.5799.0992 18.0578a.0824.0824 0 00.0312.0561c2.0528 1.5076 4.0413 2.4228 5.9929 3.0294a.0777.0777 0 00.0842-.0276c.4616-.6304.8731-1.2952 1.226-1.9942a.076.076 0 00-.0416-.1057c-.6528-.2476-1.2743-.5495-1.8722-.8923a.077.077 0 01-.0076-.1277c.1258-.0943.2517-.1923.3718-.2914a.0743.0743 0 01.0776-.0105c3.9278 1.7933 8.18 1.7933 12.0614 0a.0739.0739 0 01.0785.0095c.1202.099.246.1981.3728.2924a.077.077 0 01-.0066.1276 12.2986 12.2986 0 01-1.873.8914.0766.0766 0 00-.0407.1067c.3604.698.7719 1.3628 1.225 1.9932a.076.076 0 00.0842.0286c1.961-.6067 3.9495-1.5219 6.0023-3.0294a.077.077 0 00.0313-.0552c.5004-5.177-.8382-9.6739-3.5485-13.6604a.061.061 0 00-.0312-.0286zM8.02 15.3312c-1.1825 0-2.1569-1.0857-2.1569-2.419 0-1.3332.9555-2.4189 2.157-2.4189 1.2108 0 2.1757 1.0952 2.1568 2.419 0 1.3332-.9555 2.4189-2.1569 2.4189zm7.9748 0c-1.1825 0-2.1569-1.0857-2.1569-2.419 0-1.3332.9554-2.4189 2.1569-2.4189 1.2108 0 2.1757 1.0952 2.1568 2.419 0 1.3332-.946 2.4189-2.1568 2.4189Z" />
-                  </svg>
+      <div className="flex-1 grid grid-cols-1 lg:grid-cols-3 gap-6 overflow-hidden">
+        {/* Left Pane: Ticket List */}
+        <Card className="bg-card border-border/50 col-span-1 flex flex-col overflow-hidden hidden lg:flex">
+          <div className="p-4 border-b border-border/50">
+            <Button onClick={handleCreateNew} className="w-full bg-primary hover:bg-primary/90 text-white"><Plus className="w-4 h-4 mr-2"/> New Ticket</Button>
+          </div>
+          <div className="flex-1 overflow-y-auto p-2 space-y-2">
+            {tickets.length === 0 ? (
+              <div className="flex justify-center items-center h-32 text-foreground/50 text-sm">
+                No tickets found.
+              </div>
+            ) : tickets.map((t) => (
+              <div 
+                key={t.id} 
+                onClick={() => { setSelectedTicketId(t.id); setIsCreating(false); }}
+                className={`p-4 rounded-xl cursor-pointer border transition-colors ${
+                  t.id === selectedTicketId && !isCreating ? "bg-primary/10 border-primary/30" : "bg-background border-border/50 hover:bg-foreground/5"
+                }`}
+              >
+                <div className="flex justify-between items-start mb-1">
+                  <span className={`font-bold text-sm truncate pr-2 ${t.id === selectedTicketId && !isCreating ? "text-primary" : ""}`}>{t.subject}</span>
+                  <span className={`px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider shrink-0 ${
+                    t.status === 'OPEN' ? 'bg-success/20 text-success' :
+                    t.status === 'PENDING' ? 'bg-orange-500/20 text-orange-500' :
+                    'bg-foreground/10 text-foreground/50'
+                  }`}>
+                    {t.status}
+                  </span>
                 </div>
-                <CardTitle className="text-xl font-bold">Discord Community</CardTitle>
-              </CardHeader>
-              <CardContent className="text-center">
-                <p className="text-sm text-foreground/70 mb-6">The fastest way to get help. Join 85,000+ other users and our dedicated 24/7 support staff.</p>
-                <Button className="w-full bg-[#5865F2] hover:bg-[#4752C4] text-white">Join Discord Server</Button>
-              </CardContent>
-            </Card>
-          </motion.div>
-
-          {/* Knowledge Base */}
-          <motion.div variants={itemVariants}>
-            <Card className="bg-card/50 backdrop-blur-sm border-border/50 h-full">
-              <CardHeader className="pb-2">
-                <CardTitle className="text-lg flex items-center gap-2"><BookOpen className="w-5 h-5 text-primary" /> Knowledge Base</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <p className="text-sm text-foreground/60 mb-4">Read our comprehensive guides on setting up domains, installing plugins, and more.</p>
-                <Button variant="outline" className="w-full flex justify-between items-center group">
-                  Browse Guides <ExternalLink className="w-4 h-4 text-foreground/40 group-hover:text-primary transition-colors" />
-                </Button>
-              </CardContent>
-            </Card>
-          </motion.div>
-        </div>
-
-        <div className="lg:col-span-2 space-y-6">
-          {/* FAQ Shortcuts */}
-          <motion.div variants={itemVariants}>
-            <Card className="bg-card/50 backdrop-blur-sm border-border/50">
-              <CardHeader>
-                <CardTitle className="text-xl flex items-center gap-2">
-                  <HelpCircle className="w-5 h-5 text-secondary" /> Common Questions
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                {faqShortcuts.map((faq, i) => (
-                  <div key={i} className="p-4 bg-background border border-border/50 rounded-xl">
-                    <h4 className="font-bold mb-2 flex items-start gap-2">
-                      <span className="text-secondary mt-0.5">Q:</span> {faq.q}
-                    </h4>
-                    <p className="text-sm text-foreground/70 ml-6">{faq.a}</p>
-                  </div>
-                ))}
-                <div className="pt-2 text-center">
-                  <Link href="/faq" className="text-sm text-primary hover:underline font-medium">View all Frequently Asked Questions</Link>
+                <div className="flex justify-between items-center mt-2">
+                  <span className="text-[10px] text-foreground/50">#{t.id.slice(-4)}</span>
+                  <span className="text-[10px] text-foreground/50">{new Date(t.updatedAt).toLocaleDateString()}</span>
                 </div>
-              </CardContent>
-            </Card>
-          </motion.div>
+              </div>
+            ))}
+          </div>
+        </Card>
 
-          {/* Contact Support Form */}
-          <motion.div variants={itemVariants}>
-            <Card className="bg-card/50 backdrop-blur-sm border-border/50">
-              <CardHeader>
-                <CardTitle className="text-xl flex items-center gap-2">
-                  <MessageSquare className="w-5 h-5 text-primary" /> Contact Support
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-4">
+        {/* Right Pane: Chat or Create Form */}
+        <Card className="bg-card border-border/50 col-span-1 lg:col-span-2 flex flex-col overflow-hidden">
+          {isCreating ? (
+            <div className="flex-1 overflow-y-auto p-6 bg-background">
+              <div className="flex items-center gap-2 mb-6 lg:hidden">
+                <Button variant="ghost" size="sm" onClick={() => setIsCreating(false)}><ChevronLeft className="w-4 h-4 mr-1"/> Back</Button>
+              </div>
+              <h2 className="text-2xl font-bold mb-6 flex items-center gap-2">
+                <MessageSquare className="w-6 h-6 text-primary" /> Create New Ticket
+              </h2>
+              
+              <div className="space-y-4 max-w-2xl">
                 <div className="bg-orange-500/10 border border-orange-500/20 p-4 rounded-xl flex items-start gap-3 text-orange-500 text-sm mb-6">
                   <AlertCircle className="w-5 h-5 flex-shrink-0 mt-0.5" />
                   <p>For urgent server down issues, please ping the @Support team directly in our Discord server for immediate assistance.</p>
@@ -157,7 +208,7 @@ export default function SupportPage() {
                     <label className="text-sm font-medium">Subject</label>
                     <Input 
                       placeholder="e.g., Server stuck starting" 
-                      className="bg-background border-border/50" 
+                      className="bg-card border-border/50" 
                       value={subject}
                       onChange={(e) => setSubject(e.target.value)}
                     />
@@ -166,7 +217,7 @@ export default function SupportPage() {
                     <label className="text-sm font-medium">Server ID (Optional)</label>
                     <Input 
                       placeholder="fb-192a" 
-                      className="bg-background border-border/50 font-mono" 
+                      className="bg-card border-border/50 font-mono" 
                       value={serverId}
                       onChange={(e) => setServerId(e.target.value)}
                     />
@@ -177,14 +228,14 @@ export default function SupportPage() {
                   <label className="text-sm font-medium">Message</label>
                   <Textarea 
                     placeholder="Describe your issue in detail..." 
-                    className="min-h-[120px] bg-background border-border/50"
+                    className="min-h-[120px] bg-card border-border/50"
                     value={message}
                     onChange={(e) => setMessage(e.target.value)}
                   />
                 </div>
                 
                 {errorMsg && <p className="text-red-500 text-sm font-medium">{errorMsg}</p>}
-                {successMsg && <p className="text-success text-sm font-medium">{successMsg}</p>}
+                {successMsg && <p className="text-emerald-500 text-sm font-medium">{successMsg}</p>}
 
                 <div className="flex justify-end pt-2">
                   <Button 
@@ -196,11 +247,95 @@ export default function SupportPage() {
                     Submit Ticket
                   </Button>
                 </div>
-              </CardContent>
-            </Card>
-          </motion.div>
-        </div>
-      </motion.div>
+              </div>
+            </div>
+          ) : selectedTicket ? (
+            <>
+              <div className="p-4 border-b border-border/50 flex flex-col md:flex-row justify-between items-start md:items-center bg-background/50 gap-4">
+                <div className="flex items-center gap-2 lg:hidden">
+                  <Button variant="ghost" size="sm" onClick={() => setSelectedTicketId(null)} className="-ml-2"><ChevronLeft className="w-4 h-4 mr-1"/> Tickets</Button>
+                </div>
+                <div>
+                  <div className="flex items-center gap-2">
+                    <h2 className="text-lg font-bold truncate max-w-sm">{selectedTicket.subject}</h2>
+                    <span className={`px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider ${
+                      selectedTicket.status === 'OPEN' ? 'bg-success/20 text-success' :
+                      selectedTicket.status === 'PENDING' ? 'bg-orange-500/20 text-orange-500' :
+                      'bg-foreground/10 text-foreground/50'
+                    }`}>{selectedTicket.status}</span>
+                  </div>
+                  <p className="text-xs text-foreground/50 mt-1">Ticket #{selectedTicket.id.slice(-4)} • Opened {new Date(selectedTicket.createdAt).toLocaleDateString()}</p>
+                </div>
+              </div>
+              
+              <div className="flex-1 overflow-y-auto p-4 md:p-6 space-y-6 bg-background">
+                {selectedTicket.messages?.map((msg: any) => {
+                  const isUser = !msg.isStaffReply;
+                  return (
+                    <div key={msg.id} className={`flex w-full ${isUser ? 'justify-end' : 'justify-start'}`}>
+                      <div className={`flex flex-col max-w-[85%] md:max-w-[70%] ${isUser ? 'items-end' : 'items-start'}`}>
+                        <div className="flex items-center gap-2 mb-1 px-1">
+                          <span className="text-xs font-bold text-foreground/70">{isUser ? 'You' : 'Support Staff'}</span>
+                          <span className="text-[10px] text-foreground/40">{new Date(msg.createdAt).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}</span>
+                        </div>
+                        <div className={`p-3 md:p-4 rounded-2xl text-sm whitespace-pre-wrap shadow-sm ${
+                          isUser 
+                            ? 'bg-primary text-primary-foreground rounded-tr-sm' 
+                            : 'bg-card border border-border/50 text-card-foreground rounded-tl-sm'
+                        }`}>
+                          {msg.message}
+                        </div>
+                      </div>
+                    </div>
+                  )
+                })}
+                <div ref={messagesEndRef} />
+              </div>
+
+              <div className="p-4 border-t border-border/50 bg-background/80 backdrop-blur-sm">
+                {selectedTicket.status !== 'CLOSED' ? (
+                  <div className="flex gap-2">
+                    <textarea 
+                      className="flex-1 bg-card border border-border/50 rounded-xl p-3 text-sm resize-none outline-none focus:border-primary transition-colors focus:ring-1 focus:ring-primary/50"
+                      placeholder="Type your reply..."
+                      rows={1}
+                      style={{ minHeight: '52px', maxHeight: '120px' }}
+                      value={replyText}
+                      onChange={(e) => {
+                        setReplyText(e.target.value);
+                        e.target.style.height = 'auto';
+                        e.target.style.height = e.target.scrollHeight + 'px';
+                      }}
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter' && !e.shiftKey) {
+                          e.preventDefault();
+                          handleReply();
+                        }
+                      }}
+                    ></textarea>
+                    <Button 
+                      onClick={handleReply} 
+                      disabled={replyLoading}
+                      className="bg-primary hover:bg-primary/90 text-white h-[52px] w-[52px] rounded-xl shrink-0"
+                    >
+                      {replyLoading ? <RefreshCw className="w-5 h-5 animate-spin" /> : <Send className="w-5 h-5 ml-1" />}
+                    </Button>
+                  </div>
+                ) : (
+                  <div className="text-center p-3 bg-foreground/5 rounded-xl border border-border/50 text-foreground/50 text-sm">
+                    This ticket has been closed. You cannot reply.
+                  </div>
+                )}
+              </div>
+            </>
+          ) : (
+            <div className="flex-1 flex items-center justify-center bg-background text-foreground/50 flex-col gap-4">
+              <MessageSquare className="w-12 h-12 text-border" />
+              <p>Select a ticket from the left or create a new one.</p>
+            </div>
+          )}
+        </Card>
+      </div>
     </div>
   )
 }

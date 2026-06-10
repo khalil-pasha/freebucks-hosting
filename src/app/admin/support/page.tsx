@@ -1,5 +1,5 @@
 "use client"
-import { useEffect, useState } from "react"
+import { useEffect, useState, useRef } from "react"
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Search, MessageSquare, Send, XCircle, MoreVertical, RefreshCw } from "lucide-react"
@@ -9,9 +9,12 @@ export default function AdminSupportPage() {
   const [tickets, setTickets] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
   const [selectedTicketId, setSelectedTicketId] = useState<string | null>(null)
+  const [selectedTicket, setSelectedTicket] = useState<any>(null)
   const [filter, setFilter] = useState<'OPEN' | 'PENDING' | 'CLOSED'>('OPEN')
   const [replyText, setReplyText] = useState("")
   const [replyLoading, setReplyLoading] = useState(false)
+
+  const messagesEndRef = useRef<HTMLDivElement>(null)
 
   const fetchTickets = async () => {
     try {
@@ -27,18 +30,47 @@ export default function AdminSupportPage() {
     }
   }
 
+  const fetchSelectedTicket = async (id: string) => {
+    try {
+      const res = await api.get(`/admin/support/tickets/${id}`)
+      setSelectedTicket(res.data)
+    } catch (err) {
+      console.error(err)
+    }
+  }
+
   useEffect(() => {
     fetchTickets()
-  }, [])
+    const interval = setInterval(() => {
+      fetchTickets()
+    }, 3000)
+    return () => clearInterval(interval)
+  }, [selectedTicketId])
+
+  useEffect(() => {
+    if (selectedTicketId) {
+      fetchSelectedTicket(selectedTicketId)
+      const interval = setInterval(() => {
+        fetchSelectedTicket(selectedTicketId)
+      }, 3000)
+      return () => clearInterval(interval)
+    }
+  }, [selectedTicketId])
+
+  useEffect(() => {
+    if (messagesEndRef.current) {
+      messagesEndRef.current.scrollIntoView({ behavior: "smooth" })
+    }
+  }, [selectedTicket?.messages])
 
   const filteredTickets = tickets.filter(t => t.status === filter)
-  const selectedTicket = tickets.find(t => t.id === selectedTicketId)
 
   const handleClose = async (id: string) => {
     if (!confirm("Are you sure you want to close this ticket?")) return;
     try {
       await api.post(`/admin/support/tickets/${id}/close`)
       fetchTickets()
+      fetchSelectedTicket(id)
     } catch (err: any) {
       console.error(err)
       alert(err.response?.data?.error || "Failed to close ticket.")
@@ -49,9 +81,14 @@ export default function AdminSupportPage() {
     if (!replyText || replyText.trim().length === 0) return;
     setReplyLoading(true);
     try {
+      // Optimistic UI update
+      setSelectedTicket((prev: any) => ({
+        ...prev,
+        messages: [...(prev?.messages || []), { id: 'temp', message: replyText, isStaffReply: true, createdAt: new Date().toISOString() }]
+      }))
       await api.post(`/admin/support/tickets/${id}/reply`, { message: replyText })
       setReplyText("")
-      fetchTickets()
+      await fetchSelectedTicket(id)
     } catch (err: any) {
       console.error(err)
       alert(err.response?.data?.error || "Failed to send reply.")
@@ -67,7 +104,6 @@ export default function AdminSupportPage() {
           <h1 className="text-3xl font-bold tracking-tight">Support Tickets</h1>
           <p className="text-foreground/60 mt-1">Manage user issues and inquiries.</p>
         </div>
-        <Button variant="outline" size="sm" onClick={fetchTickets}><RefreshCw className="w-4 h-4 mr-2" /> Refresh</Button>
       </div>
 
       <div className="flex-1 grid grid-cols-1 md:grid-cols-3 gap-6 overflow-hidden">
@@ -106,20 +142,20 @@ export default function AdminSupportPage() {
                 }`}
               >
                 <div className="flex justify-between items-start mb-1">
-                  <span className="font-bold text-sm">{t.user?.username}</span>
-                  <span className="text-[10px] text-foreground/50 font-mono">#{t.id.slice(-4)}</span>
-                </div>
-                <p className={`text-sm mb-2 truncate ${t.id === selectedTicketId ? "text-foreground" : "text-foreground/70"}`}>
-                  {t.subject}
-                </p>
-                <div className="flex justify-between items-center">
-                  <span className={`px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider ${
+                  <span className={`font-bold text-sm truncate pr-2 ${t.id === selectedTicketId ? "text-primary" : ""}`}>{t.user?.username}</span>
+                  <span className={`px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider shrink-0 ${
                     t.status === 'OPEN' ? 'bg-success/20 text-success' :
                     t.status === 'PENDING' ? 'bg-orange-500/20 text-orange-500' :
                     'bg-foreground/10 text-foreground/50'
                   }`}>
                     {t.status}
                   </span>
+                </div>
+                <p className={`text-sm mb-2 truncate ${t.id === selectedTicketId ? "text-foreground" : "text-foreground/70"}`}>
+                  {t.subject}
+                </p>
+                <div className="flex justify-between items-center mt-2">
+                  <span className="text-[10px] text-foreground/50 font-mono">#{t.id.slice(-4)}</span>
                   <span className="text-[10px] text-foreground/50">{new Date(t.updatedAt).toLocaleDateString()}</span>
                 </div>
               </div>
@@ -151,46 +187,70 @@ export default function AdminSupportPage() {
                 </div>
               </div>
               
-              <div className="flex-1 overflow-y-auto p-6 space-y-6 bg-background">
-                {/* Note: This is a placeholder for the actual messages as the messages endpoint logic is not fully implemented yet for fetching all ticket messages individually */}
-                <div className="flex gap-4">
-                  <div className="w-10 h-10 rounded-full bg-primary/20 flex items-center justify-center font-bold text-primary shrink-0">{selectedTicket.user?.username?.[0]?.toUpperCase() || 'U'}</div>
-                  <div>
-                    <div className="flex items-baseline gap-2 mb-1">
-                      <span className="font-bold">{selectedTicket.user?.username}</span>
-                      <span className="text-xs text-foreground/50">{new Date(selectedTicket.createdAt).toLocaleString()}</span>
+              <div className="flex-1 overflow-y-auto p-4 md:p-6 space-y-6 bg-[url('https://www.transparenttextures.com/patterns/cubes.png')] bg-background">
+                {selectedTicket.messages?.map((msg: any) => {
+                  const isAdmin = msg.isStaffReply;
+                  return (
+                    <div key={msg.id} className={`flex w-full ${isAdmin ? 'justify-end' : 'justify-start'}`}>
+                      <div className={`flex flex-col max-w-[85%] md:max-w-[70%] ${isAdmin ? 'items-end' : 'items-start'}`}>
+                        <div className="flex items-center gap-2 mb-1 px-1">
+                          <span className="text-xs font-bold text-foreground/70">{isAdmin ? 'You' : selectedTicket.user?.username}</span>
+                          <span className="text-[10px] text-foreground/40">{new Date(msg.createdAt).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}</span>
+                        </div>
+                        <div className={`p-3 md:p-4 rounded-2xl text-sm whitespace-pre-wrap shadow-sm ${
+                          isAdmin 
+                            ? 'bg-primary text-primary-foreground rounded-tr-sm' 
+                            : 'bg-card border border-border/50 text-card-foreground rounded-tl-sm'
+                        }`}>
+                          {msg.message}
+                        </div>
+                      </div>
                     </div>
-                    <div className="bg-card border border-border/50 p-3 rounded-xl text-sm text-foreground/80 rounded-tl-none whitespace-pre-wrap">
-                      {selectedTicket.messages?.[0]?.message || "No message content."}
-                    </div>
-                  </div>
-                </div>
+                  )
+                })}
+                <div ref={messagesEndRef} />
               </div>
 
-              {selectedTicket.status !== 'CLOSED' && (
-                <div className="p-4 border-t border-border/50 bg-background/50">
+              <div className="p-4 border-t border-border/50 bg-background/80 backdrop-blur-sm">
+                {selectedTicket.status !== 'CLOSED' ? (
                   <div className="flex gap-2">
                     <textarea 
-                      className="flex-1 bg-card border border-border/50 rounded-xl p-3 text-sm resize-none outline-none focus:border-primary transition-colors"
+                      className="flex-1 bg-card border border-border/50 rounded-xl p-3 text-sm resize-none outline-none focus:border-primary transition-colors focus:ring-1 focus:ring-primary/50"
                       placeholder="Type your reply here..."
-                      rows={2}
+                      rows={1}
+                      style={{ minHeight: '52px', maxHeight: '120px' }}
                       value={replyText}
-                      onChange={(e) => setReplyText(e.target.value)}
+                      onChange={(e) => {
+                        setReplyText(e.target.value);
+                        e.target.style.height = 'auto';
+                        e.target.style.height = e.target.scrollHeight + 'px';
+                      }}
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter' && !e.shiftKey) {
+                          e.preventDefault();
+                          handleReply(selectedTicket.id);
+                        }
+                      }}
                     ></textarea>
                     <Button 
                       onClick={() => handleReply(selectedTicket.id)} 
                       disabled={replyLoading}
-                      className="bg-primary hover:bg-primary/90 text-white h-auto px-6"
+                      className="bg-primary hover:bg-primary/90 text-white h-[52px] w-[52px] rounded-xl shrink-0"
                     >
-                      {replyLoading ? <RefreshCw className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
+                      {replyLoading ? <RefreshCw className="w-5 h-5 animate-spin" /> : <Send className="w-5 h-5 ml-1" />}
                     </Button>
                   </div>
-                </div>
-              )}
+                ) : (
+                  <div className="text-center p-3 bg-foreground/5 rounded-xl border border-border/50 text-foreground/50 text-sm">
+                    This ticket has been closed. You cannot reply.
+                  </div>
+                )}
+              </div>
             </>
           ) : (
-            <div className="flex-1 flex items-center justify-center text-foreground/50">
-              Select a ticket to view details
+            <div className="flex-1 flex items-center justify-center bg-background text-foreground/50 flex-col gap-4">
+              <MessageSquare className="w-12 h-12 text-border" />
+              <p>Select a ticket to view details</p>
             </div>
           )}
         </Card>
