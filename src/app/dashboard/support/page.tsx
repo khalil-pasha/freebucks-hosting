@@ -1,11 +1,13 @@
 "use client"
+import { useState } from "react"
 import { motion } from "framer-motion"
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Textarea } from "@/components/ui/textarea"
-import { LifeBuoy, MessageSquare, BookOpen, ExternalLink, HelpCircle, AlertCircle } from "lucide-react"
+import { LifeBuoy, MessageSquare, BookOpen, ExternalLink, HelpCircle, AlertCircle, RefreshCw } from "lucide-react"
 import Link from "next/link"
+import api from "@/lib/api"
 
 const faqShortcuts = [
   { q: "How do I install modpacks?", a: "Go to your server panel, navigate to 'Software', select your modpack provider (CurseForge/Modrinth), and click install." },
@@ -14,6 +16,13 @@ const faqShortcuts = [
 ]
 
 export default function SupportPage() {
+  const [subject, setSubject] = useState("")
+  const [serverId, setServerId] = useState("")
+  const [message, setMessage] = useState("")
+  const [loading, setLoading] = useState(false)
+  const [errorMsg, setErrorMsg] = useState("")
+  const [successMsg, setSuccessMsg] = useState("")
+
   const containerVariants = {
     hidden: { opacity: 0 },
     visible: { opacity: 1, transition: { staggerChildren: 0.1 } }
@@ -22,6 +31,38 @@ export default function SupportPage() {
   const itemVariants = {
     hidden: { y: 20, opacity: 0 },
     visible: { y: 0, opacity: 1, transition: { duration: 0.4 } }
+  }
+
+  const handleSubmit = async () => {
+    setErrorMsg("");
+    setSuccessMsg("");
+
+    if (!subject || subject.length < 3) {
+      setErrorMsg("Subject must be at least 3 characters.");
+      return;
+    }
+    if (!message || message.length < 10) {
+      setErrorMsg("Message must be at least 10 characters.");
+      return;
+    }
+
+    setLoading(true);
+    try {
+      const fullMessage = serverId ? `Server ID: ${serverId}\n\n${message}` : message;
+      await api.post('/support', {
+        subject,
+        message: fullMessage
+      });
+      setSuccessMsg("Ticket submitted successfully! Our team will get back to you soon.");
+      setSubject("");
+      setServerId("");
+      setMessage("");
+    } catch (err: any) {
+      console.error(err);
+      setErrorMsg(err.response?.data?.error || "Failed to submit ticket.");
+    } finally {
+      setLoading(false);
+    }
   }
 
   return (
@@ -114,11 +155,21 @@ export default function SupportPage() {
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div className="space-y-2">
                     <label className="text-sm font-medium">Subject</label>
-                    <Input placeholder="e.g., Server stuck starting" className="bg-background border-border/50" />
+                    <Input 
+                      placeholder="e.g., Server stuck starting" 
+                      className="bg-background border-border/50" 
+                      value={subject}
+                      onChange={(e) => setSubject(e.target.value)}
+                    />
                   </div>
                   <div className="space-y-2">
                     <label className="text-sm font-medium">Server ID (Optional)</label>
-                    <Input placeholder="fb-192a" className="bg-background border-border/50 font-mono" />
+                    <Input 
+                      placeholder="fb-192a" 
+                      className="bg-background border-border/50 font-mono" 
+                      value={serverId}
+                      onChange={(e) => setServerId(e.target.value)}
+                    />
                   </div>
                 </div>
                 
@@ -127,11 +178,23 @@ export default function SupportPage() {
                   <Textarea 
                     placeholder="Describe your issue in detail..." 
                     className="min-h-[120px] bg-background border-border/50"
+                    value={message}
+                    onChange={(e) => setMessage(e.target.value)}
                   />
                 </div>
                 
+                {errorMsg && <p className="text-red-500 text-sm font-medium">{errorMsg}</p>}
+                {successMsg && <p className="text-success text-sm font-medium">{successMsg}</p>}
+
                 <div className="flex justify-end pt-2">
-                  <Button className="bg-primary hover:bg-primary/90 text-white px-8">Submit Ticket</Button>
+                  <Button 
+                    onClick={handleSubmit} 
+                    disabled={loading} 
+                    className="bg-primary hover:bg-primary/90 text-white px-8"
+                  >
+                    {loading ? <RefreshCw className="w-4 h-4 mr-2 animate-spin" /> : null}
+                    Submit Ticket
+                  </Button>
                 </div>
               </CardContent>
             </Card>

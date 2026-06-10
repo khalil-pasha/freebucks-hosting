@@ -10,6 +10,8 @@ export default function AdminSupportPage() {
   const [loading, setLoading] = useState(true)
   const [selectedTicketId, setSelectedTicketId] = useState<string | null>(null)
   const [filter, setFilter] = useState<'OPEN' | 'PENDING' | 'CLOSED'>('OPEN')
+  const [replyText, setReplyText] = useState("")
+  const [replyLoading, setReplyLoading] = useState(false)
 
   const fetchTickets = async () => {
     try {
@@ -31,6 +33,32 @@ export default function AdminSupportPage() {
 
   const filteredTickets = tickets.filter(t => t.status === filter)
   const selectedTicket = tickets.find(t => t.id === selectedTicketId)
+
+  const handleClose = async (id: string) => {
+    if (!confirm("Are you sure you want to close this ticket?")) return;
+    try {
+      await api.post(`/admin/support/${id}/close`)
+      fetchTickets()
+    } catch (err: any) {
+      console.error(err)
+      alert(err.response?.data?.error || "Failed to close ticket.")
+    }
+  }
+
+  const handleReply = async (id: string) => {
+    if (!replyText || replyText.trim().length === 0) return;
+    setReplyLoading(true);
+    try {
+      await api.post(`/admin/support/${id}/reply`, { message: replyText })
+      setReplyText("")
+      fetchTickets()
+    } catch (err: any) {
+      console.error(err)
+      alert(err.response?.data?.error || "Failed to send reply.")
+    } finally {
+      setReplyLoading(false);
+    }
+  }
 
   return (
     <div className="max-w-7xl mx-auto h-[calc(100vh-8rem)] flex flex-col space-y-4">
@@ -116,7 +144,9 @@ export default function AdminSupportPage() {
                   <p className="text-xs text-foreground/50 mt-1">Ticket #{selectedTicket.id.slice(-4)} • {selectedTicket.user?.username}</p>
                 </div>
                 <div className="flex gap-2">
-                  <Button variant="outline" size="sm" className="border-red-500/50 text-red-500 hover:bg-red-500 hover:text-white"><XCircle className="w-4 h-4 mr-2"/> Close Ticket</Button>
+                  {selectedTicket.status !== 'CLOSED' && (
+                    <Button onClick={() => handleClose(selectedTicket.id)} variant="outline" size="sm" className="border-red-500/50 text-red-500 hover:bg-red-500 hover:text-white"><XCircle className="w-4 h-4 mr-2"/> Close Ticket</Button>
+                  )}
                   <Button variant="ghost" size="icon" className="w-8 h-8"><MoreVertical className="w-4 h-4"/></Button>
                 </div>
               </div>
@@ -130,25 +160,33 @@ export default function AdminSupportPage() {
                       <span className="font-bold">{selectedTicket.user?.username}</span>
                       <span className="text-xs text-foreground/50">{new Date(selectedTicket.createdAt).toLocaleString()}</span>
                     </div>
-                    <div className="bg-card border border-border/50 p-3 rounded-xl text-sm text-foreground/80 rounded-tl-none">
-                      {selectedTicket.messages?.[0]?.content || "No message content."}
+                    <div className="bg-card border border-border/50 p-3 rounded-xl text-sm text-foreground/80 rounded-tl-none whitespace-pre-wrap">
+                      {selectedTicket.messages?.[0]?.message || "No message content."}
                     </div>
                   </div>
                 </div>
               </div>
 
-              <div className="p-4 border-t border-border/50 bg-background/50">
-                <div className="flex gap-2">
-                  <textarea 
-                    className="flex-1 bg-card border border-border/50 rounded-xl p-3 text-sm resize-none outline-none focus:border-primary transition-colors"
-                    placeholder="Type your reply here..."
-                    rows={2}
-                  ></textarea>
-                  <Button className="bg-primary hover:bg-primary/90 text-white h-auto px-6">
-                    <Send className="w-4 h-4" />
-                  </Button>
+              {selectedTicket.status !== 'CLOSED' && (
+                <div className="p-4 border-t border-border/50 bg-background/50">
+                  <div className="flex gap-2">
+                    <textarea 
+                      className="flex-1 bg-card border border-border/50 rounded-xl p-3 text-sm resize-none outline-none focus:border-primary transition-colors"
+                      placeholder="Type your reply here..."
+                      rows={2}
+                      value={replyText}
+                      onChange={(e) => setReplyText(e.target.value)}
+                    ></textarea>
+                    <Button 
+                      onClick={() => handleReply(selectedTicket.id)} 
+                      disabled={replyLoading}
+                      className="bg-primary hover:bg-primary/90 text-white h-auto px-6"
+                    >
+                      {replyLoading ? <RefreshCw className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
+                    </Button>
+                  </div>
                 </div>
-              </div>
+              )}
             </>
           ) : (
             <div className="flex-1 flex items-center justify-center text-foreground/50">
