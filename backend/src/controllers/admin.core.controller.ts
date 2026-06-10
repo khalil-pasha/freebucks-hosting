@@ -105,6 +105,102 @@ export class AdminCoreController {
     }
   }
 
+  public static async addCredits(req: Request, res: Response) {
+    try {
+      const { identifier, amount, reason } = req.body;
+      if (!identifier || !amount || amount <= 0) return res.status(400).json({ error: 'Valid identifier and positive amount required' });
+
+      let user = await db.user.findUnique({ where: { discordId: identifier } });
+      if (!user) user = await db.user.findFirst({ where: { username: identifier } });
+      if (!user) return res.status(404).json({ error: `User '${identifier}' not found` });
+
+      await db.user.update({
+        where: { id: user.id },
+        data: { balance: { increment: amount } }
+      });
+
+      await db.creditsTransaction.create({
+        data: {
+          userId: user.id,
+          amount: amount,
+          type: 'EARNED',
+          source: reason || 'ADMIN_ADD'
+        }
+      });
+
+      res.json({ success: true, newBalance: user.balance + amount });
+    } catch (error: any) {
+      console.error('Add credits error:', error);
+      res.status(500).json({ error: error.message });
+    }
+  }
+
+  public static async removeCredits(req: Request, res: Response) {
+    try {
+      const { identifier, amount, reason } = req.body;
+      if (!identifier || !amount || amount <= 0) return res.status(400).json({ error: 'Valid identifier and positive amount required' });
+
+      let user = await db.user.findUnique({ where: { discordId: identifier } });
+      if (!user) user = await db.user.findFirst({ where: { username: identifier } });
+      if (!user) return res.status(404).json({ error: `User '${identifier}' not found` });
+
+      const newBalance = Math.max(0, user.balance - amount);
+
+      await db.user.update({
+        where: { id: user.id },
+        data: { balance: newBalance }
+      });
+
+      await db.creditsTransaction.create({
+        data: {
+          userId: user.id,
+          amount: Math.min(user.balance, amount), // Don't log more than what was actually removed
+          type: 'SPENT',
+          source: reason || 'ADMIN_REMOVE'
+        }
+      });
+
+      res.json({ success: true, newBalance });
+    } catch (error: any) {
+      console.error('Remove credits error:', error);
+      res.status(500).json({ error: error.message });
+    }
+  }
+
+  public static async resetCredits(req: Request, res: Response) {
+    try {
+      const { identifier, reason } = req.body;
+      if (!identifier) return res.status(400).json({ error: 'Identifier required' });
+
+      let user = await db.user.findUnique({ where: { discordId: identifier } });
+      if (!user) user = await db.user.findFirst({ where: { username: identifier } });
+      if (!user) return res.status(404).json({ error: `User '${identifier}' not found` });
+
+      const removedAmount = user.balance;
+
+      await db.user.update({
+        where: { id: user.id },
+        data: { balance: 0 }
+      });
+
+      if (removedAmount > 0) {
+        await db.creditsTransaction.create({
+          data: {
+            userId: user.id,
+            amount: removedAmount,
+            type: 'SPENT',
+            source: reason || 'ADMIN_RESET'
+          }
+        });
+      }
+
+      res.json({ success: true, newBalance: 0 });
+    } catch (error: any) {
+      console.error('Reset credits error:', error);
+      res.status(500).json({ error: error.message });
+    }
+  }
+
   public static async getVouchers(req: Request, res: Response) {
     try {
       const vouchers = await db.voucher.findMany({

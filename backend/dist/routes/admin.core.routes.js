@@ -10,6 +10,9 @@ router.get('/stats', admin_core_controller_1.AdminCoreController.getDashboardSta
 router.get('/users', admin_core_controller_1.AdminCoreController.getUsers);
 router.get('/servers', admin_core_controller_1.AdminCoreController.getServers);
 router.get('/credits', admin_core_controller_1.AdminCoreController.getCredits);
+router.post('/credits/add', admin_core_controller_1.AdminCoreController.addCredits);
+router.post('/credits/remove', admin_core_controller_1.AdminCoreController.removeCredits);
+router.post('/credits/reset', admin_core_controller_1.AdminCoreController.resetCredits);
 router.get('/vouchers', admin_core_controller_1.AdminCoreController.getVouchers);
 router.get('/referrals', admin_core_controller_1.AdminCoreController.getReferrals);
 router.get('/premium', admin_core_controller_1.AdminCoreController.getPremiumOrders);

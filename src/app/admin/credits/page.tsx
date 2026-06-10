@@ -11,6 +11,13 @@ export default function AdminCreditsPage() {
   const [stats, setStats] = useState<any>({ totalCreditsEarned: 0, totalCreditsBurned: 0 })
   const [loading, setLoading] = useState(true)
 
+  // Form State
+  const [identifier, setIdentifier] = useState("")
+  const [amount, setAmount] = useState("")
+  const [reason, setReason] = useState("")
+  const [actionLoading, setActionLoading] = useState(false)
+  const [errorMsg, setErrorMsg] = useState("")
+
   const fetchData = async () => {
     try {
       const [transRes, statsRes] = await Promise.all([
@@ -29,6 +36,38 @@ export default function AdminCreditsPage() {
   useEffect(() => {
     fetchData()
   }, [])
+
+  const handleAction = async (action: 'add' | 'remove' | 'reset') => {
+    setErrorMsg("");
+    if (!identifier) {
+      setErrorMsg("Please enter a Discord ID or Username");
+      return;
+    }
+    if (action !== 'reset' && (!amount || isNaN(Number(amount)) || Number(amount) <= 0)) {
+      setErrorMsg("Please enter a valid positive amount");
+      return;
+    }
+
+    if (!confirm(`Are you sure you want to ${action} credits?`)) return;
+
+    setActionLoading(true);
+    try {
+      await api.post(`/admin/core/credits/${action}`, {
+        identifier,
+        amount: action !== 'reset' ? Number(amount) : undefined,
+        reason: reason || undefined
+      });
+      fetchData(); // Refresh table and stats
+      setAmount("");
+      setReason("");
+      alert("Success");
+    } catch (err: any) {
+      console.error(err);
+      setErrorMsg(err.response?.data?.error || `Failed to ${action} credits`);
+    } finally {
+      setActionLoading(false);
+    }
+  }
 
   return (
     <div className="max-w-7xl mx-auto space-y-8">
@@ -72,21 +111,39 @@ export default function AdminCreditsPage() {
           <CardContent className="space-y-4">
              <div className="space-y-2">
                <label className="text-sm font-medium">Discord ID or Username</label>
-               <Input placeholder="e.g. 123456789 or username" className="bg-background" />
+               <Input 
+                 placeholder="e.g. 123456789 or username" 
+                 className="bg-background"
+                 value={identifier}
+                 onChange={(e) => setIdentifier(e.target.value)}
+               />
              </div>
              <div className="space-y-2">
                <label className="text-sm font-medium">Amount</label>
-               <Input type="number" placeholder="0.0" className="bg-background" />
+               <Input 
+                 type="number" 
+                 placeholder="0.0" 
+                 className="bg-background"
+                 value={amount}
+                 onChange={(e) => setAmount(e.target.value)}
+               />
              </div>
              <div className="space-y-2">
                <label className="text-sm font-medium">Reason (Optional)</label>
-               <Input placeholder="e.g. Bug bounty reward" className="bg-background" />
+               <Input 
+                 placeholder="e.g. Bug bounty reward" 
+                 className="bg-background"
+                 value={reason}
+                 onChange={(e) => setReason(e.target.value)}
+               />
              </div>
              
+             {errorMsg && <p className="text-red-500 text-sm font-medium">{errorMsg}</p>}
+
              <div className="pt-4 grid grid-cols-2 gap-2">
-               <Button className="w-full bg-success hover:bg-success/90 text-white"><PlusCircle className="w-4 h-4 mr-2"/> Give</Button>
-               <Button variant="outline" className="w-full border-red-500/50 text-red-500 hover:bg-red-500/10"><MinusCircle className="w-4 h-4 mr-2"/> Remove</Button>
-               <Button variant="outline" className="w-full col-span-2 border-orange-500/50 text-orange-500 hover:bg-orange-500/10"><RotateCcw className="w-4 h-4 mr-2"/> Reset to Zero</Button>
+               <Button onClick={() => handleAction('add')} disabled={actionLoading} className="w-full bg-success hover:bg-success/90 text-white"><PlusCircle className="w-4 h-4 mr-2"/> Give</Button>
+               <Button onClick={() => handleAction('remove')} disabled={actionLoading} variant="outline" className="w-full border-red-500/50 text-red-500 hover:bg-red-500/10"><MinusCircle className="w-4 h-4 mr-2"/> Remove</Button>
+               <Button onClick={() => handleAction('reset')} disabled={actionLoading} variant="outline" className="w-full col-span-2 border-orange-500/50 text-orange-500 hover:bg-orange-500/10"><RotateCcw className="w-4 h-4 mr-2"/> Reset to Zero</Button>
              </div>
           </CardContent>
         </Card>

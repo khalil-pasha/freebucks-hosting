@@ -99,6 +99,97 @@ class AdminCoreController {
             res.status(500).json({ error: error.message });
         }
     }
+    static async addCredits(req, res) {
+        try {
+            const { identifier, amount, reason } = req.body;
+            if (!identifier || !amount || amount <= 0)
+                return res.status(400).json({ error: 'Valid identifier and positive amount required' });
+            let user = await db_1.db.user.findUnique({ where: { discordId: identifier } });
+            if (!user)
+                user = await db_1.db.user.findFirst({ where: { username: identifier } });
+            if (!user)
+                return res.status(404).json({ error: `User '${identifier}' not found` });
+            await db_1.db.user.update({
+                where: { id: user.id },
+                data: { balance: { increment: amount } }
+            });
+            await db_1.db.creditsTransaction.create({
+                data: {
+                    userId: user.id,
+                    amount: amount,
+                    type: 'EARNED',
+                    source: reason || 'ADMIN_ADD'
+                }
+            });
+            res.json({ success: true, newBalance: user.balance + amount });
+        }
+        catch (error) {
+            console.error('Add credits error:', error);
+            res.status(500).json({ error: error.message });
+        }
+    }
+    static async removeCredits(req, res) {
+        try {
+            const { identifier, amount, reason } = req.body;
+            if (!identifier || !amount || amount <= 0)
+                return res.status(400).json({ error: 'Valid identifier and positive amount required' });
+            let user = await db_1.db.user.findUnique({ where: { discordId: identifier } });
+            if (!user)
+                user = await db_1.db.user.findFirst({ where: { username: identifier } });
+            if (!user)
+                return res.status(404).json({ error: `User '${identifier}' not found` });
+            const newBalance = Math.max(0, user.balance - amount);
+            await db_1.db.user.update({
+                where: { id: user.id },
+                data: { balance: newBalance }
+            });
+            await db_1.db.creditsTransaction.create({
+                data: {
+                    userId: user.id,
+                    amount: Math.min(user.balance, amount), // Don't log more than what was actually removed
+                    type: 'SPENT',
+                    source: reason || 'ADMIN_REMOVE'
+                }
+            });
+            res.json({ success: true, newBalance });
+        }
+        catch (error) {
+            console.error('Remove credits error:', error);
+            res.status(500).json({ error: error.message });
+        }
+    }
+    static async resetCredits(req, res) {
+        try {
+            const { identifier, reason } = req.body;
+            if (!identifier)
+                return res.status(400).json({ error: 'Identifier required' });
+            let user = await db_1.db.user.findUnique({ where: { discordId: identifier } });
+            if (!user)
+                user = await db_1.db.user.findFirst({ where: { username: identifier } });
+            if (!user)
+                return res.status(404).json({ error: `User '${identifier}' not found` });
+            const removedAmount = user.balance;
+            await db_1.db.user.update({
+                where: { id: user.id },
+                data: { balance: 0 }
+            });
+            if (removedAmount > 0) {
+                await db_1.db.creditsTransaction.create({
+                    data: {
+                        userId: user.id,
+                        amount: removedAmount,
+                        type: 'SPENT',
+                        source: reason || 'ADMIN_RESET'
+                    }
+                });
+            }
+            res.json({ success: true, newBalance: 0 });
+        }
+        catch (error) {
+            console.error('Reset credits error:', error);
+            res.status(500).json({ error: error.message });
+        }
+    }
     static async getVouchers(req, res) {
         try {
             const vouchers = await db_1.db.voucher.findMany({
