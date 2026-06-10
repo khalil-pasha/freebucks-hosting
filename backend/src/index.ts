@@ -7,7 +7,8 @@ dotenv.config();
 validateEnv();
 
 const app = express();
-app.set("trust proxy", 1);
+// Trust Cloudflare/Nginx proxies to correctly resolve req.ip
+app.set("trust proxy", true);
 const port = process.env.PORT || 5000;
 
 import { securityHeaders, voucherLimiter, creditsLimiter, ticketLimiter, adminLimiter } from './middleware/security';
@@ -16,17 +17,28 @@ import { requestLogger } from './middleware/logger';
 import { db } from './utils/db';
 import { AdminQueueService } from './services/queue.service';
 import { PterodactylService } from './services/pterodactyl.service';
+import { requireAdmin } from './middleware/admin';
 
 app.use(securityHeaders);
 app.use(requestLogger);
+
+// Bulletproof CORS Configuration
+const allowedOrigins = ["https://app.freebucks.host", "http://localhost:3000"];
 const corsOptions = {
-  origin: "https://app.freebucks.host",
+  origin: function (origin: any, callback: any) {
+    if (!origin || allowedOrigins.includes(origin)) {
+      callback(null, true);
+    } else {
+      callback(new Error('Not allowed by CORS'));
+    }
+  },
   credentials: true,
   methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
   allowedHeaders: ["Content-Type", "Authorization"]
 };
 app.use(cors(corsOptions));
 app.options("*", cors(corsOptions));
+
 app.use(express.json({ limit: '10mb' }));
 
 import path from 'path';
@@ -52,22 +64,27 @@ import adminSupportRoutes from './routes/admin.support.routes';
 import profileRoutes from './routes/profile.routes';
 import adminCoreRoutes from './routes/admin.core.routes';
 
+// User Routes
 app.use('/auth', authRoutes);
-app.use('/admin/auth', adminAuthRoutes);
 app.use('/servers', serverRoutes);
-app.use('/admin/servers', adminServerRoutes);
 app.use('/credits', creditsLimiter, creditsRoutes);
 app.use('/vouchers', voucherLimiter, voucherRoutes);
 app.use('/referrals', referralRoutes);
 app.use('/queue', queueRoutes);
-app.use('/admin/queue', adminQueueRoutes);
-app.use('/admin/billing', adminBillingRoutes);
 app.use('/notifications', notificationRoutes);
-app.use('/admin/settings', adminSettingsRoutes);
 app.use('/support/tickets', ticketLimiter, supportRoutes);
-app.use('/admin/support/tickets', adminSupportRoutes);
 app.use('/profile', profileRoutes);
-app.use('/admin/core', adminCoreRoutes);
+
+// Admin Auth (Public, but rate limited)
+app.use('/admin/auth', adminLimiter, adminAuthRoutes);
+
+// Admin Protected Routes
+app.use('/admin/core', adminLimiter, requireAdmin, adminCoreRoutes);
+app.use('/admin/servers', adminLimiter, requireAdmin, adminServerRoutes);
+app.use('/admin/queue', adminLimiter, requireAdmin, adminQueueRoutes);
+app.use('/admin/billing', adminLimiter, requireAdmin, adminBillingRoutes);
+app.use('/admin/settings', adminLimiter, requireAdmin, adminSettingsRoutes);
+app.use('/admin/support/tickets', adminLimiter, requireAdmin, adminSupportRoutes);
 
 app.get('/health', async (req: Request, res: Response) => {
   try {

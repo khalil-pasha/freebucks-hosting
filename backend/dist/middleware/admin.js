@@ -11,24 +11,28 @@ const requireAdmin = async (req, res, next) => {
     try {
         const token = req.cookies?.admin_token;
         if (!token) {
-            return res.status(401).json({ error: 'Unauthorized: missing admin session' });
+            res.status(401).json({ error: 'Unauthorized: missing admin session' });
+            return;
         }
         let decoded;
         try {
             decoded = jsonwebtoken_1.default.verify(token, JWT_SECRET);
         }
         catch (e) {
-            return res.status(401).json({ error: 'Unauthorized: invalid or expired admin session' });
+            res.status(401).json({ error: 'Unauthorized: invalid or expired admin session' });
+            return;
         }
         if (!decoded || decoded.role !== 'ADMIN') {
-            return res.status(403).json({ error: 'Forbidden: Admin access required' });
+            res.status(403).json({ error: 'Forbidden: Admin access required' });
+            return;
         }
         const dbAdmin = await db_1.db.admin.findUnique({
             where: { id: decoded.id },
             select: { id: true }
         });
         if (!dbAdmin) {
-            return res.status(403).json({ error: 'Forbidden: Admin user not found' });
+            res.status(403).json({ error: 'Forbidden: Admin user not found' });
+            return;
         }
         // Set an admin specific property on req if needed by routes
         req.adminUser = { id: decoded.id, role: 'ADMIN' };
@@ -36,7 +40,8 @@ const requireAdmin = async (req, res, next) => {
     }
     catch (error) {
         console.error('Admin middleware error:', error);
-        return res.status(500).json({ error: 'Internal server error during authorization' });
+        res.status(500).json({ error: 'Internal server error during authorization' });
+        return;
     }
 };
 exports.requireAdmin = requireAdmin;

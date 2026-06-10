@@ -4,23 +4,26 @@ import { db } from '../utils/db';
 
 const JWT_SECRET = process.env.JWT_SECRET || 'fallback_secret';
 
-export const requireAdmin = async (req: Request, res: Response, next: NextFunction) => {
+export const requireAdmin = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
   try {
     const token = req.cookies?.admin_token;
     
     if (!token) {
-      return res.status(401).json({ error: 'Unauthorized: missing admin session' });
+      res.status(401).json({ error: 'Unauthorized: missing admin session' });
+      return;
     }
 
     let decoded: any;
     try {
       decoded = jwt.verify(token, JWT_SECRET);
     } catch (e) {
-      return res.status(401).json({ error: 'Unauthorized: invalid or expired admin session' });
+      res.status(401).json({ error: 'Unauthorized: invalid or expired admin session' });
+      return;
     }
 
     if (!decoded || decoded.role !== 'ADMIN') {
-      return res.status(403).json({ error: 'Forbidden: Admin access required' });
+      res.status(403).json({ error: 'Forbidden: Admin access required' });
+      return;
     }
 
     const dbAdmin = await db.admin.findUnique({
@@ -29,7 +32,8 @@ export const requireAdmin = async (req: Request, res: Response, next: NextFuncti
     });
 
     if (!dbAdmin) {
-      return res.status(403).json({ error: 'Forbidden: Admin user not found' });
+      res.status(403).json({ error: 'Forbidden: Admin user not found' });
+      return;
     }
 
     // Set an admin specific property on req if needed by routes
@@ -38,6 +42,7 @@ export const requireAdmin = async (req: Request, res: Response, next: NextFuncti
     next();
   } catch (error) {
     console.error('Admin middleware error:', error);
-    return res.status(500).json({ error: 'Internal server error during authorization' });
+    res.status(500).json({ error: 'Internal server error during authorization' });
+    return;
   }
 };

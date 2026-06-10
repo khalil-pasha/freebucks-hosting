@@ -2,9 +2,9 @@ module.exports = {
   apps: [
     {
       name: 'freebucks-backend',
-      script: 'npm',
-      args: 'start',
-      cwd: './backend',
+      script: 'node',
+      args: 'dist/index.js',
+      cwd: '/var/www/freebucks-hosting/backend',
       instances: 'max',
       exec_mode: 'cluster',
       autorestart: true,
@@ -15,17 +15,17 @@ module.exports = {
         PORT: 5000,
       },
       log_date_format: 'YYYY-MM-DD HH:mm:ss',
-      error_file: 'logs/backend-error.log',
-      out_file: 'logs/backend-out.log',
+      error_file: '/var/www/freebucks-hosting/backend/logs/backend-error.log',
+      out_file: '/var/www/freebucks-hosting/backend/logs/backend-out.log',
       merge_logs: true
     },
     {
       name: 'freebucks-frontend',
       script: 'npm',
       args: 'start',
-      cwd: './frontend',
+      cwd: '/var/www/freebucks-hosting/frontend',
       instances: 1,
-      exec_mode: 'fork', // Next.js typically runs better in fork mode for standard setups
+      exec_mode: 'fork',
       autorestart: true,
       watch: false,
       max_memory_restart: '1G',
@@ -34,8 +34,8 @@ module.exports = {
         PORT: 3000,
       },
       log_date_format: 'YYYY-MM-DD HH:mm:ss',
-      error_file: 'logs/frontend-error.log',
-      out_file: 'logs/frontend-out.log',
+      error_file: '/var/www/freebucks-hosting/frontend/logs/frontend-error.log',
+      out_file: '/var/www/freebucks-hosting/frontend/logs/frontend-out.log',
       merge_logs: true
     }
   ]

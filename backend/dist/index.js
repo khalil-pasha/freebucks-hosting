@@ -10,7 +10,8 @@ const env_1 = require("./utils/env");
 dotenv_1.default.config();
 (0, env_1.validateEnv)();
 const app = (0, express_1.default)();
-app.set("trust proxy", 1);
+// Trust Cloudflare/Nginx proxies to correctly resolve req.ip
+app.set("trust proxy", true);
 const port = process.env.PORT || 5000;
 const security_1 = require("./middleware/security");
 const errorHandler_1 = require("./middleware/errorHandler");
@@ -18,10 +19,20 @@ const logger_1 = require("./middleware/logger");
 const db_1 = require("./utils/db");
 const queue_service_1 = require("./services/queue.service");
 const pterodactyl_service_1 = require("./services/pterodactyl.service");
+const admin_1 = require("./middleware/admin");
 app.use(security_1.securityHeaders);
 app.use(logger_1.requestLogger);
+// Bulletproof CORS Configuration
+const allowedOrigins = ["https://app.freebucks.host", "http://localhost:3000"];
 const corsOptions = {
-    origin: "https://app.freebucks.host",
+    origin: function (origin, callback) {
+        if (!origin || allowedOrigins.includes(origin)) {
+            callback(null, true);
+        }
+        else {
+            callback(new Error('Not allowed by CORS'));
+        }
+    },
     credentials: true,
     methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
     allowedHeaders: ["Content-Type", "Authorization"]
@@ -49,22 +60,25 @@ const support_routes_1 = __importDefault(require("./routes/support.routes"));
 const admin_support_routes_1 = __importDefault(require("./routes/admin.support.routes"));
 const profile_routes_1 = __importDefault(require("./routes/profile.routes"));
 const admin_core_routes_1 = __importDefault(require("./routes/admin.core.routes"));
+// User Routes
 app.use('/auth', auth_routes_1.default);
-app.use('/admin/auth', admin_auth_routes_1.default);
 app.use('/servers', server_routes_1.default);
-app.use('/admin/servers', admin_server_routes_1.default);
 app.use('/credits', security_1.creditsLimiter, credits_routes_1.default);
 app.use('/vouchers', security_1.voucherLimiter, voucher_routes_1.default);
 app.use('/referrals', referral_routes_1.default);
 app.use('/queue', queue_routes_1.default);
-app.use('/admin/queue', admin_queue_routes_1.default);
-app.use('/admin/billing', admin_billing_routes_1.default);
 app.use('/notifications', notification_routes_1.default);
-app.use('/admin/settings', admin_settings_routes_1.default);
 app.use('/support/tickets', security_1.ticketLimiter, support_routes_1.default);
-app.use('/admin/support/tickets', admin_support_routes_1.default);
 app.use('/profile', profile_routes_1.default);
-app.use('/admin/core', admin_core_routes_1.default);
+// Admin Auth (Public, but rate limited)
+app.use('/admin/auth', security_1.adminLimiter, admin_auth_routes_1.default);
+// Admin Protected Routes
+app.use('/admin/core', security_1.adminLimiter, admin_1.requireAdmin, admin_core_routes_1.default);
+app.use('/admin/servers', security_1.adminLimiter, admin_1.requireAdmin, admin_server_routes_1.default);
+app.use('/admin/queue', security_1.adminLimiter, admin_1.requireAdmin, admin_queue_routes_1.default);
+app.use('/admin/billing', security_1.adminLimiter, admin_1.requireAdmin, admin_billing_routes_1.default);
+app.use('/admin/settings', security_1.adminLimiter, admin_1.requireAdmin, admin_settings_routes_1.default);
+app.use('/admin/support/tickets', security_1.adminLimiter, admin_1.requireAdmin, admin_support_routes_1.default);
 app.get('/health', async (req, res) => {
     try {
         // Check Database
