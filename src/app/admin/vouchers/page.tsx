@@ -10,6 +10,14 @@ export default function AdminVouchersPage() {
   const [vouchers, setVouchers] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
 
+  // Form State
+  const [code, setCode] = useState("")
+  const [rewardAmount, setRewardAmount] = useState("")
+  const [maxUses, setMaxUses] = useState("")
+  const [actionLoading, setActionLoading] = useState(false)
+  const [errorMsg, setErrorMsg] = useState("")
+  const [successMsg, setSuccessMsg] = useState("")
+
   const fetchVouchers = async () => {
     try {
       const res = await api.get('/admin/core/vouchers')
@@ -24,6 +32,47 @@ export default function AdminVouchersPage() {
   useEffect(() => {
     fetchVouchers()
   }, [])
+
+  const handleCreate = async () => {
+    setErrorMsg("");
+    setSuccessMsg("");
+    
+    if (!code || !rewardAmount || !maxUses) {
+      setErrorMsg("Please fill in all required fields.");
+      return;
+    }
+
+    setActionLoading(true);
+    try {
+      await api.post('/admin/core/vouchers', {
+        code,
+        rewardAmount: Number(rewardAmount),
+        maxUses: Number(maxUses)
+      });
+      setSuccessMsg("Voucher created successfully!");
+      setCode("");
+      setRewardAmount("");
+      setMaxUses("");
+      fetchVouchers();
+    } catch (err: any) {
+      console.error(err);
+      setErrorMsg(err.response?.data?.error || "Failed to create voucher");
+    } finally {
+      setActionLoading(false);
+    }
+  }
+
+  const handleDelete = async (id: string) => {
+    if (!confirm("Are you sure you want to delete this voucher? This cannot be undone.")) return;
+    
+    try {
+      await api.delete(`/admin/core/vouchers/${id}`);
+      fetchVouchers();
+    } catch (err: any) {
+      console.error(err);
+      alert(err.response?.data?.error || "Failed to delete voucher");
+    }
+  }
 
   return (
     <div className="max-w-7xl mx-auto space-y-8">
@@ -40,23 +89,47 @@ export default function AdminVouchersPage() {
           <CardContent className="space-y-4">
              <div className="space-y-2">
                <label className="text-sm font-medium">Voucher Code</label>
-               <Input placeholder="e.g. SUMMER2026" className="bg-background uppercase" />
+               <Input 
+                 placeholder="e.g. SUMMER2026" 
+                 className="bg-background uppercase" 
+                 value={code}
+                 onChange={(e) => setCode(e.target.value.toUpperCase())}
+               />
              </div>
              <div className="space-y-2">
                <label className="text-sm font-medium">Credits Reward</label>
-               <Input type="number" placeholder="50.0" className="bg-background" />
+               <Input 
+                 type="number" 
+                 placeholder="50.0" 
+                 className="bg-background" 
+                 value={rewardAmount}
+                 onChange={(e) => setRewardAmount(e.target.value)}
+               />
              </div>
              <div className="space-y-2">
                <label className="text-sm font-medium">Max Global Uses</label>
-               <Input type="number" placeholder="1000" className="bg-background" />
+               <Input 
+                 type="number" 
+                 placeholder="1000" 
+                 className="bg-background" 
+                 value={maxUses}
+                 onChange={(e) => setMaxUses(e.target.value)}
+               />
              </div>
              <div className="space-y-2">
                <label className="text-sm font-medium">Uses Per User</label>
                <Input type="number" defaultValue="1" className="bg-background" disabled />
              </div>
              
+             {errorMsg && <p className="text-red-500 text-sm font-medium">{errorMsg}</p>}
+             {successMsg && <p className="text-success text-sm font-medium">{successMsg}</p>}
+
              <div className="pt-4">
-               <Button className="w-full bg-purple-600 hover:bg-purple-700 text-white"><Plus className="w-4 h-4 mr-2"/> Generate Voucher</Button>
+               <Button 
+                 onClick={handleCreate}
+                 disabled={actionLoading}
+                 className="w-full bg-purple-600 hover:bg-purple-700 text-white"
+               ><Plus className="w-4 h-4 mr-2"/> Generate Voucher</Button>
              </div>
           </CardContent>
         </Card>
@@ -110,7 +183,7 @@ export default function AdminVouchersPage() {
                            </span>
                          </td>
                          <td className="px-4 py-3 text-right flex justify-end gap-1">
-                           <Button variant="ghost" size="icon" className="h-8 w-8 text-red-500 hover:bg-red-500/10" title="Delete"><Trash2 className="w-4 h-4" /></Button>
+                           <Button onClick={() => handleDelete(v.id)} variant="ghost" size="icon" className="h-8 w-8 text-red-500 hover:bg-red-500/10" title="Delete"><Trash2 className="w-4 h-4" /></Button>
                          </td>
                        </tr>
                      )

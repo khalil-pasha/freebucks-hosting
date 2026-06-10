@@ -215,6 +215,49 @@ export class AdminCoreController {
     }
   }
 
+  public static async createVoucher(req: Request, res: Response) {
+    try {
+      const { code, rewardAmount, maxUses } = req.body;
+      if (!code || !rewardAmount || !maxUses) {
+        return res.status(400).json({ error: 'Code, rewardAmount, and maxUses are required' });
+      }
+
+      const existing = await db.voucher.findUnique({ where: { code: code.toUpperCase() } });
+      if (existing) {
+        return res.status(400).json({ error: 'Voucher code already exists' });
+      }
+
+      const voucher = await db.voucher.create({
+        data: {
+          code: code.toUpperCase(),
+          rewardAmount: Number(rewardAmount),
+          maxUses: Number(maxUses),
+        }
+      });
+
+      res.json({ success: true, voucher });
+    } catch (error: any) {
+      console.error('Create voucher error:', error);
+      res.status(500).json({ error: error.message });
+    }
+  }
+
+  public static async deleteVoucher(req: Request, res: Response) {
+    try {
+      const id = req.params.id as string;
+      
+      // Cascade delete claims to avoid foreign key errors
+      await db.voucherClaim.deleteMany({ where: { voucherId: id } });
+      
+      await db.voucher.delete({ where: { id } });
+
+      res.json({ success: true });
+    } catch (error: any) {
+      console.error('Delete voucher error:', error);
+      res.status(500).json({ error: error.message });
+    }
+  }
+
   public static async getReferrals(req: Request, res: Response) {
     try {
       const referrals = await db.referral.findMany({

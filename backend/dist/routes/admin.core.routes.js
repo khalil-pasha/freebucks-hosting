@@ -14,6 +14,8 @@ router.post('/credits/add', admin_core_controller_1.AdminCoreController.addCredi
 router.post('/credits/remove', admin_core_controller_1.AdminCoreController.removeCredits);
 router.post('/credits/reset', admin_core_controller_1.AdminCoreController.resetCredits);
 router.get('/vouchers', admin_core_controller_1.AdminCoreController.getVouchers);
+router.post('/vouchers', admin_core_controller_1.AdminCoreController.createVoucher);
+router.delete('/vouchers/:id', admin_core_controller_1.AdminCoreController.deleteVoucher);
 router.get('/referrals', admin_core_controller_1.AdminCoreController.getReferrals);
 router.get('/premium', admin_core_controller_1.AdminCoreController.getPremiumOrders);
 router.get('/logs', admin_core_controller_1.AdminCoreController.getLogs);
