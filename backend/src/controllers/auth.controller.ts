@@ -4,17 +4,17 @@ import { db } from '../utils/db';
 import crypto from 'crypto';
 import { AuditService } from '../services/audit.service';
 
-// Basic in-memory store for states (for development). 
-// In prod, use Redis or signed cookies.
-const stateStore = new Set<string>();
-
 export class AuthController {
   public static login(req: Request, res: Response) {
     const state = crypto.randomBytes(16).toString('hex');
-    stateStore.add(state);
     
-    // Auto cleanup state after 5 mins
-    setTimeout(() => stateStore.delete(state), 5 * 60 * 1000);
+    // Store state in a cookie to support PM2 cluster mode seamlessly
+    res.cookie('oauth_state', state, {
+      maxAge: 5 * 60 * 1000, // 5 mins
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: 'lax', // lax allows it to be sent on top-level navigation from Discord
+    });
 
     const authUrl = AuthService.getDiscordAuthUrl(state);
     res.redirect(authUrl);
@@ -23,16 +23,18 @@ export class AuthController {
   public static async callback(req: Request, res: Response) {
     try {
       const { code, state } = req.query;
+      const savedState = req.cookies?.oauth_state;
 
       if (!code || !state) {
         return res.status(400).send('Missing code or state');
       }
 
-      if (!stateStore.has(state as string)) {
+      if (!savedState || state !== savedState) {
         return res.status(400).send('Invalid state parameter');
       }
 
-      stateStore.delete(state as string);
+      // Clear the state cookie after successful verification
+      res.clearCookie('oauth_state');
 
       // Exchange code
       const tokenData = await AuthService.exchangeCodeForToken(code as string);
