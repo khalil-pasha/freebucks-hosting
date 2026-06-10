@@ -4,6 +4,7 @@ exports.ServerController = void 0;
 const db_1 = require("../utils/db");
 const pterodactyl_service_1 = require("../services/pterodactyl.service");
 const audit_service_1 = require("../services/audit.service");
+const settings_service_1 = require("../services/settings.service");
 class ServerController {
     static async createServer(req, res) {
         try {
@@ -25,13 +26,18 @@ class ServerController {
             if (user.premiumOrders.length === 0 && user.servers.length >= 1) {
                 return res.status(403).json({ error: 'You already have an active free server. Upgrade to premium to create more servers.' });
             }
+            const globalServerCap = await settings_service_1.SettingsService.getNumber('globalServerCap');
+            const totalActiveServers = await db_1.db.server.count({ where: { status: { notIn: ['ARCHIVED'] } } });
+            if (totalActiveServers >= globalServerCap) {
+                return res.status(403).json({ error: 'Global server capacity reached. Please try again later.' });
+            }
             let costPerHour = 0;
             if (ramGB === 2 && cpu === 100 && disk === 5)
-                costPerHour = 1.5;
+                costPerHour = await settings_service_1.SettingsService.getNumber('serverRate2GB');
             else if (ramGB === 4 && cpu === 150 && disk === 10)
-                costPerHour = 3;
+                costPerHour = await settings_service_1.SettingsService.getNumber('serverRate4GB');
             else if (ramGB === 6 && cpu === 200 && disk === 15)
-                costPerHour = 6;
+                costPerHour = await settings_service_1.SettingsService.getNumber('serverRate6GB');
             else {
                 if (user.premiumOrders.length === 0) {
                     return res.status(403).json({ error: '8GB+ or Custom servers require an active Premium Order.' });
@@ -89,11 +95,11 @@ class ServerController {
             });
             let costPerHour = 0;
             if (ramGB === 2 && cpu === 100 && disk === 5)
-                costPerHour = 1.5;
+                costPerHour = await settings_service_1.SettingsService.getNumber('serverRate2GB');
             else if (ramGB === 4 && cpu === 150 && disk === 10)
-                costPerHour = 3;
+                costPerHour = await settings_service_1.SettingsService.getNumber('serverRate4GB');
             else if (ramGB === 6 && cpu === 200 && disk === 15)
-                costPerHour = 6;
+                costPerHour = await settings_service_1.SettingsService.getNumber('serverRate6GB');
             else {
                 if (!user || user.premiumOrders.length === 0) {
                     return res.status(403).json({ error: '8GB+ or Custom servers require an active Premium Order.' });

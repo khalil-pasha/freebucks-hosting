@@ -13,6 +13,10 @@ const DEFAULT_SETTINGS = [
     { key: 'premiumQueuePriority', type: 'number', defaultValue: 1 },
     { key: 'freeQueuePriority', type: 'number', defaultValue: 10 },
     { key: 'maintenanceMode', type: 'boolean', defaultValue: false },
+    { key: 'serverRate2GB', type: 'number', defaultValue: 1.5 },
+    { key: 'serverRate4GB', type: 'number', defaultValue: 3.0 },
+    { key: 'serverRate6GB', type: 'number', defaultValue: 6.0 },
+    { key: 'globalServerCap', type: 'number', defaultValue: 5000 },
 ];
 class SettingsService {
     static cache = new Map();
@@ -85,6 +89,38 @@ class SettingsService {
         // Invalidate/update cache
         this.cache.set(key, { value: newValue, expiresAt: Date.now() + this.TTL_MS });
         return newValue;
+    }
+    static async batchUpdate(adminId, updates) {
+        // Validate all keys first
+        for (const update of updates) {
+            if (!DEFAULT_SETTINGS.find(d => d.key === update.key)) {
+                throw new Error(`Unknown setting key: ${update.key}`);
+            }
+        }
+        const results = [];
+        await db_1.db.$transaction(async (tx) => {
+            for (const update of updates) {
+                const strValue = String(update.value);
+                const existing = await tx.setting.findUnique({ where: { key: update.key } });
+                await tx.setting.upsert({
+                    where: { key: update.key },
+                    update: { value: strValue },
+                    create: { key: update.key, value: strValue },
+                });
+                await tx.settingAuditLog.create({
+                    data: {
+                        adminId,
+                        key: update.key,
+                        oldValue: existing ? existing.value : null,
+                        newValue: strValue,
+                    },
+                });
+                results.push(update.value);
+                // Invalidate/update cache immediately
+                this.cache.set(update.key, { value: update.value, expiresAt: Date.now() + this.TTL_MS });
+            }
+        });
+        return results;
     }
     static async getAll() {
         const all = await db_1.db.setting.findMany();

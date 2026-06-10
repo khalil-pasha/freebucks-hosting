@@ -30,6 +30,23 @@ export class AdminSettingsController {
     }
   }
 
+  public static async batchUpdateSettings(req: Request, res: Response) {
+    try {
+      const adminId = req.user!.id; 
+      const { updates } = req.body; // Array of {key, value}
+      
+      if (!updates || !Array.isArray(updates)) {
+        return res.status(400).json({ error: 'Updates array is required.' });
+      }
+
+      const updatedValues = await SettingsService.batchUpdate(adminId, updates);
+      await AuditService.logAction(req, 'SETTINGS_BATCH_UPDATE', 'Multiple', adminId);
+      res.json({ success: true, results: updatedValues });
+    } catch (error: any) {
+      res.status(400).json({ error: error.message });
+    }
+  }
+
   public static async getAuditLogs(req: Request, res: Response) {
     try {
       const logs = await db.settingAuditLog.findMany({

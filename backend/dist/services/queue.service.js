@@ -198,17 +198,41 @@ class AdminQueueService {
         throw new Error('Job not found');
     }
     static async getActiveSlots() {
-        const active = await exports.serverQueue.getActiveCount();
-        return { active, max: 5 };
+        const activeJobs = await exports.serverQueue.getActive();
+        const isPaused = await exports.serverQueue.isPaused();
+        // Enrich with DB data
+        const active = await Promise.all(activeJobs.map(async (job) => {
+            const qj = await db_1.db.queueJob.findUnique({
+                where: { id: job.data.queueJobId },
+                include: { user: true, server: true }
+            });
+            return {
+                id: job.id,
+                name: qj?.server?.name || job.name,
+                owner: qj?.user?.username || 'Unknown',
+                action: job.data.action,
+                progress: job.progress || 50,
+            };
+        }));
+        return { active, max: 5, isPaused };
     }
     static async getWaitingJobs() {
-        const waiting = await exports.serverQueue.getWaiting();
-        return waiting.map(job => ({
-            id: job.id,
-            name: job.name,
-            data: job.data,
-            priority: job.opts.priority
+        const waitingJobs = await exports.serverQueue.getWaiting();
+        // Enrich with DB data
+        const waiting = await Promise.all(waitingJobs.map(async (job) => {
+            const qj = await db_1.db.queueJob.findUnique({
+                where: { id: job.data.queueJobId },
+                include: { user: true, server: true }
+            });
+            return {
+                id: job.id,
+                name: qj?.server?.name || job.name,
+                owner: qj?.user?.username || 'Unknown',
+                action: job.data.action,
+                priority: job.opts.priority
+            };
         }));
+        return waiting;
     }
     static async checkHealth() {
         try {

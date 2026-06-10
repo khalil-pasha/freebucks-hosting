@@ -1,10 +1,47 @@
 "use client"
+import { useEffect, useState } from "react"
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Settings, Save, Server, Users, Coins } from "lucide-react"
+import api from "@/lib/api"
 
 export default function AdminSettingsPage() {
+  const [settings, setSettings] = useState<any>({});
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchSettings = async () => {
+      try {
+        const res = await api.get('/admin/settings');
+        setSettings(res.data);
+      } catch (err) {
+        console.error("Failed to load settings:", err);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchSettings();
+  }, []);
+
+  const handleBatchUpdate = async (keys: string[], sectionName: string) => {
+    try {
+      const updates = keys.map(key => ({
+        key,
+        value: settings[key]
+      }));
+      await api.post('/admin/settings/batch', { updates });
+      alert(`${sectionName} saved successfully.`);
+    } catch (err: any) {
+      console.error(err);
+      alert(err.response?.data?.error || `Failed to save ${sectionName}.`);
+    }
+  };
+
+  if (loading) {
+    return <div className="p-8 text-center text-foreground/50">Loading settings...</div>;
+  }
+
   return (
     <div className="max-w-4xl mx-auto space-y-8 pb-12">
       <div>
@@ -22,24 +59,47 @@ export default function AdminSettingsPage() {
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div className="space-y-2">
                 <label className="text-sm font-medium">Daily Credit Cap</label>
-                <Input type="number" defaultValue="35" className="bg-background" />
+                <Input 
+                  type="number" 
+                  value={settings.dailyCreditCap ?? 35} 
+                  onChange={(e) => setSettings({...settings, dailyCreditCap: Number(e.target.value)})}
+                  className="bg-background" 
+                />
                 <p className="text-xs text-foreground/50">Max credits a free user can earn per day.</p>
               </div>
               <div className="space-y-2">
                 <label className="text-sm font-medium">Hourly Claim Amount</label>
-                <Input type="number" defaultValue="1.5" className="bg-background" />
+                <Input 
+                  type="number" 
+                  step="0.1"
+                  value={settings.hourlyClaimReward ?? 1.5} 
+                  onChange={(e) => setSettings({...settings, hourlyClaimReward: Number(e.target.value)})}
+                  className="bg-background" 
+                />
                 <p className="text-xs text-foreground/50">Credits given per hourly click.</p>
               </div>
               <div className="space-y-2">
                 <label className="text-sm font-medium">Referral Reward (Sender)</label>
-                <Input type="number" defaultValue="25" className="bg-background" />
+                <Input 
+                  type="number" 
+                  value={settings.referralSenderReward ?? 25} 
+                  onChange={(e) => setSettings({...settings, referralSenderReward: Number(e.target.value)})}
+                  className="bg-background" 
+                />
               </div>
               <div className="space-y-2">
                 <label className="text-sm font-medium">Referral Reward (Receiver)</label>
-                <Input type="number" defaultValue="50" className="bg-background" />
+                <Input 
+                  type="number" 
+                  value={settings.referralReceiverReward ?? 50} 
+                  onChange={(e) => setSettings({...settings, referralReceiverReward: Number(e.target.value)})}
+                  className="bg-background" 
+                />
               </div>
             </div>
-            <Button className="bg-primary hover:bg-primary/90 text-white"><Save className="w-4 h-4 mr-2" /> Save Economy Settings</Button>
+            <Button onClick={() => handleBatchUpdate(['dailyCreditCap', 'hourlyClaimReward', 'referralSenderReward', 'referralReceiverReward'], 'Economy Settings')} className="bg-primary hover:bg-primary/90 text-white">
+              <Save className="w-4 h-4 mr-2" /> Save Economy Settings
+            </Button>
           </CardContent>
         </Card>
 
@@ -52,22 +112,42 @@ export default function AdminSettingsPage() {
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div className="space-y-2">
                 <label className="text-sm font-medium">2GB Server Rate</label>
-                <Input type="number" defaultValue="1.5" className="bg-background" />
+                <Input 
+                  type="number" 
+                  step="0.1"
+                  value={settings.serverRate2GB ?? 1.5} 
+                  onChange={(e) => setSettings({...settings, serverRate2GB: Number(e.target.value)})}
+                  className="bg-background" 
+                />
               </div>
               <div className="space-y-2">
                 <label className="text-sm font-medium">4GB Server Rate</label>
-                <Input type="number" defaultValue="3.0" className="bg-background" />
+                <Input 
+                  type="number" 
+                  step="0.1"
+                  value={settings.serverRate4GB ?? 3.0} 
+                  onChange={(e) => setSettings({...settings, serverRate4GB: Number(e.target.value)})}
+                  className="bg-background" 
+                />
               </div>
               <div className="space-y-2">
                 <label className="text-sm font-medium">6GB Server Rate</label>
-                <Input type="number" defaultValue="6.0" className="bg-background" />
+                <Input 
+                  type="number" 
+                  step="0.1"
+                  value={settings.serverRate6GB ?? 6.0} 
+                  onChange={(e) => setSettings({...settings, serverRate6GB: Number(e.target.value)})}
+                  className="bg-background" 
+                />
               </div>
               <div className="space-y-2">
                 <label className="text-sm font-medium">8GB+ Server Rate</label>
-                <Input disabled defaultValue="Premium Only" className="bg-background/50 text-foreground/50" />
+                <Input disabled value="Premium Only" className="bg-background/50 text-foreground/50" />
               </div>
             </div>
-            <Button className="bg-primary hover:bg-primary/90 text-white"><Save className="w-4 h-4 mr-2" /> Save Server Pricing</Button>
+            <Button onClick={() => handleBatchUpdate(['serverRate2GB', 'serverRate4GB', 'serverRate6GB'], 'Server Pricing')} className="bg-primary hover:bg-primary/90 text-white">
+              <Save className="w-4 h-4 mr-2" /> Save Server Pricing
+            </Button>
           </CardContent>
         </Card>
 
@@ -80,16 +160,28 @@ export default function AdminSettingsPage() {
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div className="space-y-2">
                 <label className="text-sm font-medium">Max Concurrent Starts</label>
-                <Input type="number" defaultValue="5" className="bg-background" />
+                <Input 
+                  type="number" 
+                  value={settings.queueConcurrency ?? 5} 
+                  onChange={(e) => setSettings({...settings, queueConcurrency: Number(e.target.value)})}
+                  className="bg-background" 
+                />
                 <p className="text-xs text-foreground/50">How many servers the allocator can start simultaneously.</p>
               </div>
               <div className="space-y-2">
                 <label className="text-sm font-medium">Global Server Cap</label>
-                <Input type="number" defaultValue="5000" className="bg-background" />
+                <Input 
+                  type="number" 
+                  value={settings.globalServerCap ?? 5000} 
+                  onChange={(e) => setSettings({...settings, globalServerCap: Number(e.target.value)})}
+                  className="bg-background" 
+                />
                 <p className="text-xs text-foreground/50">Hard limit on total running free servers.</p>
               </div>
             </div>
-            <Button className="bg-primary hover:bg-primary/90 text-white"><Save className="w-4 h-4 mr-2" /> Save Queue Settings</Button>
+            <Button onClick={() => handleBatchUpdate(['queueConcurrency', 'globalServerCap'], 'Queue Settings')} className="bg-primary hover:bg-primary/90 text-white">
+              <Save className="w-4 h-4 mr-2" /> Save Queue Settings
+            </Button>
           </CardContent>
         </Card>
         {/* Security Settings */}

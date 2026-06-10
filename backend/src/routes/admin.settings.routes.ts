@@ -10,6 +10,7 @@ const router = Router();
 router.use(requireAuth, requireAdmin);
 
 router.get('/', AdminSettingsController.getAllSettings);
+router.post('/batch', AdminSettingsController.batchUpdateSettings);
 router.post('/', validate(updateSettingSchema), AdminSettingsController.updateSetting);
 router.get('/logs', AdminSettingsController.getAuditLogs);
 
