@@ -54,14 +54,14 @@ export default function AdminQueuePage() {
     }
   }
 
-  const handleAction = async (serverId: string, action: string) => {
-    if (!confirm(`Are you sure you want to ${action} this server in the queue?`)) return
+  const handleAction = async (bullJobId: string, action: string) => {
+    if (!confirm(`Are you sure you want to ${action} this job in the queue?`)) return
     try {
-      await api.post(`/admin/queue/${action}`, { serverId })
+      await api.post(`/admin/queue/${action}`, { bullJobId })
       fetchQueue()
-    } catch (err) {
-      console.error(`Failed to ${action} server:`, err)
-      alert(`Failed to ${action} server.`)
+    } catch (err: any) {
+      console.error(`Failed to ${action} job:`, err)
+      alert(err.response?.data?.error || `Failed to ${action} job.`)
     }
   }
 
