@@ -37,7 +37,7 @@ export default function AdminSupportPage() {
   const handleClose = async (id: string) => {
     if (!confirm("Are you sure you want to close this ticket?")) return;
     try {
-      await api.post(`/admin/support/${id}/close`)
+      await api.post(`/admin/support/tickets/${id}/close`)
       fetchTickets()
     } catch (err: any) {
       console.error(err)
@@ -49,7 +49,7 @@ export default function AdminSupportPage() {
     if (!replyText || replyText.trim().length === 0) return;
     setReplyLoading(true);
     try {
-      await api.post(`/admin/support/${id}/reply`, { message: replyText })
+      await api.post(`/admin/support/tickets/${id}/reply`, { message: replyText })
       setReplyText("")
       fetchTickets()
     } catch (err: any) {

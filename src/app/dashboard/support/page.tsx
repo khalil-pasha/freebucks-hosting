@@ -49,7 +49,7 @@ export default function SupportPage() {
     setLoading(true);
     try {
       const fullMessage = serverId ? `Server ID: ${serverId}\n\n${message}` : message;
-      await api.post('/support', {
+      await api.post('/support/tickets', {
         subject,
         message: fullMessage
       });
