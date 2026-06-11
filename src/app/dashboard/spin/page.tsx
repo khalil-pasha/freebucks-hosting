@@ -15,6 +15,8 @@ export default function RewardsPage() {
   const [rewardStatus, setRewardStatus] = useState<any>(null)
   const [now, setNow] = useState<number>(Date.now())
   const [loading, setLoading] = useState(false)
+  const [isAdFlow, setIsAdFlow] = useState(false)
+  const [adCountdown, setAdCountdown] = useState(10)
   
   const fetchRewardsData = async () => {
     try {
@@ -39,6 +41,15 @@ export default function RewardsPage() {
     return () => clearInterval(interval)
   }, [])
 
+  useEffect(() => {
+    if (isAdFlow && adCountdown > 0) {
+      const timer = setTimeout(() => {
+        setAdCountdown(prev => prev - 1)
+      }, 1000)
+      return () => clearTimeout(timer)
+    }
+  }, [isAdFlow, adCountdown])
+
   const formatCooldown = (nextTimeStr: string | null) => {
     if (!nextTimeStr) return null;
     const nextTime = new Date(nextTimeStr).getTime();
@@ -55,6 +66,12 @@ export default function RewardsPage() {
   const hourlyCooldown = rewardStatus ? formatCooldown(rewardStatus.nextHourlyClaimAt) : null;
   const rewardAmount = rewardStatus?.hourlyClaimReward || 1.5;
 
+  const handleInitialClaim = () => {
+    setIsAdFlow(true)
+    setAdCountdown(10)
+    window.open("https://omg10.com/4/11133998", "_blank")
+  }
+
   const handleHourly = async () => {
     setLoading(true)
     try {
@@ -62,8 +79,10 @@ export default function RewardsPage() {
       await refetchUser()
       alert(`Claimed ${res.data.amount} credits!`)
       fetchRewardsData()
+      setIsAdFlow(false)
     } catch (err: any) {
       alert(err.response?.data?.error || err.message)
+      setIsAdFlow(false)
     } finally {
       setLoading(false)
     }
@@ -130,10 +149,24 @@ export default function RewardsPage() {
                 </div>
               </div>
 
-              <div className="flex justify-center">
-                <Button disabled={loading || !!hourlyCooldown} onClick={handleHourly} size="lg" className="w-full max-w-sm bg-success hover:bg-success/90 text-white font-bold h-14 text-lg shadow-[0_0_20px_rgba(34,197,94,0.3)]">
-                  {hourlyCooldown ? "Cooldown Active" : "Claim Reward"}
-                </Button>
+              <div className="flex flex-col items-center gap-3">
+                {isAdFlow ? (
+                  <>
+                    <p className="text-sm text-foreground/70 mb-2 font-medium">Ad opened in a new tab. Please view it, then return here.</p>
+                    <Button disabled={adCountdown > 0 || loading || !!hourlyCooldown} onClick={handleHourly} size="lg" className="w-full max-w-sm bg-success hover:bg-success/90 text-white font-bold h-14 text-lg shadow-[0_0_20px_rgba(34,197,94,0.3)]">
+                      {adCountdown > 0 ? `Wait ${adCountdown}s...` : (loading ? "Claiming..." : "Continue Claim")}
+                    </Button>
+                    {adCountdown > 0 && (
+                      <a href="https://omg10.com/4/11133998" target="_blank" rel="noreferrer" className="text-xs text-primary hover:underline mt-2">
+                        Open Ad Manually (If popup blocked)
+                      </a>
+                    )}
+                  </>
+                ) : (
+                  <Button disabled={loading || !!hourlyCooldown} onClick={handleInitialClaim} size="lg" className="w-full max-w-sm bg-success hover:bg-success/90 text-white font-bold h-14 text-lg shadow-[0_0_20px_rgba(34,197,94,0.3)]">
+                    {hourlyCooldown ? "Cooldown Active" : "Claim Reward"}
+                  </Button>
+                )}
               </div>
             </CardContent>
           </Card>
