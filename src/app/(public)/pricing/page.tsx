@@ -21,6 +21,7 @@ export default function PricingPage() {
     if (user) {
       router.push('/dashboard/servers')
     } else {
+      localStorage.setItem('post_login_redirect', '/dashboard/servers')
       router.push('/login')
     }
   }

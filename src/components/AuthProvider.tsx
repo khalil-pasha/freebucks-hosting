@@ -66,6 +66,13 @@ export default function AuthProvider({ children }: { children: React.ReactNode }
       // Clean URL
       const newUrl = pathname;
       window.history.replaceState({}, document.title, newUrl);
+      
+      const postLoginRedirect = localStorage.getItem('post_login_redirect');
+      if (postLoginRedirect) {
+        localStorage.removeItem('post_login_redirect');
+        router.push(postLoginRedirect);
+        // We still want to fetch the user, but router.push will handle navigation
+      }
     }
 
     const currentToken = localStorage.getItem('freebucks_token');
