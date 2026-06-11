@@ -15,8 +15,8 @@ export default function AdminUserDetailPage({ params }: { params: { id: string }
       try {
         const res = await api.get(`/admin/core/users/${params.id}`)
         setUser(res.data)
-      } catch (err) {
-        console.error(err)
+      } catch (err: any) {
+        console.error("Failed to fetch user details:", err.response?.data || err.message)
       } finally {
         setLoading(false)
       }

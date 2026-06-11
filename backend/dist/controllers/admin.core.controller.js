@@ -303,7 +303,7 @@ class AdminCoreController {
     static async getUser(req, res) {
         try {
             const id = req.params.id;
-            const user = await db_1.db.user.findUnique({
+            let user = await db_1.db.user.findUnique({
                 where: { id },
                 include: {
                     servers: true,
@@ -312,7 +312,31 @@ class AdminCoreController {
                         take: 10
                     }
                 }
-            });
+            }).catch(() => null);
+            if (!user) {
+                user = await db_1.db.user.findUnique({
+                    where: { discordId: id },
+                    include: {
+                        servers: true,
+                        transactions: {
+                            orderBy: { timestamp: 'desc' },
+                            take: 10
+                        }
+                    }
+                }).catch(() => null);
+            }
+            if (!user) {
+                user = await db_1.db.user.findFirst({
+                    where: { username: id },
+                    include: {
+                        servers: true,
+                        transactions: {
+                            orderBy: { timestamp: 'desc' },
+                            take: 10
+                        }
+                    }
+                }).catch(() => null);
+            }
             if (!user)
                 return res.status(404).json({ error: 'User not found' });
             res.json(user);
