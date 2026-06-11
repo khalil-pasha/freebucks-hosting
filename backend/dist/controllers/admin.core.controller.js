@@ -399,5 +399,114 @@ class AdminCoreController {
             res.status(500).json({ error: error.message });
         }
     }
+    static async getNotifications(req, res) {
+        try {
+            const dismissedSetting = await db_1.db.setting.findUnique({ where: { key: 'admin_dismissed_notifs' } });
+            let dismissedIds = [];
+            if (dismissedSetting && dismissedSetting.value) {
+                try {
+                    dismissedIds = JSON.parse(dismissedSetting.value);
+                }
+                catch (e) { }
+            }
+            const dismissedSet = new Set(dismissedIds);
+            const [tickets, orders, failedJobs, logs] = await Promise.all([
+                db_1.db.supportTicket.findMany({ where: { status: 'OPEN' }, include: { user: { select: { username: true } } } }),
+                db_1.db.premiumOrder.findMany({ where: { status: 'PENDING' }, include: { user: { select: { username: true } } } }),
+                db_1.db.queueJob.findMany({ where: { status: 'FAILED' }, include: { user: { select: { username: true } } } }),
+                db_1.db.auditLog.findMany({ where: { action: { in: ['ERROR', 'CRITICAL', 'SERVER_CREATE_FAILED'] } }, orderBy: { timestamp: 'desc' }, take: 20 })
+            ]);
+            const notifications = [];
+            tickets.forEach(t => {
+                const id = `ticket_${t.id}`;
+                if (!dismissedSet.has(id))
+                    notifications.push({ id, title: 'Open Support Ticket', message: `${t.user?.username} opened a ticket: ${t.subject}`, time: t.createdAt, link: '/admin/support', type: 'ticket' });
+            });
+            orders.forEach(o => {
+                const id = `order_${o.id}`;
+                if (!dismissedSet.has(id))
+                    notifications.push({ id, title: 'Pending Premium Order', message: `${o.user?.username} placed a premium order.`, time: o.createdAt, link: '/admin/premium', type: 'order' });
+            });
+            failedJobs.forEach(j => {
+                const id = `job_${j.id}`;
+                if (!dismissedSet.has(id))
+                    notifications.push({ id, title: 'Failed Queue Job', message: `Job ${j.action} failed for ${j.user?.username}.`, time: j.updatedAt, link: '/admin/queue', type: 'job' });
+            });
+            logs.forEach(l => {
+                const id = `log_${l.id}`;
+                if (!dismissedSet.has(id))
+                    notifications.push({ id, title: 'System Error', message: `Action: ${l.action} ${l.resource ? '- ' + l.resource : ''}`, time: l.timestamp, link: '/admin/logs', type: 'log' });
+            });
+            notifications.sort((a, b) => b.time.getTime() - a.time.getTime());
+            res.json(notifications);
+        }
+        catch (error) {
+            res.status(500).json({ error: error.message });
+        }
+    }
+    static async markNotificationRead(req, res) {
+        try {
+            const id = req.params.id;
+            if (!id)
+                return res.status(400).json({ error: 'ID required' });
+            const dismissedSetting = await db_1.db.setting.findUnique({ where: { key: 'admin_dismissed_notifs' } });
+            let dismissedIds = [];
+            if (dismissedSetting && dismissedSetting.value) {
+                try {
+                    dismissedIds = JSON.parse(dismissedSetting.value);
+                }
+                catch (e) { }
+            }
+            if (!dismissedIds.includes(id)) {
+                dismissedIds.unshift(id);
+                if (dismissedIds.length > 500)
+                    dismissedIds = dismissedIds.slice(0, 500);
+                await db_1.db.setting.upsert({
+                    where: { key: 'admin_dismissed_notifs' },
+                    update: { value: JSON.stringify(dismissedIds) },
+                    create: { key: 'admin_dismissed_notifs', value: JSON.stringify(dismissedIds), description: 'Dismissed admin notifications' }
+                });
+            }
+            res.json({ success: true });
+        }
+        catch (error) {
+            res.status(500).json({ error: error.message });
+        }
+    }
+    static async markAllNotificationsRead(req, res) {
+        try {
+            const { ids } = req.body;
+            if (!ids || !Array.isArray(ids))
+                return res.status(400).json({ error: 'Array of ids required' });
+            const dismissedSetting = await db_1.db.setting.findUnique({ where: { key: 'admin_dismissed_notifs' } });
+            let dismissedIds = [];
+            if (dismissedSetting && dismissedSetting.value) {
+                try {
+                    dismissedIds = JSON.parse(dismissedSetting.value);
+                }
+                catch (e) { }
+            }
+            let updated = false;
+            ids.forEach(id => {
+                if (!dismissedIds.includes(id)) {
+                    dismissedIds.unshift(id);
+                    updated = true;
+                }
+            });
+            if (updated) {
+                if (dismissedIds.length > 500)
+                    dismissedIds = dismissedIds.slice(0, 500);
+                await db_1.db.setting.upsert({
+                    where: { key: 'admin_dismissed_notifs' },
+                    update: { value: JSON.stringify(dismissedIds) },
+                    create: { key: 'admin_dismissed_notifs', value: JSON.stringify(dismissedIds), description: 'Dismissed admin notifications' }
+                });
+            }
+            res.json({ success: true });
+        }
+        catch (error) {
+            res.status(500).json({ error: error.message });
+        }
+    }
 }
 exports.AdminCoreController = AdminCoreController;

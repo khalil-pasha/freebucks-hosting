@@ -1,12 +1,13 @@
 "use client";
 
 import { AdminSidebar } from "@/components/layout/admin-sidebar"
-import { Bell, Search, UserCircle, Menu } from "lucide-react"
+import { Search, UserCircle, Menu } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import AdminAuthProvider from "@/components/AdminAuthProvider"
 import { Suspense } from "react"
 import { AdminName } from "@/components/admin/admin-name"
 import { AdminSearchbar } from "@/components/admin/admin-searchbar"
+import { AdminNotifications } from "@/components/admin/admin-notifications"
 import { usePathname } from "next/navigation"
 
 export default function AdminLayout({
@@ -42,10 +43,7 @@ export default function AdminLayout({
               </div>
               
               <div className="flex items-center gap-4">
-                <Button variant="ghost" size="icon" className="relative">
-                  <Bell className="w-5 h-5" />
-                  <span className="absolute top-2 right-2 w-2 h-2 bg-red-500 rounded-full animate-pulse"></span>
-                </Button>
+                <AdminNotifications />
                 <div className="flex items-center gap-2 border-l border-border/50 pl-4">
                   <UserCircle className="w-8 h-8 text-red-500" />
                   <div className="hidden sm:flex flex-col">

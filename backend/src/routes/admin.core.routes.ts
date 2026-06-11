@@ -9,6 +9,9 @@ router.use(requireAuth, requireAdmin);
 
 router.get('/stats', AdminCoreController.getDashboardStats);
 router.get('/search', AdminCoreController.globalSearch);
+router.get('/notifications', AdminCoreController.getNotifications);
+router.post('/notifications/read-all', AdminCoreController.markAllNotificationsRead);
+router.post('/notifications/:id/read', AdminCoreController.markNotificationRead);
 router.get('/users', AdminCoreController.getUsers);
 router.get('/servers', AdminCoreController.getServers);
 router.get('/credits', AdminCoreController.getCredits);
