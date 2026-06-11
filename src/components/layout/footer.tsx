@@ -10,8 +10,8 @@ export function Footer() {
           
           <div className="md:col-span-1 space-y-4">
             <Link href="/" className="flex items-center gap-3 group mb-2">
-              <div className="relative h-16 w-32 sm:h-20 sm:w-40 overflow-hidden transition-transform group-hover:scale-105">
-                <Image src="/header-logo.jpg" alt="Free Bucks Logo" fill className="object-contain" />
+              <div className="relative h-12 w-32 sm:h-16 sm:w-40 overflow-hidden transition-transform group-hover:scale-105">
+                <Image src="/logo2.png" alt="Free Bucks Logo" fill className="object-contain" />
               </div>
             </Link>
             <p className="text-sm text-foreground/60 leading-relaxed">

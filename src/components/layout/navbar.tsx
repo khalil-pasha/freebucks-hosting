@@ -23,8 +23,8 @@ export function Navbar() {
     <header className="sticky top-0 z-50 w-full border-b border-border/50 bg-background/80 backdrop-blur-md">
       <div className="container mx-auto flex py-4 sm:py-6 items-center justify-between px-4 md:px-6">
         <Link href="/" className="flex items-center gap-3 group">
-          <div className="relative h-16 w-32 sm:h-24 sm:w-48 overflow-hidden transition-transform group-hover:scale-105">
-            <Image src="/header-logo.jpg" alt="Free Bucks Logo" fill className="object-contain" priority />
+          <div className="relative h-12 w-32 sm:h-14 sm:w-48 overflow-hidden transition-transform group-hover:scale-105">
+            <Image src="/logo2.png" alt="Free Bucks Logo" fill className="object-contain" priority />
           </div>
         </Link>
         
