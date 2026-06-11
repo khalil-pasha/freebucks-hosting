@@ -5,8 +5,8 @@ import { Shield, LifeBuoy } from "lucide-react"
 export function Footer() {
   return (
     <footer className="w-full border-t border-border/50 bg-card/30 backdrop-blur-md pt-16 pb-8">
-      <div className="container mx-auto px-4 md:px-6">
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-8 lg:gap-12 mb-12">
+      <div className="max-w-[1400px] w-full mx-auto px-[clamp(20px,4vw,48px)]">
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-12 lg:gap-16 mb-16">
           
           <div className="md:col-span-1 space-y-4">
             <Link href="/" className="flex items-center gap-3 group mb-2">

@@ -10,10 +10,10 @@ export default function Home() {
   return (
     <main className="flex min-h-screen flex-col items-center relative">
       {/* Minecraft Block Pattern Background */}
-      <div className="absolute inset-0 bg-[url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNDAiIGhlaWdodD0iNDAiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+PHBhdGggZD0iTTAgMGg0MHY0MEgwVjB6bTIwIDIwaDIwdjIwSDIwVjIweiIgZmlsbD0iIzU1NTVGRiIgZmlsbC1vcGFjaXR5PSIwLjAyIiBmaWxsLXJ1bGU9ImV2ZW5vZGQiLz48L3N2Zz4=')] opacity-50 z-0 pointer-events-none" />
+      <div className="absolute inset-0 bg-[url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNjQiIGhlaWdodD0iNjQiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+PHBhdGggZD0iTTAgMGgzMnYzMkgwem0zMiAzMmgzMnYzMkgzMnoiIGZpbGw9IiMwMEFBQUEiIGZpbGwtb3BhY2l0eT0iMC4wMiIvPjxwYXRoIGQ9Ik0wIDMySDMyVjY0SDB6bTMyLTMySDY0VjMySDMyWiIgZmlsbD0iIzU1NTVGRiIgZmlsbC1vcGFjaXR5PSIwLjAyIi8+PC9zdmc+')] opacity-50 z-0 pointer-events-none" />
 
       {/* Hero Section */}
-      <section className="w-full py-24 md:py-32 lg:py-40 flex items-center justify-center relative overflow-hidden z-10">
+      <section className="w-full py-32 md:py-40 lg:py-48 flex items-center justify-center relative overflow-hidden z-10">
         <motion.div 
           initial={{ opacity: 0, scale: 0.8 }} 
           animate={{ opacity: 1, scale: 1 }} 
@@ -27,8 +27,8 @@ export default function Home() {
           className="absolute top-1/2 right-1/4 translate-x-1/4 -translate-y-1/2 w-[600px] h-[600px] bg-secondary/20 blur-[120px] rounded-full pointer-events-none" 
         />
         
-        <div className="container mx-auto px-4 md:px-6 relative z-10">
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
+        <div className="max-w-[1400px] w-full mx-auto px-[clamp(20px,4vw,48px)] relative z-10">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-16 xl:gap-24 items-center">
             
             {/* Left: Text Content */}
             <motion.div 
@@ -182,8 +182,8 @@ export default function Home() {
       </section>
 
       {/* How Free Bucks Works */}
-      <section className="w-full py-24 bg-background relative overflow-hidden">
-        <div className="container mx-auto px-4 md:px-6">
+      <section className="w-full py-40 bg-background relative overflow-hidden">
+        <div className="max-w-[1400px] w-full mx-auto px-[clamp(20px,4vw,48px)]">
           <motion.div 
             initial={{ opacity: 0, y: 20 }}
             whileInView={{ opacity: 1, y: 0 }}
@@ -214,7 +214,7 @@ export default function Home() {
                  initial={{ opacity: 0, y: 30 }}
                  whileInView={{ opacity: 1, y: 0 }}
                  whileHover={{ y: -10, scale: 1.02 }}
-                 className={`bg-card/80 backdrop-blur border ${step.border} rounded-2xl p-6 relative z-10 text-center transition-all duration-300 hover:shadow-2xl ${step.glow}`}
+                 className={`h-full flex flex-col bg-card/80 backdrop-blur border ${step.border} rounded-2xl p-8 relative z-10 text-center transition-all duration-300 hover:shadow-[inset_0_1px_1px_rgba(255,255,255,0.1)] hover:shadow-2xl ${step.glow}`}
                >
                  <div className={`w-16 h-16 mx-auto rounded-full flex items-center justify-center mb-6 border ${step.border} ${step.bg}`}>
                    {step.icon}
@@ -228,8 +228,8 @@ export default function Home() {
       </section>
 
       {/* Credit Economy Section */}
-      <section className="w-full py-24 bg-card/30 border-y border-border/50 relative overflow-hidden">
-        <div className="container mx-auto px-4 md:px-6 relative z-10">
+      <section className="w-full py-40 bg-card/30 border-y border-border/50 relative overflow-hidden">
+        <div className="max-w-[1400px] w-full mx-auto px-[clamp(20px,4vw,48px)] relative z-10">
           <motion.div 
             initial={{ opacity: 0, y: 20 }}
             whileInView={{ opacity: 1, y: 0 }}
@@ -315,8 +315,8 @@ export default function Home() {
       </section>
 
       {/* Daily Credit System */}
-      <section className="w-full py-24 bg-background relative overflow-hidden">
-        <div className="container mx-auto px-4 md:px-6">
+      <section className="w-full py-40 bg-background relative overflow-hidden">
+        <div className="max-w-[1400px] w-full mx-auto px-[clamp(20px,4vw,48px)]">
           <div className="text-center max-w-3xl mx-auto mb-16">
             <h2 className="text-3xl md:text-4xl font-bold mb-4">Master The Economy</h2>
             <p className="text-foreground/60 text-lg">You can earn up to 35 credits every day through various activities on the platform.</p>
@@ -362,9 +362,9 @@ export default function Home() {
       </section>
 
       {/* Server Plans Comparison */}
-      <section className="w-full py-24 bg-card/10 border-y border-border/50 relative overflow-hidden">
+      <section className="w-full py-40 bg-card/10 border-y border-border/50 relative overflow-hidden">
         <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top,rgba(85,85,255,0.05)_0%,transparent_70%)]" />
-        <div className="container mx-auto px-4 md:px-6 relative z-10">
+        <div className="max-w-[1400px] w-full mx-auto px-[clamp(20px,4vw,48px)] relative z-10">
           <div className="text-center max-w-3xl mx-auto mb-16">
             <h2 className="text-3xl md:text-4xl font-bold mb-4">Transparent Server Pricing</h2>
             <p className="text-foreground/60 text-lg">No hidden dollar fees. Just straightforward hourly credit burn rates for your active servers.</p>
@@ -407,10 +407,10 @@ export default function Home() {
       </section>
 
       {/* Premium India Hosting Visualization */}
-      <section className="w-full py-32 bg-[#0A0A0A] relative overflow-hidden border-y border-border/50">
+      <section className="w-full py-40 bg-[#0A0A0A] relative overflow-hidden border-y border-border/50">
         <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,rgba(0,170,170,0.05)_0%,transparent_70%)] pointer-events-none" />
         
-        <div className="container mx-auto px-4 md:px-6 relative z-10">
+        <div className="max-w-[1400px] w-full mx-auto px-[clamp(20px,4vw,48px)] relative z-10">
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-16 items-center">
             
             {/* Left: Content */}
@@ -569,8 +569,8 @@ export default function Home() {
       </section>
 
       {/* Why Free Bucks */}
-      <section className="w-full py-24 bg-background border-t border-border/50 relative overflow-hidden">
-        <div className="container mx-auto px-4 md:px-6">
+      <section className="w-full py-40 bg-background border-t border-border/50 relative overflow-hidden">
+        <div className="max-w-[1400px] w-full mx-auto px-[clamp(20px,4vw,48px)]">
           <div className="text-center max-w-3xl mx-auto mb-16">
             <h2 className="text-3xl md:text-4xl font-bold mb-4">Why Free Bucks?</h2>
             <p className="text-foreground/60 text-lg">We've built the most transparent and fair free Minecraft hosting platform on the planet.</p>
@@ -589,7 +589,7 @@ export default function Home() {
                { icon: <HardDrive className="w-6 h-6"/>, title: "NVMe SSD", desc: "Blazing fast I/O." },
                { icon: <Target className="w-6 h-6"/>, title: "Automatic Backups", desc: "Daily snapshots." },
              ].map((feature, i) => (
-               <div key={i} className="bg-card border border-border/50 rounded-xl p-6 text-center hover:bg-foreground/5 transition-colors">
+               <div key={i} className="h-full flex flex-col bg-card border border-border/50 rounded-xl p-8 text-center hover:bg-foreground/5 transition-colors shadow-[inset_0_1px_1px_rgba(255,255,255,0.02)] hover:shadow-[inset_0_1px_1px_rgba(255,255,255,0.05)]">
                  <div className="w-12 h-12 rounded-full bg-primary/10 text-primary flex items-center justify-center mx-auto mb-4">
                    {feature.icon}
                  </div>
@@ -602,9 +602,9 @@ export default function Home() {
       </section>
 
       {/* Premium Benefits */}
-      <section className="w-full py-32 bg-black border-y border-border/50 relative overflow-hidden">
+      <section className="w-full py-40 bg-black border-y border-border/50 relative overflow-hidden">
         <div className="absolute top-0 right-0 w-1/2 h-full bg-gradient-to-l from-[#FFD700]/10 to-transparent pointer-events-none" />
-        <div className="container mx-auto px-4 md:px-6 relative z-10">
+        <div className="max-w-[1400px] w-full mx-auto px-[clamp(20px,4vw,48px)] relative z-10">
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-16 items-center">
             
             <motion.div 
@@ -681,7 +681,7 @@ export default function Home() {
       </section>
 
       {/* Community Section */}
-      <section className="w-full py-32 bg-[#5865F2] text-white relative overflow-hidden">
+      <section className="w-full py-40 bg-[#5865F2] text-white relative overflow-hidden">
         {/* Animated Background Particles */}
         <div className="absolute inset-0 overflow-hidden pointer-events-none">
            <svg className="absolute w-full h-full opacity-20">
@@ -711,7 +711,7 @@ export default function Home() {
         
         <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,rgba(255,255,255,0.15)_0%,transparent_70%)] pointer-events-none" />
         
-        <div className="container mx-auto px-4 md:px-6 relative z-10">
+        <div className="max-w-[1400px] w-full mx-auto px-[clamp(20px,4vw,48px)] relative z-10">
           <motion.div 
             initial={{ opacity: 0, y: 30 }}
             whileInView={{ opacity: 1, y: 0 }}
@@ -762,9 +762,9 @@ export default function Home() {
       </section>
 
       {/* Referrals & Vouchers */}
-      <section className="w-full py-24 bg-card/10 border-y border-border/50 relative overflow-hidden">
+      <section className="w-full py-40 bg-card/10 border-y border-border/50 relative overflow-hidden">
         <div className="absolute inset-0 bg-[url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjAiIGhlaWdodD0iMjAiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+PGNpcmNsZSBjeD0iMiIgY3k9IjIiIHI9IjIiIGZpbGw9IiM1NTU1RkYiIGZpbGwtb3BhY2l0eT0iMC4wNSIvPjwvc3ZnPg==')] opacity-50 z-0 pointer-events-none" />
-        <div className="container mx-auto px-4 md:px-6 relative z-10">
+        <div className="max-w-[1400px] w-full mx-auto px-[clamp(20px,4vw,48px)] relative z-10">
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
             <div className="bg-background/80 backdrop-blur-md border border-secondary/30 rounded-3xl p-8 lg:p-12 text-center relative overflow-hidden shadow-[0_0_40px_rgba(0,170,170,0.1)] group">
               <div className="absolute inset-0 bg-gradient-to-br from-secondary/10 to-transparent pointer-events-none opacity-50 group-hover:opacity-100 transition-opacity" />
@@ -803,54 +803,17 @@ export default function Home() {
         </div>
       </section>
 
-      {/* Roadmap Section */}
-      <section className="w-full py-24 bg-background relative overflow-hidden">
-        <div className="container mx-auto px-4 md:px-6">
-          <div className="text-center max-w-3xl mx-auto mb-16">
-            <Rocket className="w-12 h-12 text-primary mx-auto mb-4" />
-            <h2 className="text-3xl md:text-4xl font-bold mb-4">Project Roadmap</h2>
-            <p className="text-foreground/60 text-lg">See where Free Bucks is heading in the future.</p>
-          </div>
-
-          <div className="max-w-4xl mx-auto relative">
-            {/* Connecting Line */}
-            <div className="hidden md:block absolute top-1/2 left-0 w-full h-1 bg-border/50 -translate-y-1/2 z-0" />
-
-            <div className="grid grid-cols-1 md:grid-cols-4 gap-8 relative z-10">
-              {[
-                { phase: "Phase 1", title: "Free Servers", desc: "Launch core credit economy and Mumbai nodes.", status: "Complete", color: "bg-success", border: "border-success/50" },
-                { phase: "Phase 2", title: "Premium Nodes", desc: "Introduce VIP priority queue and 8GB+ servers.", status: "In Progress", color: "bg-primary", border: "border-primary/50" },
-                { phase: "Phase 3", title: "More India Locations", desc: "Expand to Delhi and Bangalore for better latency.", status: "Upcoming", color: "bg-card border-border/50", border: "border-border/50" },
-                { phase: "Phase 4", title: "Global Expansion", desc: "Deploy free nodes in Europe and North America.", status: "Upcoming", color: "bg-card border-border/50", border: "border-border/50" },
-              ].map((step, i) => (
-                <div key={i} className={`bg-background border ${step.border} rounded-2xl p-6 text-center relative`}>
-                  <div className="text-xs font-bold uppercase tracking-widest text-foreground/50 mb-2">{step.phase}</div>
-                  <h3 className="font-bold mb-2">{step.title}</h3>
-                  <p className="text-sm text-foreground/60 mb-6">{step.desc}</p>
-                  <div className={`px-3 py-1 text-[10px] font-bold uppercase tracking-wider rounded-full inline-block ${
-                    step.status === 'Complete' ? 'bg-success/20 text-success' :
-                    step.status === 'In Progress' ? 'bg-primary/20 text-primary' :
-                    'bg-foreground/10 text-foreground/50'
-                  }`}>
-                    {step.status}
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
-        </div>
-      </section>
 
       {/* FAQ Section */}
-      <section className="w-full py-24 bg-card/30 border-t border-border/50 relative">
-        <div className="container mx-auto px-4 md:px-6">
+      <section className="w-full py-40 bg-card/30 border-t border-border/50 relative">
+        <div className="max-w-[1400px] w-full mx-auto px-[clamp(20px,4vw,48px)]">
           <div className="text-center max-w-3xl mx-auto mb-16">
             <HelpCircle className="w-12 h-12 text-secondary mx-auto mb-4" />
             <h2 className="text-3xl md:text-4xl font-bold mb-4">Frequently Asked Questions</h2>
             <p className="text-foreground/60 text-lg">Everything you need to know about Free Bucks Minecraft Hosting.</p>
           </div>
 
-          <div className="max-w-3xl mx-auto space-y-4">
+          <div className="max-w-3xl mx-auto space-y-6">
             {[
               { q: "What is Free Bucks?", a: "Free Bucks is a premium Minecraft hosting platform powered by an internal credit economy. You earn credits for free and spend them to keep your server online." },
               { q: "How do I earn credits?", a: "You can earn credits by claiming your daily spin, collecting hourly rewards, referring friends (25 credits per invite), or redeeming promo vouchers from our Discord." },
