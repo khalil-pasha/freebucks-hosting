@@ -1,39 +1,32 @@
 "use client"
 import { motion } from "framer-motion"
-import { Button } from "@/components/ui/button"
 import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter } from "@/components/ui/card"
-import { Check } from "lucide-react"
+import { Button } from "@/components/ui/button"
+import { Zap } from "lucide-react"
+import { useRouter } from "next/navigation"
+import { useAuth } from "@/components/AuthProvider"
 
-const plans = [
-  {
-    name: "Free Tier",
-    price: "0",
-    description: "Perfect for getting started and testing.",
-    features: ["2GB RAM", "1 CPU Core", "10GB SSD Storage", "Basic Support", "Shared IP"],
-    popular: false,
-    button: "Get Started Free"
-  },
-  {
-    name: "Iron Plan",
-    price: "500",
-    description: "Great for small communities and friends.",
-    features: ["4GB RAM", "2 CPU Cores", "30GB NVMe Storage", "Priority Support", "Dedicated IP", "Free MySQL Database"],
-    popular: true,
-    button: "Purchase for 500 Bucks"
-  },
-  {
-    name: "Diamond Plan",
-    price: "1500",
-    description: "Ultimate performance for large servers.",
-    features: ["8GB RAM", "4 CPU Cores", "80GB NVMe Storage", "24/7 Priority Support", "Dedicated IP", "Unlimited Databases", "DDoS Protection+"],
-    popular: false,
-    button: "Purchase for 1500 Bucks"
-  }
+const fixedPlans = [
+  { name: "Free Starter", ram: 2, cpu: 100, disk: 5, cost: "1.5 credits/hr", isPremium: false },
+  { name: "Advanced", ram: 4, cpu: 150, disk: 10, cost: "3 credits/hr", isPremium: false },
+  { name: "Pro", ram: 6, cpu: 200, disk: 15, cost: "6 credits/hr", isPremium: false },
+  { name: "Premium", ram: 8, cpu: 300, disk: 30, cost: "₹549/month", isPremium: true, desc: "Dedicated CPU & NVMe" },
 ]
 
 export default function PricingPage() {
+  const router = useRouter()
+  const { user } = useAuth()
+
+  const handlePlanSelect = () => {
+    if (user) {
+      router.push('/dashboard/servers')
+    } else {
+      router.push('/login')
+    }
+  }
+
   return (
-    <div className="flex flex-col items-center w-full py-20">
+    <div className="flex flex-col items-center w-full py-20 min-h-[80vh]">
       <div className="container mx-auto px-4 md:px-6">
         <div className="text-center mb-16 max-w-2xl mx-auto">
           <motion.h1 
@@ -41,65 +34,68 @@ export default function PricingPage() {
             animate={{ opacity: 1, y: 0 }}
             className="text-4xl md:text-5xl font-bold mb-4 tracking-tight"
           >
-            Simple, Transparent Pricing
+            Choose Your Plan
           </motion.h1>
           <motion.p 
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.1 }}
-            className="text-foreground/70 text-lg"
+            className="text-foreground/60 text-lg"
           >
-            Use your earned Bucks to purchase premium hosting plans. No hidden fees.
+            Deploy your Minecraft server instantly.
           </motion.p>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-8 max-w-6xl mx-auto">
-          {plans.map((plan, index) => (
-            <motion.div
-              key={plan.name}
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.1 * index }}
-            >
-              <Card className={`relative h-full flex flex-col ${plan.popular ? 'border-primary shadow-lg shadow-primary/20' : 'border-border/50'}`}>
-                {plan.popular && (
-                  <div className="absolute -top-4 left-1/2 -translate-x-1/2 bg-primary text-white px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider">
-                    Most Popular
-                  </div>
-                )}
-                <CardHeader>
-                  <CardTitle className="text-2xl">{plan.name}</CardTitle>
-                  <CardDescription>{plan.description}</CardDescription>
-                </CardHeader>
-                <CardContent className="flex-1">
-                  <div className="mb-6 flex items-baseline gap-2">
-                    <span className="text-5xl font-extrabold">{plan.price}</span>
-                    <span className="text-foreground/70 font-medium">Bucks/mo</span>
-                  </div>
-                  <ul className="space-y-3">
-                    {plan.features.map((feature) => (
-                      <li key={feature} className="flex items-center gap-3">
-                        <div className="rounded-full bg-success/20 p-1">
-                          <Check className="h-4 w-4 text-success" />
-                        </div>
-                        <span className="text-foreground/90">{feature}</span>
-                      </li>
-                    ))}
-                  </ul>
-                </CardContent>
-                <CardFooter>
-                  <Button 
-                    className="w-full" 
-                    variant={plan.popular ? "primary" : "outline"}
-                    size="lg"
-                  >
-                    {plan.button}
-                  </Button>
-                </CardFooter>
-              </Card>
-            </motion.div>
+        <motion.div 
+          initial={{ opacity: 0, scale: 0.95 }}
+          animate={{ opacity: 1, scale: 1 }}
+          className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-12 max-w-6xl mx-auto"
+        >
+          {fixedPlans.map((plan, i) => (
+            <Card key={i} className={`relative flex flex-col ${plan.isPremium ? 'border-[#FFD700]/50 shadow-[0_0_30px_rgba(255,215,0,0.1)]' : 'border-border/50 hover:border-primary/50'} transition-all`}>
+              {plan.isPremium && <div className="absolute -top-3 left-1/2 -translate-x-1/2 px-3 py-1 bg-[#FFD700] text-black text-xs font-bold rounded-full">BEST VALUE</div>}
+              <CardHeader className="text-center pb-2">
+                <CardTitle className="text-xl">{plan.name}</CardTitle>
+                <CardDescription className="text-2xl font-bold text-foreground mt-2">{plan.cost}</CardDescription>
+              </CardHeader>
+              <CardContent className="flex-1 flex flex-col gap-3 py-4 text-sm text-foreground/80">
+                <div className="flex justify-between border-b border-border/50 pb-2"><span>RAM</span><span className="font-bold text-foreground">{plan.ram} GB</span></div>
+                <div className="flex justify-between border-b border-border/50 pb-2"><span>CPU</span><span className="font-bold text-foreground">{plan.cpu}%</span></div>
+                <div className="flex justify-between pb-2"><span>Disk</span><span className="font-bold text-foreground">{plan.disk} GB</span></div>
+                {plan.desc && <div className="text-[#FFD700] font-semibold text-center mt-2">{plan.desc}</div>}
+              </CardContent>
+              <CardFooter>
+                <Button 
+                  onClick={handlePlanSelect}
+                  className={`w-full ${plan.isPremium ? 'bg-[#FFD700] hover:bg-[#FFD700]/90 text-black' : 'bg-primary hover:bg-primary/90 text-white'}`}
+                >
+                  {plan.isPremium ? 'Buy Premium' : 'Deploy Server'}
+                </Button>
+              </CardFooter>
+            </Card>
           ))}
-        </div>
+        </motion.div>
+
+        <motion.div 
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.2 }}
+          className="max-w-4xl mx-auto mt-8 p-8 bg-background rounded-xl border border-border/50 shadow-inner"
+        >
+          <div className="flex flex-col md:flex-row items-center justify-between gap-6">
+            <div>
+              <h3 className="text-2xl font-bold mb-2 flex items-center gap-2">
+                <Zap className="text-primary w-6 h-6" /> Custom Plans Available
+              </h3>
+              <p className="text-foreground/70 text-lg">
+                Need specific hardware? You can fully customize RAM, CPU, and Disk allocations directly from the dashboard to perfectly match your community's needs.
+              </p>
+            </div>
+            <Button size="lg" className="bg-secondary hover:bg-secondary/90 text-white shadow-lg shadow-secondary/20 whitespace-nowrap" onClick={handlePlanSelect}>
+              Customize in Dashboard
+            </Button>
+          </div>
+        </motion.div>
       </div>
     </div>
   )
