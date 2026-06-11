@@ -45,6 +45,9 @@ export const metadata: Metadata = {
     locale: "en_US",
     type: "website",
   },
+  other: {
+    monetag: "bfc704a96f5906f641e23e2984ab7a4c"
+  }
 };
 
 export default function RootLayout({
