@@ -27,7 +27,7 @@ export default function FAQPage() {
 
   return (
     <div className="flex flex-col items-center w-full py-20">
-      <div className="container px-4 md:px-6 max-w-3xl">
+      <div className="container mx-auto px-4 md:px-6 max-w-3xl">
         <div className="text-center mb-12">
           <motion.h1 
             initial={{ opacity: 0, y: 20 }}

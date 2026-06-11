@@ -20,7 +20,7 @@ const featureList = [
 export default function FeaturesPage() {
   return (
     <div className="flex flex-col items-center w-full py-20">
-      <div className="container px-4 md:px-6 max-w-5xl">
+      <div className="container mx-auto px-4 md:px-6 max-w-5xl">
         <div className="text-center mb-16">
           <motion.h1 
             initial={{ opacity: 0, y: 20 }}

@@ -34,7 +34,7 @@ const plans = [
 export default function PricingPage() {
   return (
     <div className="flex flex-col items-center w-full py-20">
-      <div className="container px-4 md:px-6">
+      <div className="container mx-auto px-4 md:px-6">
         <div className="text-center mb-16 max-w-2xl mx-auto">
           <motion.h1 
             initial={{ opacity: 0, y: 20 }}
