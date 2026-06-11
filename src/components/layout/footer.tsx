@@ -12,13 +12,13 @@ export function Footer() {
       <div className="max-w-[1440px] w-full mx-auto px-[clamp(24px,4vw,56px)] relative z-10">
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-16 mb-20">
           
-          <div className="lg:col-span-2 space-y-8">
-            <Link href="/" className="flex items-center group">
-              <div className="relative h-10 w-32 md:h-16 md:w-56 overflow-hidden transition-transform hover:scale-105 duration-200">
-                <Image src="/logo2.png" alt="Free Bucks Logo" fill className="object-contain object-left" />
+          <div className="lg:col-span-2 flex flex-col items-center text-center lg:items-start lg:text-left space-y-6 lg:space-y-8">
+            <Link href="/" className="flex items-center group w-full justify-center lg:justify-start">
+              <div className="relative h-[70px] w-[200px] sm:h-[85px] sm:w-[240px] md:h-[95px] md:w-[280px] lg:h-[110px] lg:w-[320px] overflow-hidden transition-transform hover:scale-105 duration-200">
+                <Image src="/logo2.png" alt="Free Bucks Logo" fill className="object-contain object-center lg:object-left" />
               </div>
             </Link>
-            <p className="text-sm text-gray-400 leading-relaxed max-w-sm font-medium">
+            <p className="text-sm text-gray-400 leading-relaxed max-w-sm font-medium mx-auto lg:mx-0">
               Enterprise-grade Minecraft server hosting powered by a fair credit economy. High performance, DDoS protected, and accessible for everyone.
             </p>
           </div>
