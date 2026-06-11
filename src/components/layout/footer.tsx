@@ -38,7 +38,6 @@ export function Footer() {
             <ul className="space-y-4 text-sm font-semibold text-gray-400">
               <li><Link href="https://discord.gg/XY25Xgr5fV" target="_blank" className="hover:text-[#5865F2] transition-colors">Discord Server</Link></li>
               <li><Link href="/dashboard/support" className="hover:text-[#55FF55] transition-colors">Support Center</Link></li>
-              <li><Link href="#" className="hover:text-[#55FF55] transition-colors">Knowledge Base</Link></li>
             </ul>
           </div>
           
