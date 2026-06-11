@@ -337,7 +337,7 @@ export default function Home() {
                 <p className="text-sm text-gray-300 font-semibold mb-8 pb-8 border-b-4 border-[#aa00aa]/30">Dedicated resources, instant starts, and zero queue times.</p>
                 
                 <div className="mt-auto">
-                  <Link href="https://discord.com" target="_blank" className="block">
+                  <Link href="https://discord.gg/XY25Xgr5fV" target="_blank" className="block">
                     <Button className="w-full bg-[#FFAA00] hover:bg-[#FFD500] text-[#0a0f14] border-2 border-[#CC8800] font-black rounded-sm shadow-[inset_2px_2px_0_rgba(255,255,255,0.5),4px_4px_0_rgba(0,0,0,0.6)] active:translate-y-[4px] active:shadow-[inset_2px_2px_0_rgba(255,255,255,0.5),0_0_0_rgba(0,0,0,0.6)] h-14 uppercase tracking-wider text-base relative overflow-hidden group">
                       <motion.span animate={{ opacity: [0, 0.4, 0], x: [-50, 150] }} transition={{ duration: 2.5, repeat: Infinity, repeatDelay: 1 }} className="absolute inset-0 w-1/2 bg-gradient-to-r from-transparent via-white to-transparent skew-x-12" />
                       Buy on Discord
@@ -442,7 +442,7 @@ export default function Home() {
               <p className="text-gray-300 text-xl font-bold mb-10 max-w-2xl leading-relaxed drop-shadow-md">
                 Our Discord community is the heart of Free Bucks. Get support, claim exclusive voucher drops, and network with other server owners.
               </p>
-              <Link href="https://discord.com" target="_blank">
+              <Link href="https://discord.gg/XY25Xgr5fV" target="_blank">
                 <motion.div whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}>
                   <Button size="lg" className="bg-[#5865F2] hover:bg-[#4752C4] text-white h-16 px-10 text-xl font-black border-4 border-[#3c45a5] shadow-[inset_2px_2px_0_rgba(255,255,255,0.3),6px_6px_0_rgba(0,0,0,0.6)] hover:shadow-[inset_2px_2px_0_rgba(255,255,255,0.3),0_0_20px_rgba(88,101,242,0.6),6px_6px_0_rgba(0,0,0,0.6)] transition-all rounded-sm uppercase tracking-wider relative overflow-hidden group">
                     <motion.span animate={{ opacity: [0, 0.3, 0], x: [-50, 200] }} transition={{ duration: 3, repeat: Infinity, repeatDelay: 2 }} className="absolute inset-0 w-1/2 bg-gradient-to-r from-transparent via-white to-transparent skew-x-12" />

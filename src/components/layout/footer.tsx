@@ -36,7 +36,7 @@ export function Footer() {
           <div className="space-y-6">
             <h4 className="text-sm font-bold text-gray-200 tracking-widest uppercase border-b-2 border-[#1f2937] pb-2 inline-block">Community</h4>
             <ul className="space-y-4 text-sm font-semibold text-gray-400">
-              <li><Link href="#" className="hover:text-[#5865F2] transition-colors">Discord Server</Link></li>
+              <li><Link href="https://discord.gg/XY25Xgr5fV" target="_blank" className="hover:text-[#5865F2] transition-colors">Discord Server</Link></li>
               <li><Link href="/dashboard/support" className="hover:text-[#55FF55] transition-colors">Support Center</Link></li>
               <li><Link href="#" className="hover:text-[#55FF55] transition-colors">Knowledge Base</Link></li>
             </ul>
@@ -45,9 +45,9 @@ export function Footer() {
           <div className="space-y-6">
             <h4 className="text-sm font-bold text-gray-200 tracking-widest uppercase border-b-2 border-[#1f2937] pb-2 inline-block">Legal</h4>
             <ul className="space-y-4 text-sm font-semibold text-gray-400">
-              <li><Link href="#" className="hover:text-white transition-colors">Terms of Service</Link></li>
-              <li><Link href="#" className="hover:text-white transition-colors">Privacy Policy</Link></li>
-              <li><Link href="#" className="hover:text-white transition-colors">Refund Policy</Link></li>
+              <li><Link href="/terms" className="hover:text-white transition-colors">Terms of Service</Link></li>
+              <li><Link href="/privacy" className="hover:text-white transition-colors">Privacy Policy</Link></li>
+              <li><Link href="/refund" className="hover:text-white transition-colors">Refund Policy</Link></li>
             </ul>
           </div>
 
