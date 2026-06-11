@@ -35,14 +35,10 @@ export function DashboardSidebar() {
 
   return (
     <aside className="hidden md:flex flex-col w-64 bg-card border-r border-border min-h-screen fixed left-0 top-0 z-40 shadow-xl">
-      <div className="p-6">
-        <Link href="/" className="flex items-center gap-3">
-          <div className="relative h-8 w-8">
-            <Image src="/square-logo.jpg" alt="Free Bucks Logo" fill className="object-contain" />
-          </div>
-          <div className="flex flex-col">
-            <span className="font-bold text-lg tracking-tight leading-none truncate">FREE BUCKS</span>
-            <span className="text-[10px] text-foreground/50 uppercase tracking-widest font-bold mt-1">Minecraft Hosting</span>
+      <div className="p-6 pb-4 border-b border-border/50">
+        <Link href="/dashboard" className="flex items-center justify-center w-full group">
+          <div className="relative h-14 w-full max-w-[200px] overflow-hidden transition-transform group-hover:scale-105">
+            <Image src="/logo2.png" alt="Free Bucks Dashboard" fill className="object-contain" priority />
           </div>
         </Link>
       </div>
