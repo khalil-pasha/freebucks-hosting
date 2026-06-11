@@ -3,7 +3,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.AdminQueueService = exports.QueueService = exports.serverQueue = void 0;
+exports.AdminQueueService = exports.QueueService = exports.worker = exports.serverQueue = void 0;
 const bullmq_1 = require("bullmq");
 const ioredis_1 = __importDefault(require("ioredis"));
 const db_1 = require("../utils/db");
@@ -26,7 +26,7 @@ const getPriority = async (userId) => {
     return await settings_service_1.SettingsService.getNumber('freeQueuePriority');
 };
 // Initialize Worker (max 5 starting servers at a time)
-const worker = new bullmq_1.Worker('server-queue', async (job) => {
+exports.worker = new bullmq_1.Worker('server-queue', async (job) => {
     const { queueJobId, serverId, action } = job.data;
     // Mark job and server as STARTING/RESTARTING
     const status = action === 'START' ? 'STARTING' : 'RESTARTING';
@@ -76,10 +76,13 @@ const worker = new bullmq_1.Worker('server-queue', async (job) => {
     if (queueJob) {
         await notification_service_1.NotificationService.createNotification(queueJob.userId, `Server ${action === 'START' ? 'Started' : 'Restarted'}`, `Your server is now RUNNING.`, 'SERVER_START');
     }
-}, { connection: connection, concurrency: 5 }); // Keep concurrency statically set for bullmq config or dynamically recreate worker? 
-// Dynamically changing BullMQ concurrency on the fly is tricky, but we can do it statically or recreate worker. 
-// For now, leaving as 5, we can read SettingsService.getNumber('queueConcurrency') if we recreate.
-worker.on('failed', async (job, err) => {
+}, { connection: connection, concurrency: 5 });
+// Auto-sync concurrency on start
+settings_service_1.SettingsService.getNumber('queueConcurrency').then(concurrency => {
+    exports.worker.concurrency = concurrency;
+    console.log(`[QueueService] Allocator initialized with concurrency: ${concurrency}`);
+}).catch(err => console.error(err));
+exports.worker.on('failed', async (job, err) => {
     if (job) {
         const { queueJobId, serverId } = job.data;
         await db_1.db.queueJob.update({
@@ -214,7 +217,8 @@ class AdminQueueService {
                 progress: job.progress || 50,
             };
         }));
-        return { active, max: 5, isPaused };
+        const max = exports.worker.concurrency;
+        return { active, max, isPaused };
     }
     static async getWaitingJobs() {
         const waitingJobs = await exports.serverQueue.getWaiting();

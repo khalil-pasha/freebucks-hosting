@@ -10,6 +10,7 @@ export default function AdminQueuePage() {
   const [isQueuePaused, setIsQueuePaused] = React.useState(false)
   const [startingServers, setStartingServers] = React.useState<any[]>([])
   const [waitingQueue, setWaitingQueue] = React.useState<any[]>([])
+  const [maxCapacity, setMaxCapacity] = React.useState(5)
   const [loading, setLoading] = React.useState(true)
 
   const fetchQueue = async () => {
@@ -25,6 +26,7 @@ export default function AdminQueuePage() {
         pos: i + 1,
         wait: 'Calculating...' // Can implement real wait time logic later
       })))
+      setMaxCapacity(res.data.max || 5)
       setIsQueuePaused(res.data.isPaused || false)
     } catch (err) {
       console.error(err)
@@ -96,7 +98,7 @@ export default function AdminQueuePage() {
         {/* Processing Node (Starting) */}
         <div className="lg:col-span-1 space-y-4">
           <h2 className="text-xl font-bold flex items-center gap-2">
-            Currently Starting <span className="text-sm font-normal text-foreground/50">({startingServers.length}/5 capacity)</span>
+            Currently Starting <span className="text-sm font-normal text-foreground/50">({startingServers.length}/{maxCapacity} capacity)</span>
           </h2>
           
           <div className="space-y-4">

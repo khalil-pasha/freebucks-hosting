@@ -2,6 +2,7 @@ import { Request, Response } from 'express';
 import { SettingsService } from '../services/settings.service';
 import { db } from '../utils/db';
 import { AuditService } from '../services/audit.service';
+import { worker } from '../services/queue.service';
 
 export class AdminSettingsController {
   public static async getAllSettings(req: Request, res: Response) {
@@ -23,6 +24,12 @@ export class AdminSettingsController {
       }
 
       const updatedValue = await SettingsService.update(adminId, key, value);
+      
+      if (key === 'queueConcurrency') {
+        worker.concurrency = Number(value);
+        console.log(`[QueueService] Allocator updated with new concurrency: ${value}`);
+      }
+
       await AuditService.logAction(req, 'SETTINGS_UPDATE', key, adminId);
       res.json({ success: true, key, value: updatedValue });
     } catch (error: any) {
@@ -40,6 +47,13 @@ export class AdminSettingsController {
       }
 
       const updatedValues = await SettingsService.batchUpdate(adminId, updates);
+      
+      const concurrencyUpdate = updates.find(u => u.key === 'queueConcurrency');
+      if (concurrencyUpdate) {
+        worker.concurrency = Number(concurrencyUpdate.value);
+        console.log(`[QueueService] Allocator updated with new concurrency: ${concurrencyUpdate.value}`);
+      }
+
       await AuditService.logAction(req, 'SETTINGS_BATCH_UPDATE', 'Multiple', adminId);
       res.json({ success: true, results: updatedValues });
     } catch (error: any) {

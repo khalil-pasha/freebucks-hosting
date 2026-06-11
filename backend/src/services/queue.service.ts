@@ -25,7 +25,7 @@ const getPriority = async (userId: string) => {
 };
 
 // Initialize Worker (max 5 starting servers at a time)
-const worker = new Worker('server-queue', async (job: Job) => {
+export const worker = new Worker('server-queue', async (job: Job) => {
   const { queueJobId, serverId, action } = job.data;
   
   // Mark job and server as STARTING/RESTARTING
@@ -91,9 +91,13 @@ const worker = new Worker('server-queue', async (job: Job) => {
     );
   }
 
-}, { connection: connection as any, concurrency: 5 }); // Keep concurrency statically set for bullmq config or dynamically recreate worker? 
-// Dynamically changing BullMQ concurrency on the fly is tricky, but we can do it statically or recreate worker. 
-// For now, leaving as 5, we can read SettingsService.getNumber('queueConcurrency') if we recreate.
+}, { connection: connection as any, concurrency: 5 });
+
+// Auto-sync concurrency on start
+SettingsService.getNumber('queueConcurrency').then(concurrency => {
+  worker.concurrency = concurrency;
+  console.log(`[QueueService] Allocator initialized with concurrency: ${concurrency}`);
+}).catch(err => console.error(err));
 
 worker.on('failed', async (job, err) => {
   if (job) {
@@ -263,7 +267,8 @@ export class AdminQueueService {
       };
     }));
 
-    return { active, max: 5, isPaused };
+    const max = worker.concurrency;
+    return { active, max, isPaused };
   }
 
   public static async getWaitingJobs() {
