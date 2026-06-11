@@ -7,6 +7,7 @@ const admin_1 = require("../middleware/admin");
 const router = (0, express_1.Router)();
 router.use(auth_1.requireAuth, admin_1.requireAdmin);
 router.get('/stats', admin_core_controller_1.AdminCoreController.getDashboardStats);
+router.get('/search', admin_core_controller_1.AdminCoreController.globalSearch);
 router.get('/users', admin_core_controller_1.AdminCoreController.getUsers);
 router.get('/servers', admin_core_controller_1.AdminCoreController.getServers);
 router.get('/credits', admin_core_controller_1.AdminCoreController.getCredits);

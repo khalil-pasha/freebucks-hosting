@@ -8,6 +8,7 @@ const router = Router();
 router.use(requireAuth, requireAdmin);
 
 router.get('/stats', AdminCoreController.getDashboardStats);
+router.get('/search', AdminCoreController.globalSearch);
 router.get('/users', AdminCoreController.getUsers);
 router.get('/servers', AdminCoreController.getServers);
 router.get('/credits', AdminCoreController.getCredits);

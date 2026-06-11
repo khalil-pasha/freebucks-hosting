@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button"
 import AdminAuthProvider from "@/components/AdminAuthProvider"
 import { Suspense } from "react"
 import { AdminName } from "@/components/admin/admin-name"
+import { AdminSearchbar } from "@/components/admin/admin-searchbar"
 import { usePathname } from "next/navigation"
 
 export default function AdminLayout({
@@ -37,14 +38,7 @@ export default function AdminLayout({
                 <button className="md:hidden p-2 -ml-2 text-foreground/70 hover:text-foreground">
                   <Menu className="w-6 h-6" />
                 </button>
-                <div className="hidden sm:flex items-center gap-2 bg-background border border-border/50 rounded-full px-4 py-2 w-full max-w-sm">
-                  <Search className="w-4 h-4 text-foreground/50" />
-                  <input 
-                    type="text" 
-                    placeholder="Search users, servers, logs..." 
-                    className="bg-transparent border-none outline-none text-sm w-full placeholder:text-foreground/50"
-                  />
-                </div>
+                <AdminSearchbar />
               </div>
               
               <div className="flex items-center gap-4">

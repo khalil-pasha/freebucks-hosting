@@ -336,4 +336,59 @@ export class AdminCoreController {
       res.status(500).json({ error: error.message });
     }
   }
+
+  public static async globalSearch(req: Request, res: Response) {
+    try {
+      const q = req.query.q as string;
+      if (!q || q.length < 2) return res.json({ users: [], servers: [], tickets: [], logs: [] });
+
+      const [users, servers, tickets, logs] = await Promise.all([
+        db.user.findMany({
+          where: {
+            OR: [
+              { username: { contains: q } },
+              { email: { contains: q } },
+              { discordId: { contains: q } }
+            ]
+          },
+          select: { id: true, username: true, email: true },
+          take: 5
+        }),
+        db.server.findMany({
+          where: {
+            OR: [
+              { name: { contains: q } },
+              { id: { contains: q } },
+              { user: { username: { contains: q } } }
+            ]
+          },
+          include: { user: { select: { username: true } } },
+          take: 5
+        }),
+        db.supportTicket.findMany({
+          where: {
+            OR: [
+              { subject: { contains: q } },
+              { user: { username: { contains: q } } }
+            ]
+          },
+          include: { user: { select: { username: true } } },
+          take: 5
+        }),
+        db.auditLog.findMany({
+          where: {
+            OR: [
+              { action: { contains: q } },
+              { resource: { contains: q } }
+            ]
+          },
+          take: 5
+        })
+      ]);
+
+      res.json({ users, servers, tickets, logs });
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  }
 }
