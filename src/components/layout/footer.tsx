@@ -14,7 +14,7 @@ export function Footer() {
           
           <div className="lg:col-span-2 space-y-8">
             <Link href="/" className="flex items-center group">
-              <div className="relative h-14 w-44 overflow-hidden transition-transform hover:scale-105 duration-200">
+              <div className="relative h-10 w-32 md:h-16 md:w-56 overflow-hidden transition-transform hover:scale-105 duration-200">
                 <Image src="/logo2.png" alt="Free Bucks Logo" fill className="object-contain object-left" />
               </div>
             </Link>

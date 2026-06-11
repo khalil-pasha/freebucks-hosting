@@ -13,7 +13,7 @@ export default function Home() {
       <div className="absolute inset-0 bg-[url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNDAiIGhlaWdodD0iNDAiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+PHJlY3Qgd2lkdGg9IjQwIiBoZWlnaHQ9IjQwIiBmaWxsPSJub25lIiBzdHJva2U9IiMxZjI5MzciIHN0cm9rZS1vcGFjaXR5PSIwLjEiIHN0cm9rZS13aWR0aD0iMSIvPjwvc3ZnPg==')] z-0 pointer-events-none fixed" />
 
       {/* Hero Section (Cave / Night Atmosphere) */}
-      <section className="w-full pt-40 pb-24 md:pt-48 md:pb-32 flex items-center justify-center relative overflow-hidden z-10 border-b-4 border-[#1f2937] bg-[#0d131a]">
+      <section className="w-full pt-24 pb-24 md:pt-28 md:pb-32 flex items-center justify-center relative overflow-hidden z-10 border-b-4 border-[#1f2937] bg-[#0d131a]">
         {/* Diamond Cyan Ambient Glow */}
         <div className="absolute top-0 left-1/2 -translate-x-1/2 w-full h-[600px] bg-[radial-gradient(ellipse_at_top,rgba(85,255,255,0.08)_0%,transparent_60%)] pointer-events-none" />
         
