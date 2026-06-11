@@ -355,12 +355,12 @@ export default function ServersPage() {
       {/* Plan Selection Modal */}
       <AnimatePresence>
         {isPlanModalOpen && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-background/80 backdrop-blur-sm overflow-y-auto">
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 sm:p-6 bg-background/80 backdrop-blur-sm">
             <motion.div 
               initial={{ opacity: 0, scale: 0.95 }}
               animate={{ opacity: 1, scale: 1 }}
               exit={{ opacity: 0, scale: 0.95 }}
-              className="bg-card border border-border/50 rounded-xl w-full max-w-5xl shadow-2xl relative my-8"
+              className="bg-card border border-border/50 rounded-xl w-full max-w-5xl shadow-2xl relative max-h-[calc(100vh-2rem)] overflow-y-auto"
             >
               <Button variant="ghost" size="icon" className="absolute right-4 top-4 z-10" onClick={() => { setIsPlanModalOpen(false); setSelectedPlan(null); setUpgradeTarget(null); }}>
                 <X className="w-5 h-5" />
