@@ -21,14 +21,6 @@ export function Footer() {
             <p className="text-sm text-gray-400 leading-relaxed max-w-sm font-medium">
               Enterprise-grade Minecraft server hosting powered by a fair credit economy. High performance, DDoS protected, and accessible for everyone.
             </p>
-            <div className="flex items-center gap-4">
-              <Link href="https://discord.com" className="w-10 h-10 rounded-sm bg-[#111827] border-2 border-[#1f2937] flex items-center justify-center hover:bg-[#5865F2] hover:border-[#4752C4] hover:text-white text-gray-400 transition-all shadow-[inset_1px_1px_0_rgba(255,255,255,0.1),2px_2px_0_rgba(0,0,0,0.5)] active:translate-y-[2px] active:shadow-none">
-                <Discord className="w-5 h-5" />
-              </Link>
-              <Link href="#" className="w-10 h-10 rounded-sm bg-[#111827] border-2 border-[#1f2937] flex items-center justify-center hover:bg-[#1DA1F2] hover:border-[#1a91da] hover:text-white text-gray-400 transition-all shadow-[inset_1px_1px_0_rgba(255,255,255,0.1),2px_2px_0_rgba(0,0,0,0.5)] active:translate-y-[2px] active:shadow-none">
-                <MessageCircle className="w-5 h-5" />
-              </Link>
-            </div>
           </div>
           
           <div className="space-y-6">
