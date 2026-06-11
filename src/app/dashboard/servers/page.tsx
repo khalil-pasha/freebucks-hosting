@@ -202,7 +202,7 @@ export default function ServersPage() {
     { name: "Free Starter", ram: 2, cpu: 100, disk: 5, cost: `${serverRates.serverRate2GB} credits/hr`, isPremium: false },
     { name: "Advanced", ram: 4, cpu: 150, disk: 10, cost: `${serverRates.serverRate4GB} credits/hr`, isPremium: false },
     { name: "Pro", ram: 6, cpu: 200, disk: 15, cost: `${serverRates.serverRate6GB} credits/hr`, isPremium: false },
-    { name: "Premium", ram: 8, cpu: 300, disk: 30, cost: "₹499/month", isPremium: true, desc: "Dedicated CPU & NVMe" },
+    { name: "Premium", ram: 8, cpu: 300, disk: 30, cost: "₹549/month", isPremium: true, desc: "Dedicated CPU & NVMe" },
   ]
 
   const customPrice = (customRAM * 30) + ((customCPU / 50) * 30) + ((customDisk / 5) * 10)
