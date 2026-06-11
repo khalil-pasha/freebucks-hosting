@@ -32,8 +32,13 @@ export function AdminSearchbar() {
     const delayDebounceFn = setTimeout(async () => {
       setIsLoading(true)
       try {
-        const res = await api.get(`/admin/search?q=${encodeURIComponent(query)}`)
-        setResults(res.data)
+        const res = await api.get(`/admin/core/search?q=${encodeURIComponent(query)}`)
+        setResults({
+          users: res.data.users || [],
+          servers: res.data.servers || [],
+          tickets: res.data.tickets || [],
+          logs: res.data.logs || []
+        })
         setIsOpen(true)
       } catch (err) {
         console.error("Search failed:", err)
