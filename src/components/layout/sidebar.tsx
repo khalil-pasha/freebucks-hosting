@@ -20,7 +20,7 @@ import {
 
 const sidebarLinks = [
   { name: "Overview", href: "/dashboard", icon: <LayoutDashboard className="w-5 h-5" /> },
-  { name: "Servers", href: "/dashboard/servers", icon: <Server className="w-5 h-5" /> },
+  { name: "Server/Plans", href: "/dashboard/servers", icon: <Server className="w-5 h-5" /> },
   { name: "Credits", href: "/dashboard/credits", icon: <Coins className="w-5 h-5" /> },
   { name: "Rewards", href: "/dashboard/spin", icon: <Dices className="w-5 h-5" /> },
   { name: "Referrals", href: "/dashboard/referral", icon: <Users className="w-5 h-5" /> },
