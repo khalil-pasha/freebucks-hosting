@@ -213,13 +213,16 @@ export class CreditsService {
       }
     }
 
+    const hourlyClaimReward = await SettingsService.getNumber('hourlyClaimReward');
+
     return {
       lastDailySpinAt: lastSpin?.timestamp || null,
       nextDailySpinAt,
       dailySpinCooldown,
       lastHourlyClaimAt: lastHourly?.timestamp || null,
       nextHourlyClaimAt,
-      hourlyClaimCooldown
+      hourlyClaimCooldown,
+      hourlyClaimReward
     };
   }
 }

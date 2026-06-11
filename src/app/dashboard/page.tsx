@@ -84,7 +84,7 @@ export default function DashboardOverview() {
         <div className="flex gap-3">
           <Link href="/dashboard/spin">
             <Button variant="outline" className="border-secondary text-secondary hover:bg-secondary/10">
-              <Dices className="w-4 h-4 mr-2" /> Daily Spin
+              <Gift className="w-4 h-4 mr-2" /> Rewards
             </Button>
           </Link>
           <Link href="/dashboard/servers">
@@ -192,16 +192,7 @@ export default function DashboardOverview() {
               <CardTitle className="text-lg">Quick Actions</CardTitle>
             </CardHeader>
             <CardContent className="space-y-3">
-              <Link href="/dashboard/spin" className="flex items-center justify-between p-3 rounded-lg bg-background border border-border/50 hover:border-secondary/50 transition-colors group">
-                <div className="flex items-center gap-3">
-                  <div className="w-8 h-8 rounded bg-secondary/10 flex items-center justify-center text-secondary">
-                    <Dices className="w-4 h-4" />
-                  </div>
-                  <span className="font-medium text-sm">Play Daily Spin</span>
-                </div>
-                <ChevronRight className="w-4 h-4 text-foreground/30 group-hover:text-secondary" />
-              </Link>
-              
+
               <Link href="/dashboard/spin" className="flex items-center justify-between p-3 rounded-lg bg-background border border-border/50 hover:border-success/50 transition-colors group">
                 <div className="flex items-center gap-3">
                   <div className="w-8 h-8 rounded bg-success/10 flex items-center justify-center text-success">

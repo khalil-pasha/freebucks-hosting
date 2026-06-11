@@ -2,7 +2,7 @@
 import { motion } from "framer-motion"
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
-import { Coins, TrendingUp, TrendingDown, Clock, Download, Dices, Server } from "lucide-react"
+import { Coins, TrendingUp, TrendingDown, Clock, Download, Server, Gift } from "lucide-react"
 import Link from "next/link"
 
 import { useEffect, useState } from "react"
@@ -57,7 +57,7 @@ export default function CreditsPage() {
         </div>
         <Link href="/dashboard/spin">
            <Button className="bg-primary hover:bg-primary/90 text-white shadow-lg shadow-primary/20">
-             <Dices className="w-4 h-4 mr-2" /> Earn More Credits
+             <Gift className="w-4 h-4 mr-2" /> Earn More Credits
            </Button>
         </Link>
       </div>
