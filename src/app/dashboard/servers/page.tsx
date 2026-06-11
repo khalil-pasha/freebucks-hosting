@@ -25,6 +25,13 @@ export default function ServersPage() {
   const [selectedPlan, setSelectedPlan] = useState<any>(null)
   const [upgradeTarget, setUpgradeTarget] = useState<any>(null)
   
+  // Rates State
+  const [serverRates, setServerRates] = useState({
+    serverRate2GB: 1.5,
+    serverRate4GB: 3,
+    serverRate6GB: 6
+  })
+  
   // Custom Plan States
   const [customRAM, setCustomRAM] = useState(1)
   const [customCPU, setCustomCPU] = useState(50)
@@ -52,8 +59,24 @@ export default function ServersPage() {
     }
   }
 
+  const fetchRates = async () => {
+    try {
+      const res = await api.get('/servers/rates')
+      if (res.data) {
+        setServerRates({
+          serverRate2GB: res.data.serverRate2GB ?? 1.5,
+          serverRate4GB: res.data.serverRate4GB ?? 3,
+          serverRate6GB: res.data.serverRate6GB ?? 6
+        })
+      }
+    } catch (err) {
+      console.error('Failed to load server rates', err)
+    }
+  }
+
   useEffect(() => {
     fetchServers()
+    fetchRates()
     const interval = setInterval(fetchServers, 3000)
     return () => clearInterval(interval)
   }, [])
@@ -176,9 +199,9 @@ export default function ServersPage() {
   }
 
   const fixedPlans = [
-    { name: "Free Starter", ram: 2, cpu: 100, disk: 5, cost: "1.5 credits/hr", isPremium: false },
-    { name: "Advanced", ram: 4, cpu: 150, disk: 10, cost: "3 credits/hr", isPremium: false },
-    { name: "Pro", ram: 6, cpu: 200, disk: 15, cost: "6 credits/hr", isPremium: false },
+    { name: "Free Starter", ram: 2, cpu: 100, disk: 5, cost: `${serverRates.serverRate2GB} credits/hr`, isPremium: false },
+    { name: "Advanced", ram: 4, cpu: 150, disk: 10, cost: `${serverRates.serverRate4GB} credits/hr`, isPremium: false },
+    { name: "Pro", ram: 6, cpu: 200, disk: 15, cost: `${serverRates.serverRate6GB} credits/hr`, isPremium: false },
     { name: "Premium", ram: 8, cpu: 300, disk: 30, cost: "₹499/month", isPremium: true, desc: "Dedicated CPU & NVMe" },
   ]
 

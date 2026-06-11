@@ -138,5 +138,20 @@ class ServerController {
             res.status(500).json({ error: error.message });
         }
     }
+    static async getRates(req, res) {
+        try {
+            const serverRate2GB = await settings_service_1.SettingsService.getNumber('serverRate2GB');
+            const serverRate4GB = await settings_service_1.SettingsService.getNumber('serverRate4GB');
+            const serverRate6GB = await settings_service_1.SettingsService.getNumber('serverRate6GB');
+            res.json({
+                serverRate2GB,
+                serverRate4GB,
+                serverRate6GB
+            });
+        }
+        catch (error) {
+            res.status(500).json({ error: error.message });
+        }
+    }
 }
 exports.ServerController = ServerController;

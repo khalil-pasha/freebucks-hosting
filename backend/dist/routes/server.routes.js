@@ -9,5 +9,6 @@ const router = (0, express_1.Router)();
 router.use(auth_1.requireAuth);
 router.post('/create', (0, validate_1.validate)(server_validator_1.createServerSchema), server_controller_1.ServerController.createServer);
 router.patch('/:id/upgrade', (0, validate_1.validate)(server_validator_1.upgradeServerSchema), server_controller_1.ServerController.upgradeServer);
+router.get('/rates', server_controller_1.ServerController.getRates);
 router.get('/my-servers', server_controller_1.ServerController.myServers);
 exports.default = router;

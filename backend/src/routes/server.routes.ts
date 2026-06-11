@@ -10,6 +10,7 @@ router.use(requireAuth);
 
 router.post('/create', validate(createServerSchema), ServerController.createServer);
 router.patch('/:id/upgrade', validate(upgradeServerSchema), ServerController.upgradeServer);
+router.get('/rates', ServerController.getRates);
 router.get('/my-servers', ServerController.myServers);
 
 export default router;
