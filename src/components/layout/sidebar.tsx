@@ -29,14 +29,20 @@ const sidebarLinks = [
   { name: "Support", href: "/dashboard/support", icon: <LifeBuoy className="w-5 h-5" /> },
 ]
 
-export function DashboardSidebar() {
+export function DashboardSidebar({ 
+  mobileOpen = false, 
+  setMobileOpen = () => {} 
+}: { 
+  mobileOpen?: boolean;
+  setMobileOpen?: (val: boolean) => void;
+}) {
   const pathname = usePathname()
   const { user, loading } = useAuth()
 
-  return (
-    <aside className="hidden md:flex flex-col w-64 bg-card border-r border-border min-h-screen fixed left-0 top-0 z-40 shadow-xl">
+  const SidebarContent = (
+    <>
       <div className="p-6 pb-4 border-b border-border/50">
-        <Link href="/dashboard" className="flex items-center justify-center w-full group">
+        <Link href="/dashboard" className="flex items-center justify-center w-full group" onClick={() => setMobileOpen(false)}>
           <div className="relative h-14 w-full max-w-[200px] overflow-hidden transition-transform group-hover:scale-105">
             <Image src="/logo2.png" alt="Free Bucks Dashboard" fill className="object-contain" priority />
           </div>
@@ -49,6 +55,7 @@ export function DashboardSidebar() {
             <Link
               key={link.name}
               href={link.href}
+              onClick={() => setMobileOpen(false)}
               className={cn(
                 "flex items-center gap-3 px-3 py-2.5 rounded-md transition-colors font-medium text-sm",
                 pathname === link.href 
@@ -74,12 +81,38 @@ export function DashboardSidebar() {
         </div>
         <Link 
           href="/"
+          onClick={() => setMobileOpen(false)}
           className="flex items-center gap-3 px-3 py-2.5 rounded-md transition-colors font-medium text-sm text-red-500 hover:bg-red-500/10"
         >
           <LogOut className="w-5 h-5" />
           Logout
         </Link>
       </div>
-    </aside>
+    </>
+  )
+
+  return (
+    <>
+      {/* Desktop Sidebar */}
+      <aside className="hidden md:flex flex-col w-64 bg-card border-r border-border min-h-screen fixed left-0 top-0 z-40 shadow-xl">
+        {SidebarContent}
+      </aside>
+
+      {/* Mobile Sidebar */}
+      {mobileOpen && (
+        <div className="md:hidden fixed inset-0 z-50 flex">
+          {/* Overlay */}
+          <div 
+            className="fixed inset-0 bg-black/60 backdrop-blur-sm transition-opacity" 
+            onClick={() => setMobileOpen(false)}
+            aria-hidden="true"
+          />
+          {/* Drawer */}
+          <aside className="relative flex flex-col w-[280px] max-w-[80%] bg-card border-r border-border h-full shadow-2xl animate-in slide-in-from-left duration-300 z-50">
+            {SidebarContent}
+          </aside>
+        </div>
+      )}
+    </>
   )
 }
