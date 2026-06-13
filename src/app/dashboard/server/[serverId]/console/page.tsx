@@ -2,7 +2,7 @@
 
 import { useContext, useEffect, useRef, useState } from "react"
 import { ServerContext } from "../layout"
-import api from "@/lib/api"
+import api, { handleApiError } from "@/lib/api"
 import { Terminal } from 'xterm'
 import { FitAddon } from 'xterm-addon-fit'
 import 'xterm/css/xterm.css'
@@ -15,52 +15,77 @@ export default function ConsolePage() {
   const terminalRef = useRef<HTMLDivElement>(null)
   const [socket, setSocket] = useState<WebSocket | null>(null)
   const [command, setCommand] = useState("")
+  const reconnectTimeoutRef = useRef<NodeJS.Timeout | null>(null)
 
   useEffect(() => {
     if (!server || !terminalRef.current) return
 
-    const term = new Terminal({
-      theme: { background: '#09090b', foreground: '#e4e4e7' },
-      fontFamily: 'Menlo, Monaco, "Courier New", monospace',
-      fontSize: 13,
-    })
-    const fitAddon = new FitAddon()
-    term.loadAddon(fitAddon)
-    term.open(terminalRef.current)
-    fitAddon.fit()
+    let term: Terminal
+    let fitAddon: FitAddon
+    try {
+      term = new Terminal({
+        theme: { background: '#09090b', foreground: '#e4e4e7' },
+        fontFamily: 'Menlo, Monaco, "Courier New", monospace',
+        fontSize: 13,
+      })
+      fitAddon = new FitAddon()
+      term.loadAddon(fitAddon)
+      term.open(terminalRef.current)
+      fitAddon.fit()
+    } catch (err) {
+      console.error("Xterm Init Error:", err)
+      return
+    }
 
     let ws: WebSocket | null = null
 
     const connectWs = async () => {
       try {
+        term.writeln('\x1b[33m[FreeBucks]\x1b[0m Fetching websocket credentials...')
+        console.log(`[FreeBucks] Fetching websocket credentials from backend for server: ${server.id}`)
         const res = await api.get(`/servers/${server.id}/panel/websocket`)
         const { token, socket: wssUrl } = res.data
 
+        term.writeln(`\x1b[33m[FreeBucks]\x1b[0m Connecting to daemon at ${wssUrl}...`)
         ws = new WebSocket(wssUrl)
         setSocket(ws)
 
         ws.onopen = () => {
           ws?.send(JSON.stringify({ event: 'auth', args: [token] }))
-          term.writeln('\x1b[32m[FreeBucks]\x1b[0m Connected to server daemon.')
         }
 
         ws.onmessage = (e) => {
           const msg = JSON.parse(e.data)
-          if (msg.event === 'console output') {
+          if (msg.event === 'auth success') {
+            term.writeln('\x1b[32m[FreeBucks]\x1b[0m Connected and authenticated with server daemon.')
+          } else if (msg.event === 'console output') {
             msg.args.forEach((line: string) => term.writeln(line))
+          } else if (msg.event === 'status') {
+            term.writeln(`\x1b[34m[FreeBucks]\x1b[0m Server status: ${msg.args[0]}`)
+          } else if (msg.event === 'stats') {
+            // Optional: log stats or use them to update state
+          } else if (msg.event === 'token expiring') {
+            // Token expires soon, refresh it
+            connectWs()
           }
         }
 
         ws.onclose = () => {
-          term.writeln('\x1b[31m[FreeBucks]\x1b[0m Disconnected from server daemon.')
+          term.writeln('\x1b[31m[FreeBucks]\x1b[0m Disconnected from server daemon. Reconnecting in 5s...')
+          setSocket(null)
+          reconnectTimeoutRef.current = setTimeout(() => {
+            if (terminalRef.current) connectWs()
+          }, 5000)
         }
 
         ws.onerror = () => {
           term.writeln('\x1b[31m[FreeBucks]\x1b[0m Connection error.')
         }
 
-      } catch (err) {
-        term.writeln('\x1b[31m[FreeBucks]\x1b[0m Failed to get websocket credentials.')
+      } catch (err: any) {
+        const msg = handleApiError(err);
+        term.writeln(`\x1b[31m[FreeBucks]\x1b[0m ${msg}`);
+        console.error("Websocket Credential Error:", msg)
       }
     }
 
@@ -71,7 +96,11 @@ export default function ConsolePage() {
 
     return () => {
       window.removeEventListener('resize', handleResize)
-      ws?.close()
+      if (ws) {
+        ws.onclose = null;
+        ws.close();
+      }
+      if (reconnectTimeoutRef.current) clearTimeout(reconnectTimeoutRef.current);
       term.dispose()
     }
   }, [server])

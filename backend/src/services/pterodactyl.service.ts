@@ -1,8 +1,12 @@
 import axios from 'axios';
 
 export class PterodactylService {
-  private static isConfigured(): boolean {
+  private static isAppConfigured(): boolean {
     return !!(process.env.PTERODACTYL_PANEL_URL && process.env.PTERODACTYL_API_KEY);
+  }
+
+  private static isClientConfigured(): boolean {
+    return !!(process.env.PTERODACTYL_PANEL_URL && process.env.PTERODACTYL_CLIENT_KEY);
   }
 
   private static getAppHeaders() {
@@ -22,9 +26,8 @@ export class PterodactylService {
   }
 
   public static async createUser(email: string, username: string, first_name: string, last_name: string, password?: string) {
-    if (!this.isConfigured()) {
-      console.log(`[Pterodactyl Sim] Created user ${username} (${email})`);
-      return Math.floor(Math.random() * 10000) + 100;
+    if (!this.isAppConfigured()) {
+      throw new Error('Pterodactyl Application API is not configured');
     }
 
     const url = `${process.env.PTERODACTYL_PANEL_URL}/api/application/users`;
@@ -41,9 +44,8 @@ export class PterodactylService {
   }
 
   public static async updateUserPassword(pteroUserId: number, email: string, username: string, first_name: string, last_name: string, password?: string) {
-    if (!this.isConfigured()) {
-      console.log(`[Pterodactyl Sim] Updated password for user ID ${pteroUserId}`);
-      return true;
+    if (!this.isAppConfigured()) {
+      throw new Error('Pterodactyl Application API is not configured');
     }
 
     const url = `${process.env.PTERODACTYL_PANEL_URL}/api/application/users/${pteroUserId}`;
@@ -60,12 +62,8 @@ export class PterodactylService {
   }
 
   public static async createServer(name: string, ramGB: number, cpu: number, disk: number, pteroUserId: number) {
-    if (!this.isConfigured()) {
-      console.log(`[Pterodactyl Sim] Created server ${name} with ${ramGB}GB RAM, ${cpu}% CPU, ${disk}GB Disk.`);
-      return { 
-        id: Math.floor(Math.random() * 10000), 
-        identifier: Math.random().toString(36).substring(7) 
-      };
+    if (!this.isAppConfigured()) {
+      throw new Error('Pterodactyl Application API is not configured');
     }
 
     const url = `${process.env.PTERODACTYL_PANEL_URL}/api/application/servers`;
@@ -109,9 +107,8 @@ export class PterodactylService {
   }
 
   public static async updateServerBuild(serverId: number, ramGB: number, cpu: number, disk: number) {
-    if (!this.isConfigured()) {
-      console.log(`[Pterodactyl Sim] Updating build for server ID ${serverId} to ${ramGB}GB RAM, ${cpu}% CPU, ${disk}GB Disk`);
-      return true;
+    if (!this.isAppConfigured()) {
+      throw new Error('Pterodactyl Application API is not configured');
     }
 
     const getUrl = `${process.env.PTERODACTYL_PANEL_URL}/api/application/servers/${serverId}`;
@@ -138,8 +135,8 @@ export class PterodactylService {
   }
 
   public static async getServerAllocation(identifier: string) {
-    if (!this.isConfigured()) {
-      return { ip: '127.0.0.1', alias: null, port: 25565 };
+    if (!this.isClientConfigured()) {
+      throw new Error('Pterodactyl Client API is not configured');
     }
     try {
       const url = `${process.env.PTERODACTYL_PANEL_URL}/api/client/servers/${identifier}`;
@@ -161,9 +158,8 @@ export class PterodactylService {
   }
 
   public static async startServer(identifier: string) {
-    if (!this.isConfigured()) {
-      console.log(`[Pterodactyl Sim] Starting server ${identifier}`);
-      return true;
+    if (!this.isClientConfigured()) {
+      throw new Error('Pterodactyl Client API is not configured');
     }
     const url = `${process.env.PTERODACTYL_PANEL_URL}/api/client/servers/${identifier}/power`;
     await axios.post(url, { signal: 'start' }, { headers: this.getClientHeaders() });
@@ -171,9 +167,8 @@ export class PterodactylService {
   }
 
   public static async stopServer(identifier: string) {
-    if (!this.isConfigured()) {
-      console.log(`[Pterodactyl Sim] Stopping server ${identifier}`);
-      return true;
+    if (!this.isClientConfigured()) {
+      throw new Error('Pterodactyl Client API is not configured');
     }
     const url = `${process.env.PTERODACTYL_PANEL_URL}/api/client/servers/${identifier}/power`;
     await axios.post(url, { signal: 'kill' }, { headers: this.getClientHeaders() });
@@ -181,9 +176,8 @@ export class PterodactylService {
   }
 
   public static async restartServer(identifier: string) {
-    if (!this.isConfigured()) {
-      console.log(`[Pterodactyl Sim] Restarting server ${identifier}`);
-      return true;
+    if (!this.isClientConfigured()) {
+      throw new Error('Pterodactyl Client API is not configured');
     }
     const url = `${process.env.PTERODACTYL_PANEL_URL}/api/client/servers/${identifier}/power`;
     await axios.post(url, { signal: 'restart' }, { headers: this.getClientHeaders() });
@@ -191,9 +185,8 @@ export class PterodactylService {
   }
 
   public static async suspendServer(serverId: number) {
-    if (!this.isConfigured()) {
-      console.log(`[Pterodactyl Sim] Suspending server ID ${serverId}`);
-      return true;
+    if (!this.isAppConfigured()) {
+      throw new Error('Pterodactyl Application API is not configured');
     }
     const url = `${process.env.PTERODACTYL_PANEL_URL}/api/application/servers/${serverId}/suspend`;
     await axios.post(url, {}, { headers: this.getAppHeaders() });
@@ -201,9 +194,8 @@ export class PterodactylService {
   }
 
   public static async deleteServer(serverId: number) {
-    if (!this.isConfigured()) {
-      console.log(`[Pterodactyl Sim] Deleting server ID ${serverId}`);
-      return true;
+    if (!this.isAppConfigured()) {
+      throw new Error('Pterodactyl Application API is not configured');
     }
     const url = `${process.env.PTERODACTYL_PANEL_URL}/api/application/servers/${serverId}`;
     await axios.delete(url, { headers: this.getAppHeaders() });
@@ -211,8 +203,8 @@ export class PterodactylService {
   }
 
   public static async checkConnection() {
-    if (!this.isConfigured()) {
-      return { status: 'simulation_mode' };
+    if (!this.isAppConfigured()) {
+      return { status: 'simulation_mode', message: 'API not configured' };
     }
 
     try {
@@ -230,41 +222,41 @@ export class PterodactylService {
   // ==========================================
 
   public static async getServerStatus(identifier: string) {
-    if (!this.isConfigured()) return { currentState: 'offline', usage: { cpu: 0, memory_bytes: 0, disk_bytes: 0, uptime: 0 } };
+    if (!this.isClientConfigured()) throw new Error('Pterodactyl Client API is not configured');
     const url = `${process.env.PTERODACTYL_PANEL_URL}/api/client/servers/${identifier}/resources`;
     const res = await axios.get(url, { headers: this.getClientHeaders() });
     return res.data.attributes;
   }
 
   public static async getWebsocketCredentials(identifier: string) {
-    if (!this.isConfigured()) return { token: 'sim-token', socket: 'wss://sim.node/ws' };
+    if (!this.isClientConfigured()) throw new Error('Pterodactyl Client API is not configured');
     const url = `${process.env.PTERODACTYL_PANEL_URL}/api/client/servers/${identifier}/websocket`;
     const res = await axios.get(url, { headers: this.getClientHeaders() });
     return res.data.data;
   }
 
   public static async sendCommand(identifier: string, command: string) {
-    if (!this.isConfigured()) return;
+    if (!this.isClientConfigured()) throw new Error('Pterodactyl Client API is not configured');
     const url = `${process.env.PTERODACTYL_PANEL_URL}/api/client/servers/${identifier}/command`;
     await axios.post(url, { command }, { headers: this.getClientHeaders() });
   }
 
   public static async listFiles(identifier: string, directory: string = '/') {
-    if (!this.isConfigured()) return [];
+    if (!this.isClientConfigured()) throw new Error('Pterodactyl Client API is not configured');
     const url = `${process.env.PTERODACTYL_PANEL_URL}/api/client/servers/${identifier}/files/list?directory=${encodeURIComponent(directory)}`;
     const res = await axios.get(url, { headers: this.getClientHeaders() });
     return res.data.data.map((f: any) => f.attributes);
   }
 
   public static async getFileContent(identifier: string, file: string) {
-    if (!this.isConfigured()) return '';
+    if (!this.isClientConfigured()) throw new Error('Pterodactyl Client API is not configured');
     const url = `${process.env.PTERODACTYL_PANEL_URL}/api/client/servers/${identifier}/files/contents?file=${encodeURIComponent(file)}`;
     const res = await axios.get(url, { headers: this.getClientHeaders(), responseType: 'text' });
     return res.data;
   }
 
   public static async saveFileContent(identifier: string, file: string, content: string) {
-    if (!this.isConfigured()) return;
+    if (!this.isClientConfigured()) throw new Error('Pterodactyl Client API is not configured');
     const url = `${process.env.PTERODACTYL_PANEL_URL}/api/client/servers/${identifier}/files/write?file=${encodeURIComponent(file)}`;
     await axios.post(url, content, { 
       headers: { ...this.getClientHeaders(), 'Content-Type': 'text/plain' }
@@ -272,34 +264,53 @@ export class PterodactylService {
   }
 
   public static async renameFiles(identifier: string, root: string, files: {from: string, to: string}[]) {
-    if (!this.isConfigured()) return;
+    if (!this.isClientConfigured()) throw new Error('Pterodactyl Client API is not configured');
     const url = `${process.env.PTERODACTYL_PANEL_URL}/api/client/servers/${identifier}/files/rename`;
     await axios.put(url, { root, files }, { headers: this.getClientHeaders() });
   }
 
   public static async createFolder(identifier: string, root: string, name: string) {
-    if (!this.isConfigured()) return;
+    if (!this.isClientConfigured()) throw new Error('Pterodactyl Client API is not configured');
     const url = `${process.env.PTERODACTYL_PANEL_URL}/api/client/servers/${identifier}/files/create-folder`;
     await axios.post(url, { root, name }, { headers: this.getClientHeaders() });
   }
 
   public static async deleteFiles(identifier: string, root: string, files: string[]) {
-    if (!this.isConfigured()) return;
+    if (!this.isClientConfigured()) throw new Error('Pterodactyl Client API is not configured');
     const url = `${process.env.PTERODACTYL_PANEL_URL}/api/client/servers/${identifier}/files/delete`;
     await axios.post(url, { root, files }, { headers: this.getClientHeaders() });
   }
   
   public static async getUploadUrl(identifier: string) {
-    if (!this.isConfigured()) return 'http://sim.node/upload';
+    if (!this.isClientConfigured()) throw new Error('Pterodactyl Client API is not configured');
     const url = `${process.env.PTERODACTYL_PANEL_URL}/api/client/servers/${identifier}/files/upload`;
     const res = await axios.get(url, { headers: this.getClientHeaders() });
     return res.data.attributes.url;
   }
 
   public static async getDownloadUrl(identifier: string, file: string) {
-    if (!this.isConfigured()) return 'http://sim.node/download';
+    if (!this.isClientConfigured()) throw new Error('Pterodactyl Client API is not configured');
     const url = `${process.env.PTERODACTYL_PANEL_URL}/api/client/servers/${identifier}/files/download?file=${encodeURIComponent(file)}`;
     const res = await axios.get(url, { headers: this.getClientHeaders() });
     return res.data.attributes.url;
+  }
+
+  public static async getStartupVariables(identifier: string) {
+    if (!this.isClientConfigured()) throw new Error('Pterodactyl Client API is not configured');
+    const url = `${process.env.PTERODACTYL_PANEL_URL}/api/client/servers/${identifier}/startup`;
+    const res = await axios.get(url, { headers: this.getClientHeaders() });
+    return res.data.data.map((v: any) => v.attributes);
+  }
+
+  public static async updateStartupVariable(identifier: string, key: string, value: string) {
+    if (!this.isClientConfigured()) throw new Error('Pterodactyl Client API is not configured');
+    const url = `${process.env.PTERODACTYL_PANEL_URL}/api/client/servers/${identifier}/startup/variable`;
+    await axios.put(url, { key, value }, { headers: this.getClientHeaders() });
+  }
+
+  public static async reinstallServer(identifier: string) {
+    if (!this.isClientConfigured()) throw new Error('Pterodactyl Client API is not configured');
+    const url = `${process.env.PTERODACTYL_PANEL_URL}/api/client/servers/${identifier}/settings/reinstall`;
+    await axios.post(url, {}, { headers: this.getClientHeaders() });
   }
 }

@@ -1,14 +1,16 @@
 "use client"
 
-import { useContext, useEffect, useState } from "react"
+import { useContext, useEffect, useState, useRef } from "react"
 import { ServerContext } from "../layout"
 import api, { handleApiError } from "@/lib/api"
 import { Folder, FileText, File, Download, Trash, Edit, RefreshCw, Upload, Plus, ChevronRight, Save, X } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
+import axios from "axios"
 
 export default function FilesPage() {
   const { server } = useContext(ServerContext)
+  const fileInputRef = useRef<HTMLInputElement>(null)
   const [files, setFiles] = useState<any[]>([])
   const [currentPath, setCurrentPath] = useState("/")
   const [loading, setLoading] = useState(true)
@@ -108,6 +110,42 @@ export default function FilesPage() {
     }
   }
 
+  const handleCreateFolder = async () => {
+    const name = prompt("Enter folder name:")
+    if (!name) return
+    try {
+      await api.post(`/servers/${server.id}/panel/files/create-folder`, { root: currentPath, name })
+      fetchFiles(currentPath)
+    } catch (err: any) {
+      alert(handleApiError(err))
+    }
+  }
+
+  const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const filesList = e.target.files
+    if (!filesList || filesList.length === 0) return
+    try {
+      setLoading(true)
+      const res = await api.get(`/servers/${server.id}/panel/files/upload`)
+      const uploadUrl = res.data.url
+
+      const formData = new FormData()
+      for (let i = 0; i < filesList.length; i++) {
+        formData.append('files', filesList[i])
+      }
+
+      await axios.post(`${uploadUrl}&directory=${currentPath}`, formData, {
+        headers: { 'Content-Type': 'multipart/form-data' }
+      })
+      fetchFiles(currentPath)
+    } catch (err: any) {
+      alert(handleApiError(err))
+      setLoading(false)
+    }
+    // clear input
+    if (fileInputRef.current) fileInputRef.current.value = ''
+  }
+
   if (editingFile) {
     return (
       <div className="flex flex-col h-full gap-4">
@@ -147,7 +185,10 @@ export default function FilesPage() {
           ))}
         </div>
         <div className="flex gap-2">
+          <input type="file" multiple ref={fileInputRef} className="hidden" onChange={handleFileUpload} />
           <Button variant="outline" size="icon" onClick={() => fetchFiles(currentPath)} disabled={loading}><RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} /></Button>
+          <Button variant="outline" onClick={handleCreateFolder}><Plus className="w-4 h-4 mr-2" /> New Folder</Button>
+          <Button variant="default" onClick={() => fileInputRef.current?.click()}><Upload className="w-4 h-4 mr-2" /> Upload</Button>
         </div>
       </div>
 

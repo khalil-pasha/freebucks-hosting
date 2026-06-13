@@ -19,6 +19,7 @@ export class ServerPanelController {
 
   public static async getWebsocket(req: Request, res: Response) {
     const server = (req as any).server;
+    console.log(`[Websocket] Fetching credentials for server ${server.id} (Ptero ID: ${server.pterodactylIdentifier})`);
     if (!server.pterodactylIdentifier) return res.status(400).json({ error: 'Server not provisioned on node yet' });
     const creds = await PterodactylService.getWebsocketCredentials(server.pterodactylIdentifier);
     res.json(creds);
@@ -222,6 +223,31 @@ export class ServerPanelController {
     const { name } = req.body;
     await db.server.update({ where: { id: serverId }, data: { name } });
     await logActivity(serverId, req.user!.id, 'settings.update', req.ip || null, `Renamed to ${name}`);
+    res.json({ success: true });
+  }
+
+  public static async reinstallServer(req: Request, res: Response) {
+    const server = (req as any).server;
+    if (!server.pterodactylIdentifier) return res.status(400).json({ error: 'Not provisioned' });
+    await PterodactylService.reinstallServer(server.pterodactylIdentifier);
+    await logActivity(server.id, req.user!.id, 'server.reinstall', req.ip || null, 'Triggered reinstallation');
+    res.json({ success: true });
+  }
+
+  // --- Startup ---
+  public static async getStartup(req: Request, res: Response) {
+    const server = (req as any).server;
+    if (!server.pterodactylIdentifier) return res.json([]);
+    const vars = await PterodactylService.getStartupVariables(server.pterodactylIdentifier);
+    res.json(vars);
+  }
+
+  public static async updateStartup(req: Request, res: Response) {
+    const server = (req as any).server;
+    const { key, value } = req.body;
+    if (!server.pterodactylIdentifier) return res.status(400).json({ error: 'Not provisioned' });
+    await PterodactylService.updateStartupVariable(server.pterodactylIdentifier, key, value);
+    await logActivity(server.id, req.user!.id, 'startup.update', req.ip || null, `Updated ${key}`);
     res.json({ success: true });
   }
 }

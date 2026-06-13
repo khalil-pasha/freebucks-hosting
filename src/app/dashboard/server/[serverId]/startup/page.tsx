@@ -1,7 +1,8 @@
 "use client"
 
-import { useContext, useState } from "react"
+import { useContext, useState, useEffect } from "react"
 import { ServerContext } from "../layout"
+import api, { handleApiError } from "@/lib/api"
 import { PlayCircle, AlertCircle, Save } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -10,16 +11,32 @@ export default function StartupPage() {
   const { server } = useContext(ServerContext)
   const [saving, setSaving] = useState(false)
 
-  const [variables, setVariables] = useState([
-    { env_variable: 'SERVER_JARFILE', name: 'Server Jar File', val: 'server.jar' },
-    { env_variable: 'MINECRAFT_VERSION', name: 'Minecraft Version', val: 'latest' },
-    { env_variable: 'BUILD_NUMBER', name: 'Build Number', val: 'latest' }
-  ])
+  const [variables, setVariables] = useState<any[]>([])
+
+  useEffect(() => {
+    if (!server) return
+    const fetchVars = async () => {
+      try {
+        const res = await api.get(`/servers/${server.id}/panel/startup`)
+        setVariables(res.data.map((v: any) => ({ env_variable: v.env_variable, name: v.name, val: v.server_value })))
+      } catch (err: any) {
+        if (err.response && err.response.status === 403) return // Ignore if not permitted
+        console.error(handleApiError(err))
+      }
+    }
+    fetchVars()
+  }, [server])
 
   const handleSave = async () => {
     setSaving(true)
-    await new Promise(r => setTimeout(r, 1000))
-    alert("Startup variables saved! Please restart the server.")
+    try {
+      for (const v of variables) {
+        await api.post(`/servers/${server.id}/panel/startup`, { key: v.env_variable, value: v.val })
+      }
+      alert("Startup variables saved! Please restart the server.")
+    } catch (err: any) {
+      alert(handleApiError(err))
+    }
     setSaving(false)
   }
 

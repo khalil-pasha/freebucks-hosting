@@ -32,7 +32,12 @@ export default function SettingsPage() {
 
   const handleReinstall = async () => {
     if (!confirm("WARNING: This will wipe all files and reinstall the server. Are you sure?")) return
-    alert("Reinstall API is not yet implemented.")
+    try {
+      await api.post(`/servers/${server.id}/panel/reinstall`, {})
+      alert("Reinstallation triggered! Please check the console.")
+    } catch (err: any) {
+      alert(handleApiError(err))
+    }
   }
 
   return (

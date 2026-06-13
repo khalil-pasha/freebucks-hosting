@@ -36,5 +36,10 @@ router.get('/activity', requireServerAccess('activity'), ServerPanelController.g
 
 // Settings
 router.patch('/settings', requireServerAccess('settings'), ServerPanelController.updateSettings);
+router.post('/reinstall', requireServerAccess('settings'), ServerPanelController.reinstallServer);
+
+// Startup
+router.get('/startup', requireServerAccess('settings'), ServerPanelController.getStartup);
+router.post('/startup', requireServerAccess('settings'), ServerPanelController.updateStartup);
 
 export default router;

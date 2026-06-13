@@ -20,17 +20,7 @@ export default function PluginsPage() {
   const [installed, setInstalled] = useState<string[]>([])
 
   const handleInstall = async (pluginId: string) => {
-    try {
-      setInstalling(pluginId)
-      // Mock API call since actual plugin repo integration requires backend downloader.
-      await new Promise(r => setTimeout(r, 2000)) // Simulate download
-      setInstalled(prev => [...prev, pluginId])
-      alert(`${pluginId} installed successfully! Please restart the server.`)
-    } catch (err: any) {
-      alert("Failed to install plugin.")
-    } finally {
-      setInstalling(null)
-    }
+    alert("One-click plugin installation is coming soon. Please upload the plugin JAR file manually through the Files tab.");
   }
 
   return (
@@ -54,17 +44,10 @@ export default function PluginsPage() {
               <span className="text-xs text-foreground/40 font-mono">v{plugin.version}</span>
               <Button 
                 size="sm" 
-                variant={installed.includes(plugin.id) ? "secondary" : "default"}
-                disabled={installing === plugin.id || installed.includes(plugin.id)}
+                variant="outline"
                 onClick={() => handleInstall(plugin.id)}
               >
-                {installing === plugin.id ? (
-                  "Installing..."
-                ) : installed.includes(plugin.id) ? (
-                  <><Check className="w-4 h-4 mr-2" /> Installed</>
-                ) : (
-                  <><Download className="w-4 h-4 mr-2" /> Install</>
-                )}
+                <Download className="w-4 h-4 mr-2" /> Coming Soon
               </Button>
             </div>
           </div>
