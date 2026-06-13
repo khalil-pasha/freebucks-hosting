@@ -3,7 +3,7 @@ import { motion, AnimatePresence } from "framer-motion"
 import { Card, CardHeader, CardTitle, CardContent, CardFooter, CardDescription } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
-import { Server, Power, RefreshCw, Zap, Clock, Coins, MapPin, Activity, ExternalLink, X, Cpu, HardDrive, ShieldAlert } from "lucide-react"
+import { Server, Power, RefreshCw, Zap, Clock, Coins, MapPin, Activity, ExternalLink, X, Cpu, HardDrive, ShieldAlert, Settings } from "lucide-react"
 
 import { useEffect, useState } from "react"
 import { useRouter } from "next/navigation"
@@ -269,8 +269,8 @@ export default function ServersPage() {
                   </span>
                   <div className="flex gap-2">
                     <Button variant="ghost" size="sm" className="h-6 px-2 text-xs" onClick={(e) => { e.stopPropagation(); navigator.clipboard.writeText(server.allocationAlias ? `${server.allocationAlias}:${server.allocationPort}` : server.allocationIp ? `${server.allocationIp}:${server.allocationPort}` : '')}}>Copy IP</Button>
-                    <Button variant="outline" size="sm" className="h-6 px-2 text-xs border-primary/50 text-primary hover:bg-primary/10" onClick={(e) => { e.stopPropagation(); window.open('https://panel.freebucks.host', '_blank')}}>
-                      <ExternalLink className="w-3 h-3 mr-1" /> Panel Access
+                    <Button variant="outline" size="sm" className="h-6 px-2 text-xs border-primary/50 text-primary hover:bg-primary/10" onClick={(e) => { e.stopPropagation(); router.push(`/dashboard/server/${server.id}/console`)}}>
+                      <Settings className="w-3 h-3 mr-1" /> Manage Server
                     </Button>
                   </div>
                 </div>
