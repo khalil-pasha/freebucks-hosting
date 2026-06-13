@@ -65,21 +65,35 @@ export default function ConsolePage() {
           } else if (msg.event === 'stats') {
             // Optional: log stats or use them to update state
           } else if (msg.event === 'token expiring') {
-            // Token expires soon, refresh it
+            term.writeln('\x1b[33m[FreeBucks]\x1b[0m Token expiring soon, reconnecting...')
             connectWs()
+          } else if (msg.event === 'token expired') {
+            term.writeln('\x1b[31m[FreeBucks]\x1b[0m Token expired. Reconnecting...')
+            connectWs()
+          } else if (msg.event === 'jwt error') {
+            term.writeln(`\x1b[31m[FreeBucks]\x1b[0m JWT Error: ${msg.args ? msg.args.join(' ') : 'Authentication failed'}`)
+          } else if (msg.event === 'daemon error') {
+            term.writeln(`\x1b[31m[FreeBucks]\x1b[0m Daemon Error: ${msg.args ? msg.args.join(' ') : 'Unknown'}`)
           }
         }
 
-        ws.onclose = () => {
-          term.writeln('\x1b[31m[FreeBucks]\x1b[0m Disconnected from server daemon. Reconnecting in 5s...')
+        ws.onclose = (e) => {
+          let reason = e.reason || 'Unknown reason';
+          if (e.code === 1006) reason = 'Abnormal Closure (Daemon unreachable, SSL error, or proxy block)';
+          term.writeln(`\x1b[31m[FreeBucks]\x1b[0m Disconnected from server daemon. Reason: ${reason} (Code: ${e.code}). Reconnecting in 5s...`)
           setSocket(null)
           reconnectTimeoutRef.current = setTimeout(() => {
             if (terminalRef.current) connectWs()
           }, 5000)
         }
 
-        ws.onerror = () => {
-          term.writeln('\x1b[31m[FreeBucks]\x1b[0m Connection error.')
+        ws.onerror = (e) => {
+          term.writeln(`\x1b[31m[FreeBucks]\x1b[0m Connection error. URL: ${wssUrl.split('?')[0]}`)
+          const isWss = wssUrl.startsWith('wss://');
+          const isHttps = window.location.protocol === 'https:';
+          if (isHttps && !isWss) {
+             term.writeln('\x1b[31m[FreeBucks]\x1b[0m Mixed content blocked: trying to connect to ws:// from https:// page.');
+          }
         }
 
       } catch (err: any) {
@@ -134,6 +148,7 @@ export default function ConsolePage() {
     <div className="flex flex-col h-full gap-4">
       <div className="flex gap-2 mb-2">
         <Button onClick={() => handlePower('start')} disabled={status?.currentState === 'running'} variant="outline" className="text-success border-success/30 hover:bg-success/10"><Play className="w-4 h-4 mr-2" /> Start</Button>
+        <Button onClick={() => handlePower('stop')} disabled={status?.currentState === 'offline'} variant="outline" className="text-yellow-500 border-yellow-500/30 hover:bg-yellow-500/10"><Square className="w-4 h-4 mr-2" /> Stop</Button>
         <Button onClick={() => handlePower('restart')} disabled={status?.currentState === 'offline'} variant="outline" className="text-primary border-primary/30 hover:bg-primary/10"><RotateCcw className="w-4 h-4 mr-2" /> Restart</Button>
         <Button onClick={() => handlePower('kill')} disabled={status?.currentState === 'offline'} variant="outline" className="text-red-500 border-red-500/30 hover:bg-red-500/10"><Square className="w-4 h-4 mr-2" /> Kill</Button>
       </div>

@@ -31,8 +31,9 @@ export class ServerPanelController {
     if (!server.pterodactylIdentifier) return res.status(400).json({ error: 'Not provisioned' });
 
     if (action === 'start') await PterodactylService.startServer(server.pterodactylIdentifier);
-    else if (action === 'stop' || action === 'kill') await PterodactylService.stopServer(server.pterodactylIdentifier);
-    else if (action === 'restart') await PterodactylService.restartServer(server.pterodactylIdentifier);
+    else if (action === 'stop') await PterodactylService.powerServer(server.pterodactylIdentifier, 'stop');
+    else if (action === 'kill') await PterodactylService.powerServer(server.pterodactylIdentifier, 'kill');
+    else if (action === 'restart') await PterodactylService.powerServer(server.pterodactylIdentifier, 'restart');
     
     await logActivity(server.id, req.user!.id, `power.${action}`, req.ip || null);
     res.json({ success: true });

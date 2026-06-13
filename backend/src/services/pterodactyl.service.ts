@@ -157,31 +157,25 @@ export class PterodactylService {
     }
   }
 
-  public static async startServer(identifier: string) {
+  public static async powerServer(identifier: string, signal: 'start' | 'stop' | 'restart' | 'kill') {
     if (!this.isClientConfigured()) {
       throw new Error('Pterodactyl Client API is not configured');
     }
     const url = `${process.env.PTERODACTYL_PANEL_URL}/api/client/servers/${identifier}/power`;
-    await axios.post(url, { signal: 'start' }, { headers: this.getClientHeaders() });
+    await axios.post(url, { signal }, { headers: this.getClientHeaders() });
     return true;
+  }
+
+  public static async startServer(identifier: string) {
+    return this.powerServer(identifier, 'start');
   }
 
   public static async stopServer(identifier: string) {
-    if (!this.isClientConfigured()) {
-      throw new Error('Pterodactyl Client API is not configured');
-    }
-    const url = `${process.env.PTERODACTYL_PANEL_URL}/api/client/servers/${identifier}/power`;
-    await axios.post(url, { signal: 'kill' }, { headers: this.getClientHeaders() });
-    return true;
+    return this.powerServer(identifier, 'kill');
   }
 
   public static async restartServer(identifier: string) {
-    if (!this.isClientConfigured()) {
-      throw new Error('Pterodactyl Client API is not configured');
-    }
-    const url = `${process.env.PTERODACTYL_PANEL_URL}/api/client/servers/${identifier}/power`;
-    await axios.post(url, { signal: 'restart' }, { headers: this.getClientHeaders() });
-    return true;
+    return this.powerServer(identifier, 'restart');
   }
 
   public static async suspendServer(serverId: number) {
