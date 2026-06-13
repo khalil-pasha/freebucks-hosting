@@ -56,6 +56,7 @@ import referralRoutes from './routes/referral.routes';
 import authRoutes from './routes/auth.routes';
 import adminAuthRoutes from './routes/admin.auth.routes';
 import serverRoutes from './routes/server.routes';
+import serverPanelRoutes from './routes/server-panel.routes';
 import adminServerRoutes from './routes/admin.server.routes';
 import queueRoutes from './routes/queue.routes';
 import adminQueueRoutes from './routes/admin.queue.routes';
@@ -70,6 +71,7 @@ import adminCoreRoutes from './routes/admin.core.routes';
 // User Routes
 app.use('/auth', authRoutes);
 app.use('/servers', serverRoutes);
+app.use('/servers/:id/panel', serverPanelRoutes);
 app.use('/credits', creditsLimiter, creditsRoutes);
 app.use('/vouchers', voucherLimiter, voucherRoutes);
 app.use('/referrals', referralRoutes);

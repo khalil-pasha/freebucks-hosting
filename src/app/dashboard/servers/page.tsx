@@ -243,7 +243,7 @@ export default function ServersPage() {
 
           return (
           <motion.div key={server.id} initial={{ y: 20, opacity: 0 }} animate={{ y: 0, opacity: 1 }}>
-            <Card className="bg-card/50 backdrop-blur-sm border-border/50 relative overflow-hidden flex flex-col h-full hover:border-primary/30 transition-colors">
+            <Card onClick={() => router.push(`/dashboard/server/${server.id}/console`)} className="bg-card/50 backdrop-blur-sm border-border/50 relative overflow-hidden flex flex-col h-full hover:border-primary/30 transition-colors cursor-pointer hover:shadow-[0_0_15px_rgba(var(--primary),0.1)]">
               {server.costPerHour >= 8 && (
                 <div className="absolute top-0 left-0 w-full h-1 bg-[#FFD700]" />
               )}
@@ -268,8 +268,8 @@ export default function ServersPage() {
                     {server.allocationAlias ? `${server.allocationAlias}:${server.allocationPort}` : server.allocationIp ? `${server.allocationIp}:${server.allocationPort}` : 'Pending...'}
                   </span>
                   <div className="flex gap-2">
-                    <Button variant="ghost" size="sm" className="h-6 px-2 text-xs" onClick={() => navigator.clipboard.writeText(server.allocationAlias ? `${server.allocationAlias}:${server.allocationPort}` : server.allocationIp ? `${server.allocationIp}:${server.allocationPort}` : '')}>Copy IP</Button>
-                    <Button variant="outline" size="sm" className="h-6 px-2 text-xs border-primary/50 text-primary hover:bg-primary/10" onClick={() => window.open('https://panel.freebucks.host', '_blank')}>
+                    <Button variant="ghost" size="sm" className="h-6 px-2 text-xs" onClick={(e) => { e.stopPropagation(); navigator.clipboard.writeText(server.allocationAlias ? `${server.allocationAlias}:${server.allocationPort}` : server.allocationIp ? `${server.allocationIp}:${server.allocationPort}` : '')}}>Copy IP</Button>
+                    <Button variant="outline" size="sm" className="h-6 px-2 text-xs border-primary/50 text-primary hover:bg-primary/10" onClick={(e) => { e.stopPropagation(); window.open('https://panel.freebucks.host', '_blank')}}>
                       <ExternalLink className="w-3 h-3 mr-1" /> Panel Access
                     </Button>
                   </div>
@@ -325,7 +325,7 @@ export default function ServersPage() {
 
               <CardFooter className="pt-4 border-t border-border/50 bg-card/30 flex flex-wrap gap-2">
                 {displayStatus === "STOPPED" ? (
-                  <Button disabled={actionLoading === server.id} onClick={() => handleAction('start-server', server.id)} size="sm" className="bg-success hover:bg-success/90 text-white shadow-lg shadow-success/20 flex-1 sm:flex-none">
+                  <Button disabled={actionLoading === server.id} onClick={(e) => { e.stopPropagation(); handleAction('start-server', server.id)}} size="sm" className="bg-success hover:bg-success/90 text-white shadow-lg shadow-success/20 flex-1 sm:flex-none">
                     {actionLoading === server.id ? (
                       <><RefreshCw className="w-4 h-4 mr-2 animate-spin" /> Starting...</>
                     ) : (
@@ -334,15 +334,15 @@ export default function ServersPage() {
                   </Button>
                 ) : (
                   <>
-                    <Button disabled={isLocallyStarting && elapsedSecs <= 120} onClick={() => handleAction('cancel', server.id)} size="sm" className="bg-red-500 hover:bg-red-600 text-white flex-1 sm:flex-none">
+                    <Button disabled={isLocallyStarting && elapsedSecs <= 120} onClick={(e) => { e.stopPropagation(); handleAction('cancel', server.id)}} size="sm" className="bg-red-500 hover:bg-red-600 text-white flex-1 sm:flex-none">
                       <Power className="w-4 h-4 mr-2" /> Stop
                     </Button>
-                    <Button disabled={isLocallyStarting && elapsedSecs <= 120} onClick={() => handleAction('restart-server', server.id)} size="sm" variant="outline" className="flex-1 sm:flex-none border-primary/50 text-primary hover:bg-primary/10">
+                    <Button disabled={isLocallyStarting && elapsedSecs <= 120} onClick={(e) => { e.stopPropagation(); handleAction('restart-server', server.id)}} size="sm" variant="outline" className="flex-1 sm:flex-none border-primary/50 text-primary hover:bg-primary/10">
                       <RefreshCw className="w-4 h-4 mr-2" /> Restart
                     </Button>
                   </>
                 )}
-                <Button size="sm" variant="secondary" className="flex-1 sm:flex-none ml-auto" onClick={() => { setUpgradeTarget(server); setIsPlanModalOpen(true); setSelectedPlan(null); }}>
+                <Button size="sm" variant="secondary" className="flex-1 sm:flex-none ml-auto" onClick={(e) => { e.stopPropagation(); setUpgradeTarget(server); setIsPlanModalOpen(true); setSelectedPlan(null); }}>
                   <Zap className="w-4 h-4 mr-2" /> Upgrade
                 </Button>
               </CardFooter>
