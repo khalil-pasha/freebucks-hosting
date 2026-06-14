@@ -1,12 +1,12 @@
 import { Request, Response } from 'express';
 import { db } from '../utils/db';
 import { PterodactylService } from '../services/pterodactyl.service';
-
 const logActivity = async (serverId: string, userId: string, action: string, ipAddress: string | null, details: string | null = null) => {
   await db.serverActivityLog.create({
     data: { serverId, userId, action, ipAddress, details }
   });
 };
+import WebSocket from 'ws';
 
 export class ServerPanelController {
 
@@ -23,6 +23,65 @@ export class ServerPanelController {
     if (!server.pterodactylIdentifier) return res.status(400).json({ error: 'Server not provisioned on node yet' });
     const creds = await PterodactylService.getWebsocketCredentials(server.pterodactylIdentifier);
     res.json(creds);
+  }
+
+  public static async websocketProxy(ws: WebSocket, req: Request) {
+    const server = (req as any).server;
+    console.log(`[WS Proxy] client connected`);
+    
+    if (!server.pterodactylIdentifier) {
+      ws.send(JSON.stringify({ event: 'daemon error', args: ['Server not provisioned on node yet'] }));
+      ws.close();
+      return;
+    }
+
+    try {
+      console.log(`[WS Proxy] fetched Wings credentials`);
+      const creds = await PterodactylService.getWebsocketCredentials(server.pterodactylIdentifier);
+      const { token, socket: wssUrl } = creds;
+
+      const wingsWs = new WebSocket(wssUrl);
+
+      wingsWs.on('open', () => {
+        console.log(`[WS Proxy] connected to Wings`);
+        wingsWs.send(JSON.stringify({ event: 'auth', args: [token] }));
+      });
+
+      wingsWs.on('message', (data: any) => {
+        const msgStr = data.toString();
+        if (msgStr.includes('"auth success"')) {
+          console.log(`[WS Proxy] authenticated`);
+        }
+        if (ws.readyState === WebSocket.OPEN) {
+          ws.send(msgStr);
+        }
+      });
+
+      wingsWs.on('close', () => {
+        console.log(`[WS Proxy] closed/error`);
+        if (ws.readyState === WebSocket.OPEN) ws.close();
+      });
+
+      wingsWs.on('error', (err: any) => {
+        console.error(`[WS Proxy] Wings error:`, err.message);
+        if (ws.readyState === WebSocket.OPEN) ws.close();
+      });
+
+      ws.on('message', (msg: any) => {
+        if (wingsWs.readyState === WebSocket.OPEN) {
+          wingsWs.send(msg);
+        }
+      });
+
+      ws.on('close', () => {
+        if (wingsWs.readyState === WebSocket.OPEN) wingsWs.close();
+      });
+
+    } catch (err: any) {
+      console.error(`[WS Proxy] Error:`, err.message);
+      ws.send(JSON.stringify({ event: 'daemon error', args: [err.message] }));
+      ws.close();
+    }
   }
 
   public static async powerAction(req: Request, res: Response) {

@@ -6,7 +6,10 @@ import { validateEnv } from './utils/env';
 dotenv.config();
 validateEnv();
 
-const app = express();
+const appBase = express();
+import expressWs from 'express-ws';
+const { app, getWss } = expressWs(appBase);
+
 // Trust Cloudflare/Nginx proxies to correctly resolve req.ip
 app.set("trust proxy", true);
 const port = process.env.PORT || 5000;

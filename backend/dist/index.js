@@ -9,7 +9,9 @@ const dotenv_1 = __importDefault(require("dotenv"));
 const env_1 = require("./utils/env");
 dotenv_1.default.config();
 (0, env_1.validateEnv)();
-const app = (0, express_1.default)();
+const appBase = (0, express_1.default)();
+const express_ws_1 = __importDefault(require("express-ws"));
+const { app, getWss } = (0, express_ws_1.default)(appBase);
 // Trust Cloudflare/Nginx proxies to correctly resolve req.ip
 app.set("trust proxy", true);
 const port = process.env.PORT || 5000;
@@ -54,6 +56,7 @@ const referral_routes_1 = __importDefault(require("./routes/referral.routes"));
 const auth_routes_1 = __importDefault(require("./routes/auth.routes"));
 const admin_auth_routes_1 = __importDefault(require("./routes/admin.auth.routes"));
 const server_routes_1 = __importDefault(require("./routes/server.routes"));
+const server_panel_routes_1 = __importDefault(require("./routes/server-panel.routes"));
 const admin_server_routes_1 = __importDefault(require("./routes/admin.server.routes"));
 const queue_routes_1 = __importDefault(require("./routes/queue.routes"));
 const admin_queue_routes_1 = __importDefault(require("./routes/admin.queue.routes"));
@@ -67,6 +70,7 @@ const admin_core_routes_1 = __importDefault(require("./routes/admin.core.routes"
 // User Routes
 app.use('/auth', auth_routes_1.default);
 app.use('/servers', server_routes_1.default);
+app.use('/servers/:id/panel', server_panel_routes_1.default);
 app.use('/credits', security_1.creditsLimiter, credits_routes_1.default);
 app.use('/vouchers', security_1.voucherLimiter, voucher_routes_1.default);
 app.use('/referrals', referral_routes_1.default);
