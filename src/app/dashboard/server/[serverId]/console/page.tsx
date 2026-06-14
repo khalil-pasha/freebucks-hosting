@@ -11,7 +11,7 @@ import { Input } from "@/components/ui/input"
 import { Play, Square, RotateCcw } from "lucide-react"
 
 export default function ConsolePage() {
-  const { server, status } = useContext(ServerContext)
+  const { server, status, refetch } = useContext(ServerContext)
   const terminalRef = useRef<HTMLDivElement>(null)
   const [socket, setSocket] = useState<WebSocket | null>(null)
   const [command, setCommand] = useState("")
@@ -141,6 +141,7 @@ export default function ConsolePage() {
   const handlePower = async (action: string) => {
     try {
       await api.post(`/servers/${server.id}/panel/power`, { action })
+      if (refetch) refetch()
     } catch (err) {
       console.error(err)
     }

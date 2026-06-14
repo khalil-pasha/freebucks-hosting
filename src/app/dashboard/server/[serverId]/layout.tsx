@@ -52,7 +52,7 @@ export default function ServerPanelLayout({ children }: { children: React.ReactN
     fetchServer()
     const interval = setInterval(() => {
       api.get(`/servers/${serverId}/panel/status`).then(res => setStatus(res.data)).catch(console.error)
-    }, 10000)
+    }, 5000)
     return () => clearInterval(interval)
   }, [serverId])
 

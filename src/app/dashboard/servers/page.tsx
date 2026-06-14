@@ -241,6 +241,9 @@ export default function ServersPage() {
           const elapsedSecs = isLocallyStarting ? Math.floor((now - localState.startedAt) / 1000) : 0;
           const remainingSecs = Math.max(0, 60 - elapsedSecs);
 
+          const finalStatus = isLocallyStarting && server.liveStatus !== 'ONLINE' ? 'STARTING' : (server.liveStatus || displayStatus);
+          const finalIndicatorColor = finalStatus === 'ONLINE' ? 'bg-success' : finalStatus === 'STARTING' ? 'bg-orange-500' : 'bg-destructive';
+
           return (
           <motion.div key={server.id} initial={{ y: 20, opacity: 0 }} animate={{ y: 0, opacity: 1 }}>
             <Card onClick={() => router.push(`/dashboard/server/${server.id}/console`)} className="bg-card/50 backdrop-blur-sm border-border/50 relative overflow-hidden flex flex-col h-full hover:border-primary/30 transition-colors cursor-pointer hover:shadow-[0_0_15px_rgba(var(--primary),0.1)]">
@@ -256,9 +259,9 @@ export default function ServersPage() {
                     </CardTitle>
                     <p className="text-sm font-mono text-foreground/50 mt-1">{server.id}</p>
                   </div>
-                  <div className={`flex items-center gap-2 px-3 py-1 rounded-full text-xs font-bold uppercase border ${getStatusColor(displayStatus)}`}>
-                    <div className={`w-2 h-2 rounded-full ${server.liveStatus === 'ONLINE' ? 'bg-success' : 'bg-destructive'} animate-pulse`} />
-                    {server.liveStatus || displayStatus}
+                  <div className={`flex items-center gap-2 px-3 py-1 rounded-full text-xs font-bold uppercase border ${getStatusColor(finalStatus)}`}>
+                    <div className={`w-2 h-2 rounded-full ${finalIndicatorColor} animate-pulse`} />
+                    {finalStatus}
                   </div>
                 </div>
               </CardHeader>

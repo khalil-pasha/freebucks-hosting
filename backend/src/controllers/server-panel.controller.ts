@@ -160,7 +160,13 @@ export class ServerPanelController {
     const directory = req.query.directory as string || '/';
     if (!server.pterodactylIdentifier) return res.json([]);
     const files = await PterodactylService.listFiles(server.pterodactylIdentifier, directory);
-    res.json(files);
+    const mappedFiles = files.map((f: any) => ({
+      name: f.name,
+      isFile: f.is_file,
+      size: f.size,
+      modifiedAt: f.modified_at
+    }));
+    res.json(mappedFiles);
   }
 
   public static async getFileContent(req: Request, res: Response) {

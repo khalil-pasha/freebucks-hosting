@@ -71,11 +71,12 @@ export class PterodactylService {
       name,
       user: pteroUserId, // Ensure the Ptero user ID exists, usually linked to DB User
       egg: parseInt(process.env.PTERODACTYL_EGG_ID || '1', 10),
-      docker_image: 'ghcr.io/pterodactyl/yolks:java_17',
+      docker_image: 'ghcr.io/pterodactyl/yolks:java_25',
       startup: 'java -Xms128M -Xmx{{SERVER_MEMORY}}M -jar {{SERVER_JARFILE}}',
       environment: {
         SERVER_JARFILE: 'server.jar',
-        BUILD_NUMBER: 'latest'
+        BUILD_NUMBER: 'latest',
+        EULA: '1'
       },
       limits: {
         memory: ramGB * 1024,
