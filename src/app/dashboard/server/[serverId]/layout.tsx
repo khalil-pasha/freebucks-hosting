@@ -69,8 +69,8 @@ export default function ServerPanelLayout({ children }: { children: React.ReactN
                 <ArrowLeft className="w-5 h-5" />
               </Button>
               <h1 className="text-2xl font-bold">{server?.name}</h1>
-              <span className={`px-2 py-0.5 rounded text-xs font-bold uppercase ${status?.currentState === 'running' ? 'bg-success/20 text-success' : 'bg-foreground/10'}`}>
-                {status?.currentState || 'offline'}
+              <span className={`px-2 py-0.5 rounded text-xs font-bold uppercase ${status?.currentState === 'ONLINE' ? 'bg-success/20 text-success' : 'bg-foreground/10'}`}>
+                {status?.currentState || 'OFFLINE'}
               </span>
             </div>
             <p className="text-foreground/60 font-mono text-sm ml-11">

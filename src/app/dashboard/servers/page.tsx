@@ -256,8 +256,9 @@ export default function ServersPage() {
                     </CardTitle>
                     <p className="text-sm font-mono text-foreground/50 mt-1">{server.id}</p>
                   </div>
-                  <div className={`px-3 py-1 rounded-full text-xs font-bold uppercase border ${getStatusColor(displayStatus)}`}>
-                    {displayStatus}
+                  <div className={`flex items-center gap-2 px-3 py-1 rounded-full text-xs font-bold uppercase border ${getStatusColor(displayStatus)}`}>
+                    <div className={`w-2 h-2 rounded-full ${server.liveStatus === 'ONLINE' ? 'bg-success' : 'bg-destructive'} animate-pulse`} />
+                    {server.liveStatus || displayStatus}
                   </div>
                 </div>
               </CardHeader>
@@ -306,15 +307,21 @@ export default function ServersPage() {
                 <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 pt-2">
                   <div className="flex flex-col">
                     <span className="text-xs text-foreground/50 mb-1 flex items-center gap-1"><Zap className="w-3 h-3"/> RAM</span>
-                    <span className={`text-sm font-bold ${server.costPerHour >= 8 ? 'text-[#FFD700]' : 'text-foreground'}`}>{server.ramGB}GB</span>
+                    <span className={`text-sm font-bold ${server.costPerHour >= 8 ? 'text-[#FFD700]' : 'text-foreground'}`}>
+                      {server.liveUsage ? (server.liveUsage.memory_bytes / 1024 / 1024).toFixed(0) : 0}MB <span className="text-xs font-normal text-foreground/50">/ {server.ramGB}GB</span>
+                    </span>
                   </div>
                   <div className="flex flex-col">
                     <span className="text-xs text-foreground/50 mb-1 flex items-center gap-1"><Cpu className="w-3 h-3"/> CPU</span>
-                    <span className="text-sm font-bold">{server.cpu}%</span>
+                    <span className="text-sm font-bold">
+                      {server.liveUsage ? server.liveUsage.cpu.toFixed(2) : 0}% <span className="text-xs font-normal text-foreground/50">/ {server.cpu}%</span>
+                    </span>
                   </div>
                   <div className="flex flex-col">
                     <span className="text-xs text-foreground/50 mb-1 flex items-center gap-1"><HardDrive className="w-3 h-3"/> Disk</span>
-                    <span className="text-sm font-bold">{server.disk}GB</span>
+                    <span className="text-sm font-bold">
+                      {server.liveUsage ? (server.liveUsage.disk_bytes / 1024 / 1024).toFixed(0) : 0}MB <span className="text-xs font-normal text-foreground/50">/ {server.disk}GB</span>
+                    </span>
                   </div>
                   <div className="flex flex-col">
                     <span className="text-xs text-foreground/50 mb-1 flex items-center gap-1"><Coins className="w-3 h-3"/> Cost</span>

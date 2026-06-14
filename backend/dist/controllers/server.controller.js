@@ -125,11 +125,33 @@ class ServerController {
             const servers = await db_1.db.server.findMany({ where: { userId } });
             const enrichedServers = await Promise.all(servers.map(async (server) => {
                 const allocation = await pterodactyl_service_1.PterodactylService.getServerAllocation(server.pterodactylIdentifier);
+                let liveStatus = 'OFFLINE';
+                let liveUsage = { cpu: 0, memory_bytes: 0, disk_bytes: 0 };
+                try {
+                    const stats = await pterodactyl_service_1.PterodactylService.getServerStatus(server.pterodactylIdentifier);
+                    const stateMap = {
+                        'running': 'ONLINE',
+                        'offline': 'OFFLINE',
+                        'starting': 'STARTING',
+                        'stopping': 'STOPPING'
+                    };
+                    liveStatus = stateMap[stats.current_state] || stats.current_state?.toUpperCase() || 'OFFLINE';
+                    liveUsage = {
+                        cpu: stats.resources?.cpu_absolute || 0,
+                        memory_bytes: stats.resources?.memory_bytes || 0,
+                        disk_bytes: stats.resources?.disk_bytes || 0
+                    };
+                }
+                catch (err) {
+                    // Ignore if daemon offline
+                }
                 return {
                     ...server,
                     allocationIp: allocation?.ip || null,
                     allocationAlias: allocation?.alias || null,
                     allocationPort: allocation?.port || null,
+                    liveStatus,
+                    liveUsage
                 };
             }));
             res.json(enrichedServers);

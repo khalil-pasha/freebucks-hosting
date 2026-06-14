@@ -12,9 +12,56 @@ export class ServerPanelController {
 
   public static async getStatus(req: Request, res: Response) {
     const server = (req as any).server;
-    if (!server.pterodactylIdentifier) return res.json({ currentState: 'offline', usage: { cpu: 0, memory_bytes: 0, disk_bytes: 0, uptime: 0 } });
-    const status = await PterodactylService.getServerStatus(server.pterodactylIdentifier);
-    res.json(status);
+    if (!server.pterodactylIdentifier) return res.json({ currentState: 'OFFLINE', usage: { cpu: 0, memory_bytes: 0, disk_bytes: 0, uptime: 0 } });
+    
+    try {
+      const pteroStats = await PterodactylService.getServerStatus(server.pterodactylIdentifier);
+      
+      console.log(`[Status Debug] Raw Pterodactyl API response for ${server.pterodactylIdentifier}:`, JSON.stringify(pteroStats));
+
+      const stateMap: Record<string, string> = {
+        'running': 'ONLINE',
+        'offline': 'OFFLINE',
+        'starting': 'STARTING',
+        'stopping': 'STOPPING'
+      };
+
+      const mappedState = stateMap[pteroStats.current_state] || pteroStats.current_state?.toUpperCase() || 'OFFLINE';
+
+      const finalResponse = {
+        currentState: mappedState,
+        isSuspended: pteroStats.is_suspended,
+        usage: {
+          cpu: pteroStats.resources?.cpu_absolute || 0,
+          memory_bytes: pteroStats.resources?.memory_bytes || 0,
+          disk_bytes: pteroStats.resources?.disk_bytes || 0,
+          network_rx_bytes: pteroStats.resources?.network_rx_bytes || 0,
+          network_tx_bytes: pteroStats.resources?.network_tx_bytes || 0,
+          uptime: pteroStats.resources?.uptime || 0
+        }
+      };
+
+      console.log(`[Status Debug] Final JSON returned to frontend for ${server.pterodactylIdentifier}:`, JSON.stringify(finalResponse));
+
+      // Synchronize database status
+      const dbStateMap: Record<string, string> = {
+        'running': 'RUNNING',
+        'offline': 'STOPPED',
+        'starting': 'STARTING',
+        'stopping': 'STOPPING'
+      };
+      
+      const mappedDbState = dbStateMap[pteroStats.current_state] || 'STOPPED';
+
+      if (server.status !== mappedDbState) {
+        await db.server.update({ where: { id: server.id }, data: { status: mappedDbState as any } });
+      }
+
+      res.json(finalResponse);
+    } catch (err: any) {
+      console.error(`[Status Debug] Error fetching status for ${server.pterodactylIdentifier}:`, err.message);
+      res.json({ currentState: 'OFFLINE', usage: { cpu: 0, memory_bytes: 0, disk_bytes: 0, uptime: 0 } });
+    }
   }
 
   public static async getWebsocket(req: Request, res: Response) {

@@ -147,11 +147,35 @@ export class ServerController {
       
       const enrichedServers = await Promise.all(servers.map(async (server) => {
         const allocation = await PterodactylService.getServerAllocation(server.pterodactylIdentifier as string);
+        let liveStatus = 'OFFLINE';
+        let liveUsage = { cpu: 0, memory_bytes: 0, disk_bytes: 0 };
+        try {
+          const stats = await PterodactylService.getServerStatus(server.pterodactylIdentifier as string);
+          
+          const stateMap: Record<string, string> = {
+            'running': 'ONLINE',
+            'offline': 'OFFLINE',
+            'starting': 'STARTING',
+            'stopping': 'STOPPING'
+          };
+          liveStatus = stateMap[stats.current_state] || stats.current_state?.toUpperCase() || 'OFFLINE';
+          
+          liveUsage = {
+            cpu: stats.resources?.cpu_absolute || 0,
+            memory_bytes: stats.resources?.memory_bytes || 0,
+            disk_bytes: stats.resources?.disk_bytes || 0
+          };
+        } catch (err) {
+          // Ignore if daemon offline
+        }
+        
         return {
           ...server,
           allocationIp: allocation?.ip || null,
           allocationAlias: allocation?.alias || null,
           allocationPort: allocation?.port || null,
+          liveStatus,
+          liveUsage
         };
       }));
 
