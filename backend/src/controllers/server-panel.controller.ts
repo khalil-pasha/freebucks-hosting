@@ -293,9 +293,26 @@ export class ServerPanelController {
   // --- Startup ---
   public static async getStartup(req: Request, res: Response) {
     const server = (req as any).server;
-    if (!server.pterodactylIdentifier) return res.json([]);
+    if (!server.pterodactylIdentifier) return res.json({ variables: [], dockerImage: null });
+    
     const vars = await PterodactylService.getStartupVariables(server.pterodactylIdentifier);
-    res.json(vars);
+    let dockerImage = null;
+    if (server.pterodactylServerId) {
+      dockerImage = await PterodactylService.getServerDockerImage(server.pterodactylServerId);
+    }
+    
+    res.json({ variables: vars, dockerImage });
+  }
+
+  public static async updateDockerImage(req: Request, res: Response) {
+    const server = (req as any).server;
+    const { dockerImage } = req.body;
+    if (!server.pterodactylIdentifier) return res.status(400).json({ error: 'Not provisioned' });
+    if (!dockerImage) return res.status(400).json({ error: 'Missing dockerImage' });
+    
+    await PterodactylService.updateDockerImage(server.pterodactylIdentifier, dockerImage);
+    await logActivity(server.id, req.user!.id, 'startup.update', req.ip || null, `Updated Docker Image to ${dockerImage}`);
+    res.json({ success: true });
   }
 
   public static async updateStartup(req: Request, res: Response) {

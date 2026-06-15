@@ -272,11 +272,34 @@ class PterodactylService {
         return res.data.attributes.url;
     }
     static async getStartupVariables(identifier) {
-        if (!this.isClientConfigured())
+        if (!this.isClientConfigured()) {
             throw new Error('Pterodactyl Client API is not configured');
+        }
         const url = `${process.env.PTERODACTYL_PANEL_URL}/api/client/servers/${identifier}/startup`;
-        const res = await axios_1.default.get(url, { headers: this.getClientHeaders() });
-        return res.data.data.map((v) => v.attributes);
+        const response = await axios_1.default.get(url, { headers: this.getClientHeaders() });
+        return response.data.data.map((v) => v.attributes);
+    }
+    static async updateDockerImage(identifier, dockerImage) {
+        if (!this.isClientConfigured()) {
+            throw new Error('Pterodactyl Client API is not configured');
+        }
+        const url = `${process.env.PTERODACTYL_PANEL_URL}/api/client/servers/${identifier}/settings/docker-image`;
+        await axios_1.default.put(url, { docker_image: dockerImage }, { headers: this.getClientHeaders() });
+        return true;
+    }
+    static async getServerDockerImage(pterodactylServerId) {
+        if (!this.isAppConfigured()) {
+            return null;
+        }
+        try {
+            const url = `${process.env.PTERODACTYL_PANEL_URL}/api/application/servers/${pterodactylServerId}`;
+            const response = await axios_1.default.get(url, { headers: this.getAppHeaders() });
+            return response.data.attributes.container.image;
+        }
+        catch (err) {
+            console.error('[Pterodactyl] Failed to fetch server docker image:', err);
+            return null;
+        }
     }
     static async updateStartupVariable(identifier, key, value) {
         if (!this.isClientConfigured())

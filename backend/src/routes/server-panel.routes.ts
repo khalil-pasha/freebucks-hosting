@@ -42,5 +42,6 @@ router.post('/reinstall', requireServerAccess('settings'), ServerPanelController
 // Startup
 router.get('/startup', requireServerAccess('settings'), ServerPanelController.getStartup);
 router.post('/startup', requireServerAccess('settings'), ServerPanelController.updateStartup);
+router.put('/docker-image', requireServerAccess('settings'), ServerPanelController.updateDockerImage);
 
 export default router;
