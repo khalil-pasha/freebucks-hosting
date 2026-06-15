@@ -11,13 +11,15 @@ const audit_service_1 = require("../services/audit.service");
 class AuthController {
     static login(req, res) {
         const state = crypto_1.default.randomBytes(16).toString('hex');
-        // Store state in a cookie to support PM2 cluster mode seamlessly
-        res.cookie('oauth_state', state, {
+        const cookieOptions = {
             maxAge: 5 * 60 * 1000, // 5 mins
             httpOnly: true,
             secure: process.env.NODE_ENV === 'production',
-            sameSite: 'lax', // lax allows it to be sent on top-level navigation from Discord
-        });
+            sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax',
+            domain: process.env.NODE_ENV === 'production' ? '.freebucks.host' : undefined
+        };
+        // Store state in a cookie to support PM2 cluster mode seamlessly
+        res.cookie('oauth_state', state, cookieOptions);
         const authUrl = auth_service_1.AuthService.getDiscordAuthUrl(state);
         res.redirect(authUrl);
     }
@@ -29,10 +31,18 @@ class AuthController {
                 return res.status(400).send('Missing code or state');
             }
             if (!savedState || state !== savedState) {
-                return res.status(400).send('Invalid state parameter');
+                console.error(`[OAuth] State mismatch. Expected: ${savedState}, Received: ${state}`);
+                return res.status(400).send('Invalid state parameter. Please ensure cookies are enabled and try logging in again.');
             }
+            const cookieOptions = {
+                maxAge: 5 * 60 * 1000,
+                httpOnly: true,
+                secure: process.env.NODE_ENV === 'production',
+                sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax',
+                domain: process.env.NODE_ENV === 'production' ? '.freebucks.host' : undefined
+            };
             // Clear the state cookie after successful verification
-            res.clearCookie('oauth_state');
+            res.clearCookie('oauth_state', cookieOptions);
             // Exchange code
             const tokenData = await auth_service_1.AuthService.exchangeCodeForToken(code);
             // Get Discord User

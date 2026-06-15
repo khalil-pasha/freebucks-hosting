@@ -8,13 +8,16 @@ export class AuthController {
   public static login(req: Request, res: Response) {
     const state = crypto.randomBytes(16).toString('hex');
     
-    // Store state in a cookie to support PM2 cluster mode seamlessly
-    res.cookie('oauth_state', state, {
+    const cookieOptions = {
       maxAge: 5 * 60 * 1000, // 5 mins
       httpOnly: true,
       secure: process.env.NODE_ENV === 'production',
-      sameSite: 'lax', // lax allows it to be sent on top-level navigation from Discord
-    });
+      sameSite: process.env.NODE_ENV === 'production' ? 'none' as const : 'lax' as const,
+      domain: process.env.NODE_ENV === 'production' ? '.freebucks.host' : undefined
+    };
+
+    // Store state in a cookie to support PM2 cluster mode seamlessly
+    res.cookie('oauth_state', state, cookieOptions);
 
     const authUrl = AuthService.getDiscordAuthUrl(state);
     res.redirect(authUrl);
@@ -30,11 +33,20 @@ export class AuthController {
       }
 
       if (!savedState || state !== savedState) {
-        return res.status(400).send('Invalid state parameter');
+        console.error(`[OAuth] State mismatch. Expected: ${savedState}, Received: ${state}`);
+        return res.status(400).send('Invalid state parameter. Please ensure cookies are enabled and try logging in again.');
       }
 
+      const cookieOptions = {
+        maxAge: 5 * 60 * 1000,
+        httpOnly: true,
+        secure: process.env.NODE_ENV === 'production',
+        sameSite: process.env.NODE_ENV === 'production' ? 'none' as const : 'lax' as const,
+        domain: process.env.NODE_ENV === 'production' ? '.freebucks.host' : undefined
+      };
+
       // Clear the state cookie after successful verification
-      res.clearCookie('oauth_state');
+      res.clearCookie('oauth_state', cookieOptions);
 
       // Exchange code
       const tokenData = await AuthService.exchangeCodeForToken(code as string);

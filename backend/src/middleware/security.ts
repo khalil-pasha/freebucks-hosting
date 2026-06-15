@@ -4,15 +4,17 @@ import helmet from 'helmet';
 // Global helmet config
 export const securityHeaders = helmet();
 
+export const ipKeyGenerator = (req: any) => {
+  return (req.headers['cf-connecting-ip'] as string) || req.ip || req.socket?.remoteAddress || 'unknown';
+};
+
 // Lightweight auth limiter for endpoints like /auth/discord and /auth/me (100 requests / 1 minute)
 export const generalAuthLimiter = rateLimit({
   windowMs: 1 * 60 * 1000,
   max: 100,
   standardHeaders: true,
   legacyHeaders: false,
-  keyGenerator: (req) => {
-    return (req.headers['cf-connecting-ip'] as string) || req.ip || 'unknown';
-  },
+  keyGenerator: ipKeyGenerator,
   handler: (req, res) => {
     if (req.originalUrl.includes('/discord')) {
       const frontendUrl = process.env.FRONTEND_URL || 'https://app.freebucks.host';
@@ -22,15 +24,12 @@ export const generalAuthLimiter = rateLimit({
   }
 });
 
-// Sensitive auth limiter for /discord/callback or logins (30 requests / 1 minute)
 export const sensitiveAuthLimiter = rateLimit({
   windowMs: 1 * 60 * 1000,
   max: 30,
   standardHeaders: true,
   legacyHeaders: false,
-  keyGenerator: (req) => {
-    return (req.headers['cf-connecting-ip'] as string) || req.ip || 'unknown';
-  },
+  keyGenerator: ipKeyGenerator,
   handler: (req, res) => {
     if (req.originalUrl.includes('/discord')) {
       const frontendUrl = process.env.FRONTEND_URL || 'https://app.freebucks.host';
@@ -40,44 +39,38 @@ export const sensitiveAuthLimiter = rateLimit({
   }
 });
 
-// Voucher: 10 requests / 15 minutes
 export const voucherLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,
   max: 10,
   message: { error: 'Too many voucher redemption attempts, please try again later' },
   standardHeaders: true,
   legacyHeaders: false,
+  keyGenerator: ipKeyGenerator,
 });
 
-// Credits: 100 requests / 1 minute to allow dashboard navigation
 export const creditsLimiter = rateLimit({
   windowMs: 1 * 60 * 1000,
   max: 100,
   message: { error: 'Too many credits requests, please try again later' },
   standardHeaders: true,
   legacyHeaders: false,
-  keyGenerator: (req) => {
-    return (req.headers['cf-connecting-ip'] as string) || req.ip || 'unknown';
-  }
+  keyGenerator: ipKeyGenerator
 });
 
-// Tickets: 20 requests / 15 minutes
 export const ticketLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,
   max: 20,
   message: { error: 'Too many ticket requests, please try again later' },
   standardHeaders: true,
   legacyHeaders: false,
+  keyGenerator: ipKeyGenerator,
 });
 
-// Admin routes: 100 requests / 1 minute (Increased to prevent aggressive lockouts on dashboard)
 export const adminLimiter = rateLimit({
   windowMs: 1 * 60 * 1000,
   max: 100,
   message: { error: 'Too many admin requests, please try again later' },
   standardHeaders: true,
   legacyHeaders: false,
-  keyGenerator: (req) => {
-    return (req.headers['cf-connecting-ip'] as string) || req.ip || 'unknown';
-  }
+  keyGenerator: ipKeyGenerator
 });
