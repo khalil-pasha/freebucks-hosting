@@ -9,7 +9,7 @@ router.use(requireAuth);
 
 router.get('/status', requireServerAccess(), ServerPanelController.getStatus);
 router.get('/websocket', requireServerAccess(), ServerPanelController.getWebsocket);
-(router as any).ws('/ws-proxy', requireServerAccess(), ServerPanelController.websocketProxy);
+
 router.post('/power', requireServerAccess('console'), ServerPanelController.powerAction);
 router.post('/command', requireServerAccess('console'), ServerPanelController.sendCommand);
 

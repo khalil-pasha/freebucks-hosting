@@ -41,19 +41,16 @@ export default function ConsolePage() {
 
     const connectWs = async () => {
       try {
-        term.writeln('\x1b[33m[FreeBucks]\x1b[0m Connecting to FreeBucks proxy...')
-        console.log(`[FreeBucks] Connecting to proxy for server: ${server.id}`)
-        
-        const token = localStorage.getItem('freebucks_token')
-        const baseURL = api.defaults.baseURL || window.location.origin
-        const wsBaseURL = baseURL.replace(/^http/, 'ws')
-        const proxyUrl = `${wsBaseURL}/servers/${server.id}/panel/ws-proxy?token=${token}`
+        term.writeln('\x1b[33m[FreeBucks]\x1b[0m Fetching daemon credentials...')
+        const res = await api.get(`/servers/${server.id}/panel/websocket`)
+        const { token, socket: socketUrl } = res.data
 
-        ws = new WebSocket(proxyUrl)
+        term.writeln('\x1b[33m[FreeBucks]\x1b[0m Connecting to server daemon...')
+        ws = new WebSocket(socketUrl)
         setSocket(ws)
 
         ws.onopen = () => {
-          term.writeln('\x1b[32m[FreeBucks]\x1b[0m Proxy connection established. Waiting for daemon auth...')
+          ws!.send(JSON.stringify({ event: 'auth', args: [token] }))
         }
 
         ws.onmessage = (e) => {
@@ -90,8 +87,8 @@ export default function ConsolePage() {
         }
 
         ws.onerror = (e) => {
-          term.writeln(`\x1b[31m[FreeBucks]\x1b[0m Connection error. URL: ${proxyUrl.split('?')[0]}`)
-          const isWss = proxyUrl.startsWith('wss://');
+          term.writeln('\x1b[31m[FreeBucks]\x1b[0m Connection error.')
+          const isWss = socketUrl.startsWith('wss://');
           const isHttps = window.location.protocol === 'https:';
           if (isHttps && !isWss) {
              term.writeln('\x1b[31m[FreeBucks]\x1b[0m Mixed content blocked: trying to connect to ws:// from https:// page.');

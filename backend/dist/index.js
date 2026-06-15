@@ -9,9 +9,7 @@ const dotenv_1 = __importDefault(require("dotenv"));
 const env_1 = require("./utils/env");
 dotenv_1.default.config();
 (0, env_1.validateEnv)();
-const appBase = (0, express_1.default)();
-const express_ws_1 = __importDefault(require("express-ws"));
-const { app, getWss } = (0, express_ws_1.default)(appBase);
+const app = (0, express_1.default)();
 // Trust Cloudflare/Nginx proxies to correctly resolve req.ip
 app.set("trust proxy", true);
 const port = process.env.PORT || 5000;
