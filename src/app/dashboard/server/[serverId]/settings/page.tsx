@@ -11,6 +11,7 @@ export default function SettingsPage() {
   const { server, refetch } = useContext(ServerContext)
   const [name, setName] = useState(server?.name || "")
   const [saving, setSaving] = useState(false)
+  const [acceptingEula, setAcceptingEula] = useState(false)
 
   useEffect(() => {
     if (server) setName(server.name)
@@ -40,6 +41,18 @@ export default function SettingsPage() {
     }
   }
 
+  const handleAcceptEula = async () => {
+    try {
+      setAcceptingEula(true)
+      await api.post(`/servers/${server.id}/panel/eula/accept`)
+      alert("EULA accepted! You can now start the server.")
+    } catch (err: any) {
+      alert(handleApiError(err))
+    } finally {
+      setAcceptingEula(false)
+    }
+  }
+
   return (
     <div className="max-w-2xl flex flex-col gap-8 h-full">
       <div className="bg-card border border-border/50 rounded-xl p-6">
@@ -57,6 +70,14 @@ export default function SettingsPage() {
             <Save className="w-4 h-4 mr-2" /> {saving ? "Saving..." : "Save Changes"}
           </Button>
         </form>
+      </div>
+
+      <div className="bg-card border border-border/50 rounded-xl p-6">
+        <h2 className="text-xl font-bold mb-2">Minecraft® EULA</h2>
+        <p className="text-foreground/70 text-sm mb-4">In order to run a Minecraft server, you must agree to the Mojang EULA.</p>
+        <Button onClick={handleAcceptEula} disabled={acceptingEula} variant="secondary">
+          {acceptingEula ? "Accepting..." : "Accept EULA"}
+        </Button>
       </div>
 
       <div className="bg-red-500/5 border border-red-500/20 rounded-xl p-6">

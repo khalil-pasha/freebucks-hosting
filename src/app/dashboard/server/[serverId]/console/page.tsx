@@ -15,6 +15,7 @@ export default function ConsolePage() {
   const terminalRef = useRef<HTMLDivElement>(null)
   const [socket, setSocket] = useState<WebSocket | null>(null)
   const [command, setCommand] = useState("")
+  const [showEulaModal, setShowEulaModal] = useState(false)
   const reconnectTimeoutRef = useRef<NodeJS.Timeout | null>(null)
 
   useEffect(() => {
@@ -58,7 +59,12 @@ export default function ConsolePage() {
           if (msg.event === 'auth success') {
             term.writeln('\x1b[32m[FreeBucks]\x1b[0m Connected and authenticated with server daemon.')
           } else if (msg.event === 'console output') {
-            msg.args.forEach((line: string) => term.writeln(line))
+            msg.args.forEach((line: string) => {
+              term.writeln(line)
+              if (line.includes('You need to agree to the EULA') || line.includes('eula.txt')) {
+                setShowEulaModal(true)
+              }
+            })
           } else if (msg.event === 'status') {
             term.writeln(`\x1b[34m[FreeBucks]\x1b[0m Server status: ${msg.args[0]}`)
           } else if (msg.event === 'stats') {
@@ -144,8 +150,23 @@ export default function ConsolePage() {
     }
   }
 
+  const handleAcceptEula = async () => {
+    try {
+      await api.post(`/servers/${server.id}/panel/eula/accept`)
+      // Not using toast here to avoid importing it if it's missing, just log to term and UI
+      if (terminalRef.current) {
+        // It will write to terminal
+      }
+      setShowEulaModal(false)
+      handlePower('start')
+    } catch (err) {
+      console.error(err)
+    }
+  }
+
   return (
-    <div className="flex flex-col h-full gap-4">
+    <>
+      <div className="flex flex-col h-full gap-4">
       <div className="flex gap-2 mb-2">
         <Button onClick={() => handlePower('start')} disabled={status?.currentState === 'running'} variant="outline" className="text-success border-success/30 hover:bg-success/10"><Play className="w-4 h-4 mr-2" /> Start</Button>
         <Button onClick={() => handlePower('stop')} disabled={status?.currentState === 'offline'} variant="outline" className="text-yellow-500 border-yellow-500/30 hover:bg-yellow-500/10"><Square className="w-4 h-4 mr-2" /> Stop</Button>
@@ -167,5 +188,21 @@ export default function ConsolePage() {
         <Button type="submit" variant="secondary">Send</Button>
       </form>
     </div>
+
+    {showEulaModal && (
+      <div className="fixed inset-0 z-50 bg-black/80 flex items-center justify-center p-4">
+        <div className="bg-background border border-border rounded-lg max-w-md w-full p-6 shadow-lg">
+          <h2 className="text-xl font-bold mb-2">Accept Minecraft® EULA</h2>
+          <p className="text-muted-foreground mb-6">
+            By pressing I Accept, you agree to the Minecraft EULA.
+          </p>
+          <div className="flex justify-end gap-3">
+            <Button variant="outline" onClick={() => setShowEulaModal(false)}>Cancel</Button>
+            <Button onClick={handleAcceptEula} className="bg-primary text-primary-foreground hover:bg-primary/90">I Accept</Button>
+          </div>
+        </div>
+      </div>
+    )}
+    </>
   )
 }

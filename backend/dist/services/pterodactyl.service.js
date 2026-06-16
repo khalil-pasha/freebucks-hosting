@@ -222,6 +222,17 @@ class PterodactylService {
         const url = `${process.env.PTERODACTYL_PANEL_URL}/api/client/servers/${identifier}/command`;
         await axios_1.default.post(url, { command }, { headers: this.getClientHeaders() });
     }
+    static async acceptEula(identifier) {
+        if (!this.isClientConfigured())
+            throw new Error('Pterodactyl Client API is not configured');
+        const url = `${process.env.PTERODACTYL_PANEL_URL}/api/client/servers/${identifier}/files/write?file=eula.txt`;
+        await axios_1.default.post(url, 'eula=true', {
+            headers: {
+                ...this.getClientHeaders(),
+                'Content-Type': 'text/plain'
+            }
+        });
+    }
     static async listFiles(identifier, directory = '/') {
         if (!this.isClientConfigured())
             throw new Error('Pterodactyl Client API is not configured');

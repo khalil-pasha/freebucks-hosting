@@ -12,6 +12,7 @@ router.get('/websocket', requireServerAccess(), ServerPanelController.getWebsock
 
 router.post('/power', requireServerAccess('console'), ServerPanelController.powerAction);
 router.post('/command', requireServerAccess('console'), ServerPanelController.sendCommand);
+router.post('/eula/accept', requireServerAccess('console'), ServerPanelController.acceptEula);
 
 // Files
 router.get('/files', requireServerAccess('files'), ServerPanelController.listFiles);

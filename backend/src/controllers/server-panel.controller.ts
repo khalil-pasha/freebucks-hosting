@@ -318,6 +318,22 @@ export class ServerPanelController {
     res.json({ variables: vars, dockerImage });
   }
 
+
+
+  public static async acceptEula(req: Request, res: Response) {
+    const server = (req as any).server;
+    if (!server.pterodactylIdentifier) return res.status(400).json({ error: 'Server is not provisioned.' });
+    
+    try {
+      await PterodactylService.acceptEula(server.pterodactylIdentifier);
+      await logActivity(server.id, req.user!.id, 'EULA_ACCEPTED', req.ip || null, 'Accepted Minecraft EULA');
+      res.json({ success: true });
+    } catch (error: any) {
+      console.error('[EULA Accept Error]', error.response?.data || error.message);
+      res.status(500).json({ error: 'Failed to accept EULA. Please try again or accept manually in the Files tab.' });
+    }
+  }
+
   public static async updateDockerImage(req: Request, res: Response) {
     const server = (req as any).server;
     const { dockerImage } = req.body;
