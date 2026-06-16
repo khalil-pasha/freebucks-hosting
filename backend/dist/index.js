@@ -7,8 +7,12 @@ const express_1 = __importDefault(require("express"));
 const cors_1 = __importDefault(require("cors"));
 const dotenv_1 = __importDefault(require("dotenv"));
 const env_1 = require("./utils/env");
+const axios_1 = __importDefault(require("axios"));
 dotenv_1.default.config();
 (0, env_1.validateEnv)();
+// Force IPv4 for all outbound requests (Pterodactyl, Discord)
+// Bypasses ETIMEDOUT AggregateError caused by broken IPv6 routing to Cloudflare
+axios_1.default.defaults.family = 4;
 const app = (0, express_1.default)();
 // Trust Cloudflare/Nginx proxies to correctly resolve req.ip
 app.set("trust proxy", true);

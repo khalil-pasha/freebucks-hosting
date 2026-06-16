@@ -1,12 +1,14 @@
-import rateLimit from 'express-rate-limit';
+import rateLimit, { ipKeyGenerator } from 'express-rate-limit';
 import helmet from 'helmet';
 
 // Global helmet config
 export const securityHeaders = helmet();
 
-export const ipKeyGenerator = (req: any) => {
-  return (req.headers['cf-connecting-ip'] as string) || req.ip || req.socket?.remoteAddress || 'unknown';
+export const customKeyGenerator = (req: any) => {
+  const ip = (req.headers['cf-connecting-ip'] as string) || req.ip || req.socket?.remoteAddress || 'unknown';
+  return ipKeyGenerator(ip);
 };
+
 
 // Lightweight auth limiter for endpoints like /auth/discord and /auth/me (100 requests / 1 minute)
 export const generalAuthLimiter = rateLimit({
@@ -14,7 +16,7 @@ export const generalAuthLimiter = rateLimit({
   max: 100,
   standardHeaders: true,
   legacyHeaders: false,
-  keyGenerator: ipKeyGenerator,
+  keyGenerator: customKeyGenerator,
   handler: (req, res) => {
     if (req.originalUrl.includes('/discord')) {
       const frontendUrl = process.env.FRONTEND_URL || 'https://app.freebucks.host';
@@ -29,7 +31,7 @@ export const sensitiveAuthLimiter = rateLimit({
   max: 30,
   standardHeaders: true,
   legacyHeaders: false,
-  keyGenerator: ipKeyGenerator,
+  keyGenerator: customKeyGenerator,
   handler: (req, res) => {
     if (req.originalUrl.includes('/discord')) {
       const frontendUrl = process.env.FRONTEND_URL || 'https://app.freebucks.host';
@@ -45,7 +47,7 @@ export const voucherLimiter = rateLimit({
   message: { error: 'Too many voucher redemption attempts, please try again later' },
   standardHeaders: true,
   legacyHeaders: false,
-  keyGenerator: ipKeyGenerator,
+  keyGenerator: customKeyGenerator,
 });
 
 export const creditsLimiter = rateLimit({
@@ -54,7 +56,7 @@ export const creditsLimiter = rateLimit({
   message: { error: 'Too many credits requests, please try again later' },
   standardHeaders: true,
   legacyHeaders: false,
-  keyGenerator: ipKeyGenerator
+  keyGenerator: customKeyGenerator
 });
 
 export const ticketLimiter = rateLimit({
@@ -63,7 +65,7 @@ export const ticketLimiter = rateLimit({
   message: { error: 'Too many ticket requests, please try again later' },
   standardHeaders: true,
   legacyHeaders: false,
-  keyGenerator: ipKeyGenerator,
+  keyGenerator: customKeyGenerator,
 });
 
 export const adminLimiter = rateLimit({
@@ -72,5 +74,5 @@ export const adminLimiter = rateLimit({
   message: { error: 'Too many admin requests, please try again later' },
   standardHeaders: true,
   legacyHeaders: false,
-  keyGenerator: ipKeyGenerator
+  keyGenerator: customKeyGenerator
 });
