@@ -325,10 +325,19 @@ export class ServerPanelController {
     if (!server.pterodactylIdentifier) return res.status(400).json({ error: 'Server is not provisioned.' });
     
     try {
+      const stateBefore = await PterodactylService.getServerStatus(server.pterodactylIdentifier);
+      console.log(`[EULA] Server state BEFORE accept:`, stateBefore.current_state);
+
       await PterodactylService.acceptEula(server.pterodactylIdentifier);
       
+      const eulaContent = await PterodactylService.getFileContent(server.pterodactylIdentifier, '/eula.txt').catch(() => 'Failed to read eula.txt');
+      console.log(`[EULA] eula.txt contents verified:\n${eulaContent}`);
+
       // Force a restart to ensure Wings clears crash state and Pterodactyl UI sees the restart
       await PterodactylService.powerServer(server.pterodactylIdentifier, 'restart');
+
+      const stateAfter = await PterodactylService.getServerStatus(server.pterodactylIdentifier);
+      console.log(`[EULA] Server state AFTER restart signal:`, stateAfter.current_state);
 
       await logActivity(server.id, req.user!.id, 'EULA_ACCEPTED', req.ip || null, 'Accepted Minecraft EULA');
       res.json({ success: true });
