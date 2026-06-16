@@ -18,15 +18,15 @@ export default function ServerPanelLayout({ children }: { children: React.ReactN
   const [status, setStatus] = useState<any>(null)
   const [loading, setLoading] = useState(true)
 
-  const tabs = [
-    { name: "Console", icon: Terminal, href: `/dashboard/server/${serverId}/console` },
-    { name: "Files", icon: Folder, href: `/dashboard/server/${serverId}/files` },
-    { name: "Users", icon: Users, href: `/dashboard/server/${serverId}/users` },
-    { name: "Plugins", icon: Puzzle, href: `/dashboard/server/${serverId}/plugins` },
-    { name: "Startup", icon: PlayCircle, href: `/dashboard/server/${serverId}/startup` },
-    { name: "Settings", icon: Settings, href: `/dashboard/server/${serverId}/settings` },
-    { name: "Subdomain", icon: Globe, href: `/dashboard/server/${serverId}/subdomain` },
-    { name: "Activity", icon: Activity, href: `/dashboard/server/${serverId}/activity` },
+  const allTabs = [
+    { name: "Console", icon: Terminal, href: `/dashboard/server/${serverId}/console`, perm: 'console' },
+    { name: "Files", icon: Folder, href: `/dashboard/server/${serverId}/files`, perm: 'files' },
+    { name: "Users", icon: Users, href: `/dashboard/server/${serverId}/users`, perm: 'settings' },
+    { name: "Plugins", icon: Puzzle, href: `/dashboard/server/${serverId}/plugins`, perm: 'files' },
+    { name: "Startup", icon: PlayCircle, href: `/dashboard/server/${serverId}/startup`, perm: 'settings' },
+    { name: "Settings", icon: Settings, href: `/dashboard/server/${serverId}/settings`, perm: 'settings' },
+    { name: "Subdomain", icon: Globe, href: `/dashboard/server/${serverId}/subdomain`, perm: 'settings' },
+    { name: "Activity", icon: Activity, href: `/dashboard/server/${serverId}/activity`, perm: 'activity' },
   ]
 
   const fetchServer = async () => {
@@ -98,7 +98,7 @@ export default function ServerPanelLayout({ children }: { children: React.ReactN
         <div className="flex flex-col lg:flex-row gap-6 h-[calc(100vh-16rem)] min-h-[600px]">
           {/* Sidebar Nav */}
           <div className="w-full lg:w-64 flex-shrink-0 flex lg:flex-col gap-2 overflow-x-auto pb-2 lg:pb-0 scrollbar-hide">
-            {tabs.map(tab => {
+            {allTabs.filter(tab => !server?.isShared || server?.permissions?.includes('admin') || server?.permissions?.includes(tab.perm)).map(tab => {
               const active = pathname === tab.href
               const Icon = tab.icon
               return (

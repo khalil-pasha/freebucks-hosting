@@ -10,6 +10,7 @@ import { Input } from "@/components/ui/input"
 export default function UsersPage() {
   const { server } = useContext(ServerContext)
   const [users, setUsers] = useState<any[]>([])
+  const [invites, setInvites] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
   
   const [inviteIdentifier, setInviteIdentifier] = useState("")
@@ -27,7 +28,8 @@ export default function UsersPage() {
     try {
       setLoading(true)
       const res = await api.get(`/servers/${server.id}/panel/users`)
-      setUsers(res.data)
+      setUsers(res.data.accesses || [])
+      setInvites(res.data.invites || [])
     } catch (err) {
       console.error(err)
     } finally {
@@ -66,6 +68,16 @@ export default function UsersPage() {
     if (!confirm("Remove this user's access?")) return
     try {
       await api.delete(`/servers/${server.id}/panel/users/${accessId}`)
+      fetchUsers()
+    } catch (err: any) {
+      alert(handleApiError(err))
+    }
+  }
+
+  const handleCancelInvite = async (inviteId: string) => {
+    if (!confirm("Cancel this pending invite?")) return
+    try {
+      await api.delete(`/servers/${server.id}/panel/users/invites/${inviteId}`)
       fetchUsers()
     } catch (err: any) {
       alert(handleApiError(err))
@@ -120,14 +132,14 @@ export default function UsersPage() {
           </thead>
           <tbody>
             {users.map((access, i) => (
-              <tr key={i} className="border-b border-border/10">
+              <tr key={access.id} className="border-b border-border/10">
                 <td className="px-4 py-3 flex items-center gap-3">
                   <div className="w-8 h-8 rounded-full bg-primary/20 flex items-center justify-center font-bold text-primary">
                     {access.user.username[0].toUpperCase()}
                   </div>
                   <div>
                     <p className="font-medium">{access.user.username}</p>
-                    <p className="text-xs text-foreground/50">{access.user.email}</p>
+                    <p className="text-xs text-foreground/50">{access.user.email || access.user.discordId}</p>
                   </div>
                 </td>
                 <td className="px-4 py-3">
@@ -144,9 +156,34 @@ export default function UsersPage() {
                 </td>
               </tr>
             ))}
-            {!loading && users.length === 0 && (
+            {invites.map((invite, i) => (
+              <tr key={invite.id} className="border-b border-border/10 opacity-75">
+                <td className="px-4 py-3 flex items-center gap-3">
+                  <div className="w-8 h-8 rounded-full bg-foreground/10 flex items-center justify-center font-bold text-foreground/50">
+                    ?
+                  </div>
+                  <div>
+                    <p className="font-medium text-foreground/70">Pending Invite</p>
+                    <p className="text-xs text-foreground/50">{invite.email || invite.discordId}</p>
+                  </div>
+                </td>
+                <td className="px-4 py-3">
+                  <div className="flex gap-1 flex-wrap">
+                    {JSON.parse(invite.permissions).map((p: string) => (
+                      <span key={p} className="px-2 py-0.5 rounded text-xs font-bold bg-foreground/10 uppercase tracking-wider">{p}</span>
+                    ))}
+                  </div>
+                </td>
+                <td className="px-4 py-3 text-right">
+                  <Button variant="ghost" size="sm" className="text-red-500 hover:bg-red-500/10" onClick={() => handleCancelInvite(invite.id)}>
+                    Cancel
+                  </Button>
+                </td>
+              </tr>
+            ))}
+            {!loading && users.length === 0 && invites.length === 0 && (
               <tr>
-                <td colSpan={3} className="px-4 py-8 text-center text-foreground/50">No subusers added yet.</td>
+                <td colSpan={3} className="px-4 py-8 text-center text-foreground/50">No subusers or pending invites.</td>
               </tr>
             )}
           </tbody>

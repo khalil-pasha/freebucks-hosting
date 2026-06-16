@@ -192,43 +192,91 @@ export class ServerPanelController {
   // --- Users (Server Access) ---
   public static async listUsers(req: Request, res: Response) {
     const serverId = req.params.id as string;
+    const server = (req as any).server;
+    
     const accesses = await db.serverAccess.findMany({
       where: { serverId },
-      include: { user: { select: { id: true, username: true, email: true, discordId: true, avatar: true } } }
+      include: {
+        user: { select: { id: true, username: true, email: true, avatar: true } }
+      }
     });
-    res.json(accesses);
+
+    const invites = await db.serverInvite.findMany({
+      where: { serverId, status: 'PENDING' }
+    });
+
+    res.json({ accesses, invites });
   }
 
   public static async inviteUser(req: Request, res: Response) {
     const serverId = req.params.id as string;
     const { emailOrDiscord, permissions } = req.body;
     
-    // Find user
-    const targetUser = await db.user.findFirst({
-      where: {
-        OR: [
-          { email: emailOrDiscord },
-          { discordId: emailOrDiscord }
-        ]
-      }
-    });
-
-    if (!targetUser) return res.status(404).json({ error: 'User not found' });
-    if (targetUser.id === req.user!.id) return res.status(400).json({ error: 'Cannot invite yourself' });
+    if (!emailOrDiscord || !emailOrDiscord.trim()) {
+      return res.status(400).json({ error: 'Email or Discord ID is required' });
+    }
 
     const server = (req as any).server;
     if (server.userId !== req.user!.id) {
       return res.status(403).json({ error: 'Only the server owner can invite users.' });
     }
 
-    const access = await db.serverAccess.upsert({
-      where: { serverId_userId: { serverId, userId: targetUser.id } },
-      update: { permissions: JSON.stringify(permissions) },
-      create: { serverId, userId: targetUser.id, permissions: JSON.stringify(permissions) }
+    const isEmail = emailOrDiscord.includes('@');
+    const email = isEmail ? emailOrDiscord.trim().toLowerCase() : null;
+    const discordId = !isEmail ? emailOrDiscord.trim() : null;
+
+    // Check if user is trying to invite themselves
+    const reqUser = req.user as any;
+    if ((email && reqUser.email?.toLowerCase() === email) || (discordId && reqUser.discordId === discordId)) {
+      return res.status(400).json({ error: 'Cannot invite yourself' });
+    }
+
+    // Check if the user already has access
+    const existingUser = await db.user.findFirst({
+      where: {
+        OR: [
+          ...(email ? [{ email }] : []),
+          ...(discordId ? [{ discordId }] : [])
+        ]
+      }
     });
 
-    await logActivity(serverId, req.user!.id, 'user.invite', req.ip || null, targetUser.username);
-    res.json(access);
+    if (existingUser) {
+      const existingAccess = await db.serverAccess.findUnique({
+        where: { serverId_userId: { serverId, userId: existingUser.id } }
+      });
+      if (existingAccess) {
+        return res.status(400).json({ error: 'User already has access to this server.' });
+      }
+    }
+
+    // Check for duplicate pending invites
+    const duplicateInvite = await db.serverInvite.findFirst({
+      where: {
+        serverId,
+        status: 'PENDING',
+        OR: [
+          ...(email ? [{ email }] : []),
+          ...(discordId ? [{ discordId }] : [])
+        ]
+      }
+    });
+
+    if (duplicateInvite) {
+      return res.status(400).json({ error: 'Invite already pending.' });
+    }
+
+    const invite = await db.serverInvite.create({
+      data: {
+        serverId,
+        email,
+        discordId,
+        permissions: JSON.stringify(permissions)
+      }
+    });
+
+    await logActivity(serverId, req.user!.id, 'user.invite', req.ip || null, emailOrDiscord);
+    res.json(invite);
   }
 
   public static async removeUser(req: Request, res: Response) {
@@ -241,7 +289,99 @@ export class ServerPanelController {
     }
 
     await db.serverAccess.delete({ where: { id: accessId } });
-    await logActivity(serverId, req.user!.id, 'user.remove', req.ip || null, `Access ID: ${accessId}`);
+    await logActivity(serverId, req.user!.id, 'user.remove', req.ip || null, accessId);
+    res.json({ success: true });
+  }
+
+  public static async cancelInvite(req: Request, res: Response) {
+    const serverId = req.params.id as string;
+    const inviteId = req.params.inviteId as string;
+
+    const server = (req as any).server;
+    if (server.userId !== req.user!.id) {
+      return res.status(403).json({ error: 'Only the server owner can cancel invites.' });
+    }
+
+    await db.serverInvite.delete({ where: { id: inviteId } });
+    await logActivity(serverId, req.user!.id, 'invite.cancel', req.ip || null, inviteId);
+    res.json({ success: true });
+  }
+
+  // User-facing invite methods (not bound to server middleware)
+  public static async listUserInvites(req: Request, res: Response) {
+    const user = await db.user.findUnique({ where: { id: req.user!.id } });
+    if (!user) return res.status(404).json({ error: 'User not found' });
+
+    const invites = await db.serverInvite.findMany({
+      where: {
+        status: 'PENDING',
+        OR: [
+          ...(user.email ? [{ email: user.email.toLowerCase() }] : []),
+          ...(user.discordId ? [{ discordId: user.discordId }] : [])
+        ]
+      },
+      include: {
+        server: {
+          include: {
+            user: { select: { username: true, avatar: true } }
+          }
+        }
+      }
+    });
+
+    res.json(invites);
+  }
+
+  public static async acceptInvite(req: Request, res: Response) {
+    const inviteId = req.params.inviteId as string;
+    const user = await db.user.findUnique({ where: { id: req.user!.id } });
+    if (!user) return res.status(404).json({ error: 'User not found' });
+
+    const invite = await db.serverInvite.findFirst({
+      where: {
+        id: inviteId,
+        status: 'PENDING',
+        OR: [
+          ...(user.email ? [{ email: user.email.toLowerCase() }] : []),
+          ...(user.discordId ? [{ discordId: user.discordId }] : [])
+        ]
+      }
+    });
+
+    if (!invite) return res.status(404).json({ error: 'Invite not found or already processed' });
+
+    await db.$transaction([
+      db.serverInvite.update({ where: { id: invite.id }, data: { status: 'ACCEPTED' } }),
+      db.serverAccess.upsert({
+        where: { serverId_userId: { serverId: invite.serverId, userId: user.id } },
+        update: { permissions: invite.permissions },
+        create: { serverId: invite.serverId, userId: user.id, permissions: invite.permissions }
+      })
+    ]);
+
+    await logActivity(invite.serverId, req.user!.id, 'invite.accept', req.ip || null, user.username);
+    res.json({ success: true });
+  }
+
+  public static async declineInvite(req: Request, res: Response) {
+    const inviteId = req.params.inviteId as string;
+    const user = await db.user.findUnique({ where: { id: req.user!.id } });
+    if (!user) return res.status(404).json({ error: 'User not found' });
+
+    const invite = await db.serverInvite.findFirst({
+      where: {
+        id: inviteId,
+        status: 'PENDING',
+        OR: [
+          ...(user.email ? [{ email: user.email.toLowerCase() }] : []),
+          ...(user.discordId ? [{ discordId: user.discordId }] : [])
+        ]
+      }
+    });
+
+    if (!invite) return res.status(404).json({ error: 'Invite not found or already processed' });
+
+    await db.serverInvite.update({ where: { id: invite.id }, data: { status: 'DECLINED' } });
     res.json({ success: true });
   }
 

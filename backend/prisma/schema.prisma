@@ -62,28 +62,28 @@ enum NotificationType {
 }
 
 model User {
-  id        String   @id @default(uuid())
-  discordId String   @unique
-  username  String
-  avatar    String?
-  email     String?  @unique
-  role      Role     @default(USER)
-  balance   Float    @default(12.5) // Realistic starting balance
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  id                String   @id @default(uuid())
+  discordId         String   @unique
+  username          String
+  avatar            String?
+  email             String?  @unique
+  role              Role     @default(USER)
+  balance           Float    @default(12.5) // Realistic starting balance
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
   pterodactylUserId Int?
 
-  servers           Server[]
-  transactions      CreditsTransaction[]
-  referralsMade     Referral[]           @relation("Referrer")
-  referralsReceived Referral[]           @relation("Referred")
-  voucherClaims     VoucherClaim[]
-  queueJobs         QueueJob[]
-  supportTickets    SupportTicket[]
-  ticketMessages    TicketMessage[]
-  premiumOrders     PremiumOrder[]
-  notifications     Notification[]
-  serverAccesses    ServerAccess[]
+  servers            Server[]
+  transactions       CreditsTransaction[]
+  referralsMade      Referral[]           @relation("Referrer")
+  referralsReceived  Referral[]           @relation("Referred")
+  voucherClaims      VoucherClaim[]
+  queueJobs          QueueJob[]
+  supportTickets     SupportTicket[]
+  ticketMessages     TicketMessage[]
+  premiumOrders      PremiumOrder[]
+  notifications      Notification[]
+  serverAccesses     ServerAccess[]
   serverActivityLogs ServerActivityLog[]
 }
 
@@ -116,12 +116,13 @@ model Server {
   pterodactylServerId   Int?
   pterodactylIdentifier String?
 
-  billingLogs ServerBillingLog[]
-  queueJobs   QueueJob[]
-  accesses    ServerAccess[]
+  billingLogs  ServerBillingLog[]
+  queueJobs    QueueJob[]
+  accesses     ServerAccess[]
   activityLogs ServerActivityLog[]
-  subdomain   ServerSubdomain?
-  pluginLogs  PluginInstallLog[]
+  subdomain    ServerSubdomain?
+  pluginLogs   PluginInstallLog[]
+  invites      ServerInvite[]
 }
 
 model CreditsTransaction {
@@ -200,7 +201,7 @@ model SupportTicket {
   createdAt DateTime     @default(now())
   updatedAt DateTime     @updatedAt
 
-  messages  TicketMessage[]
+  messages TicketMessage[]
 }
 
 model TicketMessage {
@@ -252,26 +253,38 @@ model SettingAuditLog {
 }
 
 model AuditLog {
-  id         String   @id @default(uuid())
-  userId     String?  // Optional for unauthenticated actions
-  action     String
-  resource   String?
-  ipAddress  String?
-  userAgent  String?
-  timestamp  DateTime @default(now())
+  id        String   @id @default(uuid())
+  userId    String? // Optional for unauthenticated actions
+  action    String
+  resource  String?
+  ipAddress String?
+  userAgent String?
+  timestamp DateTime @default(now())
 }
 
 model ServerAccess {
-  id        String   @id @default(uuid())
-  serverId  String
-  server    Server   @relation(fields: [serverId], references: [id], onDelete: Cascade)
-  userId    String
-  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  id          String   @id @default(uuid())
+  serverId    String
+  server      Server   @relation(fields: [serverId], references: [id], onDelete: Cascade)
+  userId      String
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
   permissions String // JSON string array of permissions or comma separated
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
 
   @@unique([serverId, userId])
+}
+
+model ServerInvite {
+  id          String   @id @default(uuid())
+  serverId    String
+  server      Server   @relation(fields: [serverId], references: [id], onDelete: Cascade)
+  email       String?
+  discordId   String?
+  permissions String // JSON string array
+  status      String   @default("PENDING") // PENDING
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
 }
 
 model ServerActivityLog {
@@ -282,7 +295,7 @@ model ServerActivityLog {
   user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
   action    String
   ipAddress String?
-  details   String?  // Additional context
+  details   String? // Additional context
   createdAt DateTime @default(now())
 }
 
@@ -297,10 +310,10 @@ model ServerSubdomain {
 }
 
 model PluginInstallLog {
-  id        String   @id @default(uuid())
-  serverId  String
-  server    Server   @relation(fields: [serverId], references: [id], onDelete: Cascade)
-  pluginName String
-  version   String?
+  id          String   @id @default(uuid())
+  serverId    String
+  server      Server   @relation(fields: [serverId], references: [id], onDelete: Cascade)
+  pluginName  String
+  version     String?
   installedAt DateTime @default(now())
 }

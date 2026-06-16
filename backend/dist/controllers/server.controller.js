@@ -131,7 +131,15 @@ class ServerController {
     static async myServers(req, res) {
         try {
             const userId = req.user.id;
-            const servers = await db_1.db.server.findMany({ where: { userId } });
+            const servers = await db_1.db.server.findMany({
+                where: {
+                    OR: [
+                        { userId },
+                        { accesses: { some: { userId } } }
+                    ]
+                },
+                include: { accesses: true }
+            });
             const enrichedServers = await Promise.all(servers.map(async (server) => {
                 const allocation = await pterodactyl_service_1.PterodactylService.getServerAllocation(server.pterodactylIdentifier);
                 let liveStatus = 'OFFLINE';
@@ -160,7 +168,9 @@ class ServerController {
                     allocationAlias: allocation?.alias || null,
                     allocationPort: allocation?.port || null,
                     liveStatus,
-                    liveUsage
+                    liveUsage,
+                    isShared: server.userId !== userId,
+                    permissions: server.userId === userId ? ['admin'] : JSON.parse(server.accesses.find((a) => a.userId === userId)?.permissions || '[]')
                 };
             }));
             res.json(enrichedServers);

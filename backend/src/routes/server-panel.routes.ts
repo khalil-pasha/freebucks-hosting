@@ -8,7 +8,7 @@ const router = Router({ mergeParams: true });
 router.use(requireAuth);
 
 router.get('/status', requireServerAccess(), ServerPanelController.getStatus);
-router.get('/websocket', requireServerAccess(), ServerPanelController.getWebsocket);
+router.get('/websocket', requireServerAccess('console'), ServerPanelController.getWebsocket);
 
 router.post('/power', requireServerAccess('console'), ServerPanelController.powerAction);
 router.post('/command', requireServerAccess('console'), ServerPanelController.sendCommand);
@@ -24,10 +24,11 @@ router.post('/files/delete', requireServerAccess('files'), ServerPanelController
 router.get('/files/upload', requireServerAccess('files'), ServerPanelController.getUploadUrl);
 router.get('/files/download', requireServerAccess('files'), ServerPanelController.getDownloadUrl);
 
-// Users
+// Users & Invites
 router.get('/users', requireServerAccess('settings'), ServerPanelController.listUsers);
 router.post('/users', requireServerAccess('settings'), ServerPanelController.inviteUser);
 router.delete('/users/:accessId', requireServerAccess('settings'), ServerPanelController.removeUser);
+router.delete('/users/invites/:inviteId', requireServerAccess('settings'), ServerPanelController.cancelInvite);
 
 // Subdomain
 router.get('/subdomain', requireServerAccess('settings'), ServerPanelController.getSubdomain);

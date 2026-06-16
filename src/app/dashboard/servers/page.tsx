@@ -256,6 +256,9 @@ export default function ServersPage() {
                   <div>
                     <CardTitle className="text-xl flex items-center gap-2">
                       <Server className="w-5 h-5 text-primary" /> {server.name}
+                      {server.isShared && (
+                        <span className="px-2 py-0.5 rounded text-xs font-bold bg-primary/20 text-primary uppercase tracking-wider ml-2">Shared</span>
+                      )}
                     </CardTitle>
                     <p className="text-sm font-mono text-foreground/50 mt-1">{server.id}</p>
                   </div>
@@ -352,9 +355,11 @@ export default function ServersPage() {
                     </Button>
                   </>
                 )}
-                <Button size="sm" variant="secondary" className="flex-1 sm:flex-none ml-auto" onClick={(e) => { e.stopPropagation(); setUpgradeTarget(server); setIsPlanModalOpen(true); setSelectedPlan(null); }}>
-                  <Zap className="w-4 h-4 mr-2" /> Upgrade
-                </Button>
+                {!server.isShared && (
+                  <Button size="sm" variant="secondary" className="flex-1 sm:flex-none ml-auto" onClick={(e) => { e.stopPropagation(); setUpgradeTarget(server); setIsPlanModalOpen(true); setSelectedPlan(null); }}>
+                    <Zap className="w-4 h-4 mr-2" /> Upgrade
+                  </Button>
+                )}
               </CardFooter>
             </Card>
           </motion.div>
