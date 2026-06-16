@@ -153,12 +153,10 @@ export default function ConsolePage() {
   const handleAcceptEula = async () => {
     try {
       await api.post(`/servers/${server.id}/panel/eula/accept`)
-      // Not using toast here to avoid importing it if it's missing, just log to term and UI
       if (terminalRef.current) {
-        // It will write to terminal
+        // Backend now handles the restart automatically
       }
       setShowEulaModal(false)
-      handlePower('start')
     } catch (err) {
       console.error(err)
     }

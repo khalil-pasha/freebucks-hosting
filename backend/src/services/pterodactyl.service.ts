@@ -243,13 +243,15 @@ export class PterodactylService {
 
   public static async acceptEula(identifier: string) {
     if (!this.isClientConfigured()) throw new Error('Pterodactyl Client API is not configured');
-    const url = `${process.env.PTERODACTYL_PANEL_URL}/api/client/servers/${identifier}/files/write?file=eula.txt`;
-    await axios.post(url, 'eula=true', {
+    const url = `${process.env.PTERODACTYL_PANEL_URL}/api/client/servers/${identifier}/files/write?file=%2Feula.txt`;
+    const res = await axios.post(url, 'eula=true\n', {
       headers: {
         ...this.getClientHeaders(),
         'Content-Type': 'text/plain'
       }
     });
+    console.log(`[Pterodactyl] EULA write response status:`, res.status);
+    return res.data;
   }
 
   public static async listFiles(identifier: string, directory: string = '/') {

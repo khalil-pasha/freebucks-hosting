@@ -326,6 +326,10 @@ export class ServerPanelController {
     
     try {
       await PterodactylService.acceptEula(server.pterodactylIdentifier);
+      
+      // Force a restart to ensure Wings clears crash state and Pterodactyl UI sees the restart
+      await PterodactylService.powerServer(server.pterodactylIdentifier, 'restart');
+
       await logActivity(server.id, req.user!.id, 'EULA_ACCEPTED', req.ip || null, 'Accepted Minecraft EULA');
       res.json({ success: true });
     } catch (error: any) {
