@@ -88,9 +88,18 @@ export class ServerController {
 
       res.status(201).json(server);
     } catch (error: any) {
-      console.error(error.response?.data || error);
-      const errorMessage = error.response?.data?.errors?.[0]?.detail || error.response?.data?.message || error.message || 'An unknown error occurred while creating the server.';
-      res.status(500).json({ error: errorMessage });
+      console.error('[ServerCreate] Failed:', error?.response?.data || error);
+      let errorMessage = 'An unknown error occurred while creating the server.';
+      
+      if (error?.response?.data?.errors && Array.isArray(error.response.data.errors) && error.response.data.errors.length > 0) {
+        errorMessage = error.response.data.errors.map((e: any) => `${e.detail || e.title}`).join(' | ');
+      } else if (error?.response?.data?.message) {
+        errorMessage = error.response.data.message;
+      } else if (error?.message) {
+        errorMessage = error.message;
+      }
+      
+      res.status(400).json({ error: `Pterodactyl Create Error: ${errorMessage}` });
     }
   }
 

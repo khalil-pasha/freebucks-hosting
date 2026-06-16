@@ -90,9 +90,6 @@ export class PterodactylService {
         allocations: 1,
         backups: 1
       },
-      allocation: {
-        default: 0 // In prod, usually pass node or let auto-deploy handle
-      },
       deploy: {
         locations: [parseInt(process.env.PTERODACTYL_LOCATION_ID || '1', 10)],
         dedicated_ip: false,
@@ -100,11 +97,19 @@ export class PterodactylService {
       }
     };
 
-    const response = await axios.post(url, data, { headers: this.getAppHeaders() });
-    return {
-      id: response.data.attributes.id,
-      identifier: response.data.attributes.identifier,
-    };
+    console.log('[Pterodactyl] Sending Create Server Payload:', JSON.stringify(data, null, 2));
+
+    try {
+      const response = await axios.post(url, data, { headers: this.getAppHeaders() });
+      return {
+        id: response.data.attributes.id,
+        identifier: response.data.attributes.identifier,
+      };
+    } catch (err: any) {
+      console.error('[Pterodactyl] Create Server Error. Status:', err.response?.status);
+      console.error('[Pterodactyl] Create Server Error Data:', JSON.stringify(err.response?.data || err.message, null, 2));
+      throw err;
+    }
   }
 
   public static async updateServerBuild(serverId: number, ramGB: number, cpu: number, disk: number) {
