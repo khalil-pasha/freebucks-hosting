@@ -66,10 +66,24 @@ export class ServerPanelController {
 
   public static async getWebsocket(req: Request, res: Response) {
     const server = (req as any).server;
-    console.log(`[Websocket] Fetching credentials for server ${server.id} (Ptero ID: ${server.pterodactylIdentifier})`);
-    if (!server.pterodactylIdentifier) return res.status(400).json({ error: 'Server not provisioned on node yet' });
-    const creds = await PterodactylService.getWebsocketCredentials(server.pterodactylIdentifier);
-    res.json(creds);
+    console.log(`[Websocket] Fetching credentials for FreeBucks DB Server ID: ${server.id}, Pterodactyl Identifier: ${server.pterodactylIdentifier}`);
+    
+    if (!server.pterodactylIdentifier) {
+      return res.status(400).json({ error: 'Server is still provisioning. Please wait.' });
+    }
+
+    try {
+      const creds = await PterodactylService.getWebsocketCredentials(server.pterodactylIdentifier);
+      res.json(creds);
+    } catch (err: any) {
+      console.error(`[Websocket] Failed to fetch credentials for server ${server.id} (Ptero: ${server.pterodactylIdentifier}):`, err.message);
+      if (err.response) {
+        console.error(`[Websocket] Pterodactyl Response Status:`, err.response.status);
+        console.error(`[Websocket] Pterodactyl Response Body:`, JSON.stringify(err.response.data));
+        return res.status(err.response.status).json({ error: `Pterodactyl error: ${err.response.data?.errors?.[0]?.detail || 'Unknown Pterodactyl Error'}` });
+      }
+      return res.status(502).json({ error: 'Failed to connect to game panel daemon. Daemon might be offline.' });
+    }
   }
 
 
