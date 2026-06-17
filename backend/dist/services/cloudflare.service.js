@@ -43,18 +43,20 @@ class CloudflareService {
             payload.content = content;
         if (data)
             payload.data = data;
-        console.log(`[CF] Creating ${type} record`, JSON.stringify(payload));
+        console.log(`[CF] creating ${type} record`, JSON.stringify(payload));
         try {
             if (existing) {
                 // Update
                 const url = `${this.baseUrl}/${existing.id}`;
                 const res = await axios_1.default.put(url, payload, { headers: this.getHeaders() });
+                console.log(`[CF] response received`);
                 console.log(`[CF] ${type} record success`, JSON.stringify(res.data));
                 return res.data.result;
             }
             else {
                 // Create
                 const res = await axios_1.default.post(this.baseUrl, payload, { headers: this.getHeaders() });
+                console.log(`[CF] response received`);
                 console.log(`[CF] ${type} record success`, JSON.stringify(res.data));
                 return res.data.result;
             }

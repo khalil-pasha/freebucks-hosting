@@ -362,7 +362,7 @@ class ServerPanelController {
     static async getSubdomain(req, res) {
         const serverId = req.params.id;
         let sub = await db_1.db.serverSubdomain.findUnique({ where: { serverId } });
-        if (sub && (sub.status === 'Pending DNS Provisioning' || sub.status === 'PENDING')) {
+        if (sub && (sub.status === 'Pending DNS Provisioning' || sub.status === 'PENDING' || sub.status.startsWith('FAILED'))) {
             try {
                 const { promises: dns } = require('dns');
                 const domain = `${sub.subdomain}.freebucks.host`;
@@ -380,21 +380,41 @@ class ServerPanelController {
                     srvExists = true;
                 }
                 if (aExists && srvExists) {
-                    sub = await db_1.db.serverSubdomain.update({
-                        where: { serverId },
-                        data: { status: 'ACTIVE' }
-                    });
-                    console.log(`[SUBDOMAIN] status updated to ACTIVE`);
+                    if (sub.status !== 'ACTIVE') {
+                        sub = await db_1.db.serverSubdomain.update({
+                            where: { serverId },
+                            data: { status: 'ACTIVE' }
+                        });
+                        console.log(`[SUBDOMAIN] status updated to ACTIVE`);
+                    }
                 }
                 else {
-                    // Wait, do we set to PENDING? If it's old, it's 'Pending DNS Provisioning', let's normalize it to 'PENDING'.
-                    if (sub.status !== 'PENDING') {
-                        sub = await db_1.db.serverSubdomain.update({ where: { serverId }, data: { status: 'PENDING' } });
+                    console.log(`[CF] Auto-provisioning missing DNS records for ${sub.subdomain}`);
+                    const server = await db_1.db.server.findUnique({ where: { id: serverId } });
+                    if (server && server.pterodactylIdentifier) {
+                        const allocation = await pterodactyl_service_1.PterodactylService.getServerAllocation(server.pterodactylIdentifier);
+                        if (allocation && allocation.ip && allocation.port) {
+                            console.log(`[CF] generateSubdomain entered (auto-provision)`);
+                            await cloudflare_service_1.CloudflareService.createMinecraftSubdomain(sub.subdomain, allocation.ip, allocation.port);
+                            sub = await db_1.db.serverSubdomain.update({
+                                where: { serverId },
+                                data: { status: 'ACTIVE' }
+                            });
+                            console.log(`[CF] database updated`);
+                            console.log(`[SUBDOMAIN] status updated to ACTIVE`);
+                        }
+                        else {
+                            console.log(`[CF] Auto-provision failed: No allocation details`);
+                        }
                     }
                 }
             }
             catch (err) {
-                console.error('[SUBDOMAIN] DNS check failed', err);
+                console.error('[SUBDOMAIN] DNS check or auto-provision failed', err);
+                sub = await db_1.db.serverSubdomain.update({
+                    where: { serverId },
+                    data: { status: `FAILED: ${err.message}` }
+                });
             }
         }
         res.json(sub);
@@ -418,6 +438,7 @@ class ServerPanelController {
             if (!allocation || !allocation.ip || !allocation.port) {
                 return res.status(400).json({ error: 'Could not fetch server allocation details.' });
             }
+            console.log(`[CF] generateSubdomain entered`);
             // Provision via Cloudflare
             await cloudflare_service_1.CloudflareService.createMinecraftSubdomain(requestedSubdomain, allocation.ip, allocation.port);
             console.log(`[SUBDOMAIN] A record exists/created`);
@@ -427,6 +448,7 @@ class ServerPanelController {
                 update: { subdomain: requestedSubdomain, status: 'ACTIVE' },
                 create: { serverId, subdomain: requestedSubdomain, status: 'ACTIVE' }
             });
+            console.log(`[CF] database updated`);
             console.log(`[SUBDOMAIN] status updated to ACTIVE`);
             await logActivity(serverId, req.user.id, 'subdomain.update', req.ip || null, requestedSubdomain);
             res.json(sub);
