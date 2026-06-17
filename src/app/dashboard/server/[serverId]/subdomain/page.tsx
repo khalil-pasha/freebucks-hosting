@@ -75,8 +75,8 @@ export default function SubdomainPage() {
                 <p className="font-bold">{subdomain.status}</p>
                 <p className="text-sm opacity-80 mt-1">
                   {subdomain.status === 'Active' 
-                    ? "Your subdomain is active and pointing to your server." 
-                    : "Your subdomain is pending DNS provisioning. Please allow up to 24 hours for DNS propagation."}
+                    ? "Your subdomain is active. Use this address in Minecraft to connect directly to your server." 
+                    : subdomain.status.startsWith('Failed') ? "There was an error provisioning your subdomain." : "Your subdomain is pending DNS provisioning."}
                 </p>
               </div>
             </div>

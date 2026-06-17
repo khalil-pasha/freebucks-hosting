@@ -1,6 +1,7 @@
 import { Request, Response } from 'express';
 import { db } from '../utils/db';
 import { PterodactylService } from '../services/pterodactyl.service';
+import { CloudflareService } from '../services/cloudflare.service';
 const logActivity = async (serverId: string, userId: string, action: string, ipAddress: string | null, details: string | null = null) => {
   await db.serverActivityLog.create({
     data: { serverId, userId, action, ipAddress, details }
@@ -426,14 +427,36 @@ export class ServerPanelController {
       return res.status(400).json({ error: 'Subdomain already taken' });
     }
 
-    const sub = await db.serverSubdomain.upsert({
-      where: { serverId },
-      update: { subdomain: requestedSubdomain, status: 'Pending DNS Provisioning' },
-      create: { serverId, subdomain: requestedSubdomain, status: 'Pending DNS Provisioning' }
-    });
+    const server = await db.server.findUnique({ where: { id: serverId } });
+    if (!server) return res.status(404).json({ error: 'Server not found' });
 
-    await logActivity(serverId, req.user!.id, 'subdomain.update', req.ip || null, requestedSubdomain);
-    res.json(sub);
+    try {
+      const allocation = await PterodactylService.getServerAllocation(server.pterodactylIdentifier as string);
+      if (!allocation || !allocation.ip || !allocation.port) {
+        return res.status(400).json({ error: 'Could not fetch server allocation details.' });
+      }
+
+      // Provision via Cloudflare
+      await CloudflareService.createMinecraftSubdomain(requestedSubdomain, allocation.ip, allocation.port);
+
+      const sub = await db.serverSubdomain.upsert({
+        where: { serverId },
+        update: { subdomain: requestedSubdomain, status: 'Active' },
+        create: { serverId, subdomain: requestedSubdomain, status: 'Active' }
+      });
+
+      await logActivity(serverId, req.user!.id, 'subdomain.update', req.ip || null, requestedSubdomain);
+      res.json(sub);
+    } catch (err: any) {
+      console.error('[Subdomain Generation Error]', err);
+      // Fallback or explicit failure
+      await db.serverSubdomain.upsert({
+        where: { serverId },
+        update: { subdomain: requestedSubdomain, status: `Failed: ${err.message}` },
+        create: { serverId, subdomain: requestedSubdomain, status: `Failed: ${err.message}` }
+      });
+      return res.status(400).json({ error: err.message || 'Failed to provision subdomain.' });
+    }
   }
 
   // --- Activity ---
