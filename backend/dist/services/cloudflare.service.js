@@ -35,21 +35,33 @@ class CloudflareService {
      */
     static async createOrUpdateRecord(type, name, content, data, proxied = false) {
         const existing = await this.getRecord(name, type);
-        const payload = { type, name, proxied };
+        const payload = { type, name };
+        if (type !== 'SRV') {
+            payload.proxied = proxied;
+        }
         if (content)
             payload.content = content;
         if (data)
             payload.data = data;
-        if (existing) {
-            // Update
-            const url = `${this.baseUrl}/${existing.id}`;
-            const res = await axios_1.default.put(url, payload, { headers: this.getHeaders() });
-            return res.data.result;
+        console.log(`[CF] Creating ${type} record`, JSON.stringify(payload));
+        try {
+            if (existing) {
+                // Update
+                const url = `${this.baseUrl}/${existing.id}`;
+                const res = await axios_1.default.put(url, payload, { headers: this.getHeaders() });
+                console.log(`[CF] ${type} record success`, JSON.stringify(res.data));
+                return res.data.result;
+            }
+            else {
+                // Create
+                const res = await axios_1.default.post(this.baseUrl, payload, { headers: this.getHeaders() });
+                console.log(`[CF] ${type} record success`, JSON.stringify(res.data));
+                return res.data.result;
+            }
         }
-        else {
-            // Create
-            const res = await axios_1.default.post(this.baseUrl, payload, { headers: this.getHeaders() });
-            return res.data.result;
+        catch (err) {
+            console.error(`[CF] Failed to create/update ${type} record:`, err.response?.data || err.message);
+            throw err;
         }
     }
     /**
@@ -60,24 +72,23 @@ class CloudflareService {
             throw new Error('Cloudflare DNS is not configured.');
         }
         const domain = 'freebucks.host'; // Base domain
-        const aRecordName = `${subdomain}.${domain}`;
-        const srvRecordName = `_minecraft._tcp.${subdomain}.${domain}`;
+        const aRecordName = `${subdomain}.${domain}`; // FQDN for API matching
+        const srvRecordName = `_minecraft._tcp.${subdomain}.${domain}`; // FQDN for API matching
         console.log(`[Cloudflare] Provisioning subdomain: ${subdomain}`);
         console.log(`[Cloudflare] Node IP: ${ip}, Port: ${port}`);
         try {
-            // 1. Create A Record (subdomain.freebucks.host -> Node IP)
-            // Must NOT be proxied for Minecraft to connect directly.
+            // 1. Create A Record
             const aResult = await this.createOrUpdateRecord('A', aRecordName, ip, undefined, false);
             console.log(`[Cloudflare] A Record Success: ${aRecordName} -> ${ip}`);
-            // 2. Create SRV Record (_minecraft._tcp.subdomain.freebucks.host -> port + target)
+            // 2. Create SRV Record
             const srvData = {
                 service: '_minecraft',
                 proto: '_tcp',
-                name: subdomain, // Cloudflare API data.name takes the short name for the host part
+                name: subdomain, // Short name for the SRV data object
                 priority: 0,
                 weight: 0,
                 port: port,
-                target: aRecordName,
+                target: aRecordName, // Target must be FQDN
             };
             const srvResult = await this.createOrUpdateRecord('SRV', srvRecordName, undefined, srvData, false);
             console.log(`[Cloudflare] SRV Record Success: ${srvRecordName} -> ${aRecordName}:${port}`);
