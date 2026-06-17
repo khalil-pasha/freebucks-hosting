@@ -279,22 +279,26 @@ class ServerPanelController {
         const user = await db_1.db.user.findUnique({ where: { id: req.user.id } });
         if (!user)
             return res.status(404).json({ error: 'User not found' });
+        console.log('[DEBUG INVITE] Current logged-in user:', { id: user.id, email: user.email, discordId: user.discordId });
+        const orConditions = [
+            ...(user.email ? [{ email: user.email.toLowerCase() }] : []),
+            ...(user.discordId ? [{ discordId: user.discordId }] : [])
+        ];
+        if (orConditions.length === 0) {
+            return res.json([]);
+        }
+        console.log('[DEBUG INVITE] Query OR conditions:', orConditions);
         const invites = await db_1.db.serverInvite.findMany({
             where: {
                 status: 'PENDING',
-                OR: [
-                    ...(user.email ? [{ email: user.email.toLowerCase() }] : []),
-                    ...(user.discordId ? [{ discordId: user.discordId }] : [])
-                ]
+                OR: orConditions.length > 0 ? orConditions : undefined
             },
             include: {
-                server: {
-                    include: {
-                        user: { select: { username: true, avatar: true } }
-                    }
-                }
+                server: { select: { id: true, name: true, user: { select: { username: true } } } }
             }
         });
+        console.log('[DEBUG INVITE] Found invites count:', invites.length);
+        console.log('[DEBUG INVITE] Latest pending invites in DB:', await db_1.db.serverInvite.findMany({ where: { status: 'PENDING' }, take: 5 }));
         res.json(invites);
     }
     static async acceptInvite(req, res) {
@@ -302,14 +306,18 @@ class ServerPanelController {
         const user = await db_1.db.user.findUnique({ where: { id: req.user.id } });
         if (!user)
             return res.status(404).json({ error: 'User not found' });
+        const orConditions = [
+            ...(user.email ? [{ email: user.email.toLowerCase() }] : []),
+            ...(user.discordId ? [{ discordId: user.discordId }] : [])
+        ];
+        if (orConditions.length === 0) {
+            return res.status(404).json({ error: 'Invite not found or already processed' });
+        }
         const invite = await db_1.db.serverInvite.findFirst({
             where: {
                 id: inviteId,
                 status: 'PENDING',
-                OR: [
-                    ...(user.email ? [{ email: user.email.toLowerCase() }] : []),
-                    ...(user.discordId ? [{ discordId: user.discordId }] : [])
-                ]
+                OR: orConditions
             }
         });
         if (!invite)
@@ -330,14 +338,18 @@ class ServerPanelController {
         const user = await db_1.db.user.findUnique({ where: { id: req.user.id } });
         if (!user)
             return res.status(404).json({ error: 'User not found' });
+        const orConditions = [
+            ...(user.email ? [{ email: user.email.toLowerCase() }] : []),
+            ...(user.discordId ? [{ discordId: user.discordId }] : [])
+        ];
+        if (orConditions.length === 0) {
+            return res.status(404).json({ error: 'Invite not found or already processed' });
+        }
         const invite = await db_1.db.serverInvite.findFirst({
             where: {
                 id: inviteId,
                 status: 'PENDING',
-                OR: [
-                    ...(user.email ? [{ email: user.email.toLowerCase() }] : []),
-                    ...(user.discordId ? [{ discordId: user.discordId }] : [])
-                ]
+                OR: orConditions
             }
         });
         if (!invite)

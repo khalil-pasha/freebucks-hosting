@@ -8,14 +8,17 @@ import { Button } from "@/components/ui/button"
 export default function InvitesPage() {
   const [invites, setInvites] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
 
   const fetchInvites = async () => {
     try {
       setLoading(true)
-      const res = await api.get('/invites')
+      setError(null)
+      const res = await api.get('/servers/invites')
       setInvites(res.data)
-    } catch (err) {
+    } catch (err: any) {
       console.error(err)
+      setError(handleApiError(err))
     } finally {
       setLoading(false)
     }
@@ -27,7 +30,7 @@ export default function InvitesPage() {
 
   const handleAction = async (inviteId: string, action: 'accept' | 'decline') => {
     try {
-      await api.post(`/invites/${inviteId}/${action}`)
+      await api.post(`/servers/invites/${inviteId}/${action}`)
       fetchInvites()
       if (action === 'accept') {
         alert("Invite accepted! You can now access the server.")
@@ -38,6 +41,21 @@ export default function InvitesPage() {
   }
 
   if (loading) return <div className="p-8 text-center text-foreground/50">Loading invites...</div>
+
+  if (error) {
+    return (
+      <div className="max-w-4xl mx-auto py-8 px-4 h-full">
+        <div className="bg-red-500/10 border border-red-500/30 rounded-xl p-8 text-center flex flex-col items-center">
+          <X className="w-12 h-12 text-red-500 mb-4" />
+          <h2 className="text-xl font-bold text-red-500 mb-2">Error loading invites</h2>
+          <p className="text-red-500/80">{error}</p>
+          <Button variant="outline" className="mt-4 border-red-500/30 text-red-500 hover:bg-red-500/10" onClick={fetchInvites}>
+            Try Again
+          </Button>
+        </div>
+      </div>
+    )
+  }
 
   return (
     <div className="max-w-4xl mx-auto py-8 px-4 h-full">
