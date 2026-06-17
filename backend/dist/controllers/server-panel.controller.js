@@ -361,7 +361,42 @@ class ServerPanelController {
     // --- Subdomain ---
     static async getSubdomain(req, res) {
         const serverId = req.params.id;
-        const sub = await db_1.db.serverSubdomain.findUnique({ where: { serverId } });
+        let sub = await db_1.db.serverSubdomain.findUnique({ where: { serverId } });
+        if (sub && (sub.status === 'Pending DNS Provisioning' || sub.status === 'PENDING')) {
+            try {
+                const { promises: dns } = require('dns');
+                const domain = `${sub.subdomain}.freebucks.host`;
+                const srvDomain = `_minecraft._tcp.${domain}`;
+                let aExists = false;
+                let srvExists = false;
+                const aRecords = await dns.resolve4(domain).catch(() => []);
+                if (aRecords.length > 0) {
+                    console.log(`[SUBDOMAIN] A record exists/created`);
+                    aExists = true;
+                }
+                const srvRecords = await dns.resolveSrv(srvDomain).catch(() => []);
+                if (srvRecords.length > 0) {
+                    console.log(`[SUBDOMAIN] SRV record exists/created`);
+                    srvExists = true;
+                }
+                if (aExists && srvExists) {
+                    sub = await db_1.db.serverSubdomain.update({
+                        where: { serverId },
+                        data: { status: 'ACTIVE' }
+                    });
+                    console.log(`[SUBDOMAIN] status updated to ACTIVE`);
+                }
+                else {
+                    // Wait, do we set to PENDING? If it's old, it's 'Pending DNS Provisioning', let's normalize it to 'PENDING'.
+                    if (sub.status !== 'PENDING') {
+                        sub = await db_1.db.serverSubdomain.update({ where: { serverId }, data: { status: 'PENDING' } });
+                    }
+                }
+            }
+            catch (err) {
+                console.error('[SUBDOMAIN] DNS check failed', err);
+            }
+        }
         res.json(sub);
     }
     static async generateSubdomain(req, res) {
@@ -385,11 +420,14 @@ class ServerPanelController {
             }
             // Provision via Cloudflare
             await cloudflare_service_1.CloudflareService.createMinecraftSubdomain(requestedSubdomain, allocation.ip, allocation.port);
+            console.log(`[SUBDOMAIN] A record exists/created`);
+            console.log(`[SUBDOMAIN] SRV record exists/created`);
             const sub = await db_1.db.serverSubdomain.upsert({
                 where: { serverId },
-                update: { subdomain: requestedSubdomain, status: 'Active' },
-                create: { serverId, subdomain: requestedSubdomain, status: 'Active' }
+                update: { subdomain: requestedSubdomain, status: 'ACTIVE' },
+                create: { serverId, subdomain: requestedSubdomain, status: 'ACTIVE' }
             });
+            console.log(`[SUBDOMAIN] status updated to ACTIVE`);
             await logActivity(serverId, req.user.id, 'subdomain.update', req.ip || null, requestedSubdomain);
             res.json(sub);
         }
@@ -398,8 +436,8 @@ class ServerPanelController {
             // Fallback or explicit failure
             await db_1.db.serverSubdomain.upsert({
                 where: { serverId },
-                update: { subdomain: requestedSubdomain, status: `Failed: ${err.message}` },
-                create: { serverId, subdomain: requestedSubdomain, status: `Failed: ${err.message}` }
+                update: { subdomain: requestedSubdomain, status: `FAILED: ${err.message}` },
+                create: { serverId, subdomain: requestedSubdomain, status: `FAILED: ${err.message}` }
             });
             return res.status(400).json({ error: err.message || 'Failed to provision subdomain.' });
         }

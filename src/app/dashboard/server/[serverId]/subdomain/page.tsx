@@ -69,14 +69,24 @@ export default function SubdomainPage() {
               </div>
             </div>
 
-            <div className={`p-4 rounded-lg border flex items-start gap-3 ${subdomain.status === 'Active' ? 'bg-success/10 border-success/30 text-success' : 'bg-orange-500/10 border-orange-500/30 text-orange-500'}`}>
-              {subdomain.status === 'Active' ? <CheckCircle2 className="w-5 h-5 mt-0.5" /> : <AlertCircle className="w-5 h-5 mt-0.5" />}
+            <div className={`p-4 rounded-lg border flex items-start gap-3 ${
+              subdomain.status === 'ACTIVE' ? 'bg-green-500/10 border-green-500/30 text-green-500' :
+              subdomain.status.startsWith('FAILED') ? 'bg-red-500/10 border-red-500/30 text-red-500' :
+              'bg-orange-500/10 border-orange-500/30 text-orange-500'
+            }`}>
+              {subdomain.status === 'ACTIVE' ? <CheckCircle2 className="w-5 h-5 mt-0.5" /> : <AlertCircle className="w-5 h-5 mt-0.5" />}
               <div>
-                <p className="font-bold">{subdomain.status}</p>
+                <p className="font-bold">
+                  {subdomain.status === 'ACTIVE' ? 'DNS Active' :
+                   subdomain.status.startsWith('FAILED') ? 'DNS Failed' :
+                   'DNS Pending'}
+                </p>
                 <p className="text-sm opacity-80 mt-1">
-                  {subdomain.status === 'Active' 
+                  {subdomain.status === 'ACTIVE' 
                     ? "Your subdomain is active. Use this address in Minecraft to connect directly to your server." 
-                    : subdomain.status.startsWith('Failed') ? "There was an error provisioning your subdomain." : "Your subdomain is pending DNS provisioning."}
+                    : subdomain.status.startsWith('FAILED') 
+                      ? subdomain.status.replace('FAILED:', 'Error:')
+                      : "Your subdomain is pending DNS provisioning."}
                 </p>
               </div>
             </div>
