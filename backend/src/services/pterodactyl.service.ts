@@ -282,6 +282,18 @@ export class PterodactylService {
     await axios.put(url, { root, files }, { headers: this.getClientHeaders() });
   }
 
+  public static async chmodFiles(identifier: string, root: string, files: {file: string, mode: string}[]) {
+    if (!this.isClientConfigured()) throw new Error('Pterodactyl Client API is not configured');
+    const url = `${process.env.PTERODACTYL_PANEL_URL}/api/client/servers/${identifier}/files/chmod`;
+    await axios.post(url, { root, files }, { headers: this.getClientHeaders() });
+  }
+
+  public static async compressFiles(identifier: string, root: string, files: string[]) {
+    if (!this.isClientConfigured()) throw new Error('Pterodactyl Client API is not configured');
+    const url = `${process.env.PTERODACTYL_PANEL_URL}/api/client/servers/${identifier}/files/compress`;
+    await axios.post(url, { root, files }, { headers: this.getClientHeaders() });
+  }
+
   public static async createFolder(identifier: string, root: string, name: string) {
     if (!this.isClientConfigured()) throw new Error('Pterodactyl Client API is not configured');
     const url = `${process.env.PTERODACTYL_PANEL_URL}/api/client/servers/${identifier}/files/create-folder`;

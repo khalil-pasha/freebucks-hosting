@@ -147,6 +147,7 @@ class ServerPanelController {
         const files = await pterodactyl_service_1.PterodactylService.listFiles(server.pterodactylIdentifier, directory);
         const mappedFiles = files.map((f) => ({
             name: f.name,
+            mode: f.mode,
             isFile: f.is_file,
             size: f.size,
             modifiedAt: f.modified_at
@@ -180,7 +181,25 @@ class ServerPanelController {
         if (!server.pterodactylIdentifier)
             return res.status(400).json({ error: 'Not provisioned' });
         await pterodactyl_service_1.PterodactylService.renameFiles(server.pterodactylIdentifier, root, files);
-        await logActivity(server.id, req.user.id, 'file.rename', req.ip || null, `Renamed ${files.length} items in ${root}`);
+        await logActivity(server.id, req.user.id, 'file.rename', req.ip || null, `Renamed/moved ${files.length} items in ${root}`);
+        res.json({ success: true });
+    }
+    static async chmodFiles(req, res) {
+        const server = req.server;
+        const { root, files } = req.body;
+        if (!server.pterodactylIdentifier)
+            return res.status(400).json({ error: 'Not provisioned' });
+        await pterodactyl_service_1.PterodactylService.chmodFiles(server.pterodactylIdentifier, root, files);
+        await logActivity(server.id, req.user.id, 'file.chmod', req.ip || null, `Changed permissions for ${files.length} items in ${root}`);
+        res.json({ success: true });
+    }
+    static async compressFiles(req, res) {
+        const server = req.server;
+        const { root, files } = req.body;
+        if (!server.pterodactylIdentifier)
+            return res.status(400).json({ error: 'Not provisioned' });
+        await pterodactyl_service_1.PterodactylService.compressFiles(server.pterodactylIdentifier, root, files);
+        await logActivity(server.id, req.user.id, 'file.archive', req.ip || null, `Archived ${files.length} items in ${root}`);
         res.json({ success: true });
     }
     static async createFolder(req, res) {

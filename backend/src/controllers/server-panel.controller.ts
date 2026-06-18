@@ -161,6 +161,7 @@ export class ServerPanelController {
     const files = await PterodactylService.listFiles(server.pterodactylIdentifier, directory);
     const mappedFiles = files.map((f: any) => ({
       name: f.name,
+      mode: f.mode,
       isFile: f.is_file,
       size: f.size,
       modifiedAt: f.modified_at
@@ -194,7 +195,25 @@ export class ServerPanelController {
     const { root, files } = req.body;
     if (!server.pterodactylIdentifier) return res.status(400).json({ error: 'Not provisioned' });
     await PterodactylService.renameFiles(server.pterodactylIdentifier, root, files);
-    await logActivity(server.id, req.user!.id, 'file.rename', req.ip || null, `Renamed ${files.length} items in ${root}`);
+    await logActivity(server.id, req.user!.id, 'file.rename', req.ip || null, `Renamed/moved ${files.length} items in ${root}`);
+    res.json({ success: true });
+  }
+
+  public static async chmodFiles(req: Request, res: Response) {
+    const server = (req as any).server;
+    const { root, files } = req.body;
+    if (!server.pterodactylIdentifier) return res.status(400).json({ error: 'Not provisioned' });
+    await PterodactylService.chmodFiles(server.pterodactylIdentifier, root, files);
+    await logActivity(server.id, req.user!.id, 'file.chmod', req.ip || null, `Changed permissions for ${files.length} items in ${root}`);
+    res.json({ success: true });
+  }
+
+  public static async compressFiles(req: Request, res: Response) {
+    const server = (req as any).server;
+    const { root, files } = req.body;
+    if (!server.pterodactylIdentifier) return res.status(400).json({ error: 'Not provisioned' });
+    await PterodactylService.compressFiles(server.pterodactylIdentifier, root, files);
+    await logActivity(server.id, req.user!.id, 'file.archive', req.ip || null, `Archived ${files.length} items in ${root}`);
     res.json({ success: true });
   }
 

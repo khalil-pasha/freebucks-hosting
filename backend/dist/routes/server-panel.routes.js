@@ -18,6 +18,8 @@ router.post('/files/write', (0, server_access_1.requireServerAccess)('files'), s
 router.post('/files/rename', (0, server_access_1.requireServerAccess)('files'), server_panel_controller_1.ServerPanelController.renameFiles);
 router.post('/files/create-folder', (0, server_access_1.requireServerAccess)('files'), server_panel_controller_1.ServerPanelController.createFolder);
 router.post('/files/delete', (0, server_access_1.requireServerAccess)('files'), server_panel_controller_1.ServerPanelController.deleteFiles);
+router.post('/files/chmod', (0, server_access_1.requireServerAccess)('files'), server_panel_controller_1.ServerPanelController.chmodFiles);
+router.post('/files/archive', (0, server_access_1.requireServerAccess)('files'), server_panel_controller_1.ServerPanelController.compressFiles);
 router.get('/files/upload', (0, server_access_1.requireServerAccess)('files'), server_panel_controller_1.ServerPanelController.getUploadUrl);
 router.get('/files/download', (0, server_access_1.requireServerAccess)('files'), server_panel_controller_1.ServerPanelController.getDownloadUrl);
 // Users & Invites
