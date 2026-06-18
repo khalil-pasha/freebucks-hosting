@@ -116,6 +116,11 @@ export default function ServersPage() {
     try {
       setActionLoading(serverId)
       
+      let powerAction = ''
+      if (action === 'start-server') powerAction = 'start'
+      else if (action === 'restart-server') powerAction = 'restart'
+      else if (action === 'cancel') powerAction = 'stop'
+
       // Instantly trigger local UI state
       if (action === 'start-server' || action === 'restart-server') {
         setStartingServers(prev => ({ 
@@ -132,10 +137,21 @@ export default function ServersPage() {
         })
       }
       
-      await api.post(`/queue/${action}`, { serverId })
+      await api.post(`/servers/${serverId}/panel/power`, { action: powerAction })
+      
+      // Update local state and restart polling immediately
       fetchServers()
     } catch (err: any) {
-      alert(handleApiError(err))
+      const errorMsg = err.response?.data?.error || handleApiError(err) || 'Failed to execute power action'
+      alert(`Error: ${errorMsg}`)
+      
+      // Revert optimistic UI state on failure
+      setStartingServers(prev => {
+        const newState = { ...prev }
+        delete newState[serverId]
+        return newState
+      })
+      fetchServers()
     } finally {
       setActionLoading(null)
     }
