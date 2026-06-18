@@ -141,6 +141,9 @@ export default function ServersPage() {
       
       // Update local state and restart polling immediately
       fetchServers()
+      if (powerAction === 'start' || powerAction === 'restart') {
+        refetchUser()
+      }
     } catch (err: any) {
       const errorMsg = err.response?.data?.error || handleApiError(err) || 'Failed to execute power action'
       alert(`Error: ${errorMsg}`)
@@ -360,8 +363,8 @@ export default function ServersPage() {
               </CardContent>
 
               <CardFooter className="pt-4 border-t border-border/50 bg-card/30 flex flex-wrap gap-2">
-                {displayStatus === "STOPPED" ? (
-                  <Button disabled={actionLoading === server.id || !!(user && user.balance <= 0)} onClick={(e) => { e.stopPropagation(); handleAction('start-server', server.id)}} size="sm" className="bg-success hover:bg-success/90 text-white shadow-lg shadow-success/20 flex-1 sm:flex-none">
+                {displayStatus === "STOPPED" || displayStatus === "OFFLINE" ? (
+                  <Button disabled={actionLoading === server.id || !!(user && user.balance < server.costPerHour)} onClick={(e) => { e.stopPropagation(); handleAction('start-server', server.id)}} size="sm" className="bg-success hover:bg-success/90 text-white shadow-lg shadow-success/20 flex-1 sm:flex-none">
                     {actionLoading === server.id ? (
                       <><RefreshCw className="w-4 h-4 mr-2 animate-spin" /> Starting...</>
                     ) : (
@@ -373,7 +376,7 @@ export default function ServersPage() {
                     <Button disabled={!!(isLocallyStarting && elapsedSecs <= 120)} onClick={(e) => { e.stopPropagation(); handleAction('cancel', server.id)}} size="sm" className="bg-red-500 hover:bg-red-600 text-white flex-1 sm:flex-none">
                       <Power className="w-4 h-4 mr-2" /> Stop
                     </Button>
-                    <Button disabled={!!((isLocallyStarting && elapsedSecs <= 120) || (user && user.balance <= 0))} onClick={(e) => { e.stopPropagation(); handleAction('restart-server', server.id)}} size="sm" variant="outline" className="flex-1 sm:flex-none border-primary/50 text-primary hover:bg-primary/10">
+                    <Button disabled={!!((isLocallyStarting && elapsedSecs <= 120) || (user && user.balance < server.costPerHour))} onClick={(e) => { e.stopPropagation(); handleAction('restart-server', server.id)}} size="sm" variant="outline" className="flex-1 sm:flex-none border-primary/50 text-primary hover:bg-primary/10">
                       <RefreshCw className="w-4 h-4 mr-2" /> Restart
                     </Button>
                   </>

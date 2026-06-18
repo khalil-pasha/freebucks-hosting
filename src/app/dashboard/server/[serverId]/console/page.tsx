@@ -13,7 +13,7 @@ import { useAuth } from "@/components/AuthProvider"
 
 export default function ConsolePage() {
   const { server, status, refetch } = useContext(ServerContext)
-  const { user } = useAuth()
+  const { user, refetchUser } = useAuth()
   const terminalRef = useRef<HTMLDivElement>(null)
   const [socket, setSocket] = useState<WebSocket | null>(null)
   const [command, setCommand] = useState("")
@@ -147,8 +147,12 @@ export default function ConsolePage() {
     try {
       await api.post(`/servers/${server.id}/panel/power`, { action })
       if (refetch) refetch()
-    } catch (err) {
-      console.error(err)
+      if (action === 'start' || action === 'restart') {
+        refetchUser()
+      }
+    } catch (err: any) {
+      const errorMsg = err.response?.data?.error || 'Failed to execute power action'
+      alert(`Error: ${errorMsg}`)
     }
   }
 
@@ -174,9 +178,9 @@ export default function ConsolePage() {
         </div>
       )}
       <div className="flex gap-2 mb-2">
-        <Button onClick={() => handlePower('start')} disabled={status?.currentState === 'running' || !!(user && user.balance <= 0)} variant="outline" className="text-success border-success/30 hover:bg-success/10"><Play className="w-4 h-4 mr-2" /> Start</Button>
+        <Button onClick={() => handlePower('start')} disabled={status?.currentState === 'running' || !!(user && server && user.balance < server.costPerHour)} variant="outline" className="text-success border-success/30 hover:bg-success/10"><Play className="w-4 h-4 mr-2" /> Start</Button>
         <Button onClick={() => handlePower('stop')} disabled={status?.currentState === 'offline'} variant="outline" className="text-yellow-500 border-yellow-500/30 hover:bg-yellow-500/10"><Square className="w-4 h-4 mr-2" /> Stop</Button>
-        <Button onClick={() => handlePower('restart')} disabled={status?.currentState === 'offline' || !!(user && user.balance <= 0)} variant="outline" className="text-primary border-primary/30 hover:bg-primary/10"><RotateCcw className="w-4 h-4 mr-2" /> Restart</Button>
+        <Button onClick={() => handlePower('restart')} disabled={status?.currentState === 'offline' || !!(user && server && user.balance < server.costPerHour)} variant="outline" className="text-primary border-primary/30 hover:bg-primary/10"><RotateCcw className="w-4 h-4 mr-2" /> Restart</Button>
         <Button onClick={() => handlePower('kill')} disabled={status?.currentState === 'offline'} variant="outline" className="text-red-500 border-red-500/30 hover:bg-red-500/10"><Square className="w-4 h-4 mr-2" /> Kill</Button>
       </div>
 

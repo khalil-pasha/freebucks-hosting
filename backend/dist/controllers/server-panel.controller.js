@@ -83,10 +83,11 @@ class ServerPanelController {
         console.log(`[POWER] ${action.toUpperCase()} requested for server ${server.id}`);
         if (action === 'start' || action === 'restart') {
             const owner = await db_1.db.user.findUnique({ where: { id: server.userId } });
+            const hourlyCost = server.costPerHour;
             console.log(`[POWER] User balance checked for server ${server.id}: ${owner?.balance}`);
-            if (!owner || owner.balance <= 0) {
-                console.log(`[CREDITS] Insufficient balance blocked start`);
-                return res.status(400).json({ error: 'Insufficient credits. Please top up your balance.' });
+            if (!owner || owner.balance < hourlyCost) {
+                console.log(`[CREDITS] Insufficient balance blocked start/restart`);
+                return res.status(400).json({ error: `Insufficient credits. You need at least ${hourlyCost} credits to start/restart this server.` });
             }
         }
         console.log(`[POWER] Power action ${action} sent to Pterodactyl for server ${server.id}`);
@@ -98,6 +99,33 @@ class ServerPanelController {
             await pterodactyl_service_1.PterodactylService.powerServer(server.pterodactylIdentifier, 'kill');
         else if (action === 'restart')
             await pterodactyl_service_1.PterodactylService.powerServer(server.pterodactylIdentifier, 'restart');
+        if (action === 'start' || action === 'restart') {
+            const hourlyCost = server.costPerHour;
+            if (hourlyCost > 0) {
+                await db_1.db.$transaction(async (tx) => {
+                    await tx.user.update({
+                        where: { id: server.userId },
+                        data: { balance: { decrement: hourlyCost } }
+                    });
+                    await tx.creditsTransaction.create({
+                        data: {
+                            userId: server.userId,
+                            amount: hourlyCost,
+                            type: 'SPENT',
+                            source: action === 'start' ? 'SERVER_START' : 'SERVER_RESTART'
+                        }
+                    });
+                    await tx.serverBillingLog.create({
+                        data: {
+                            serverId: server.id,
+                            amountDeducted: hourlyCost,
+                            reason: action === 'start' ? 'UPFRONT_START_DEDUCTION' : 'UPFRONT_RESTART_DEDUCTION'
+                        }
+                    });
+                });
+                console.log(`[CREDITS] Deducted upfront power cost (${hourlyCost}) for server ${server.id}`);
+            }
+        }
         await logActivity(server.id, req.user.id, `power.${action}`, req.ip || null);
         res.json({ success: true });
     }
