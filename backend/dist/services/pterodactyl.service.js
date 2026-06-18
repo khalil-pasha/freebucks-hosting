@@ -275,6 +275,12 @@ class PterodactylService {
         const url = `${process.env.PTERODACTYL_PANEL_URL}/api/client/servers/${identifier}/files/compress`;
         await axios_1.default.post(url, { root, files }, { headers: this.getClientHeaders() });
     }
+    static async decompressFile(identifier, root, file) {
+        if (!this.isClientConfigured())
+            throw new Error('Pterodactyl Client API is not configured');
+        const url = `${process.env.PTERODACTYL_PANEL_URL}/api/client/servers/${identifier}/files/decompress`;
+        await axios_1.default.post(url, { root, file }, { headers: this.getClientHeaders() });
+    }
     static async createFolder(identifier, root, name) {
         if (!this.isClientConfigured())
             throw new Error('Pterodactyl Client API is not configured');

@@ -17,7 +17,7 @@ export default function FilesPage() {
   const [editingFile, setEditingFile] = useState<{ name: string, content: string } | null>(null)
   const [saving, setSaving] = useState(false)
 
-  const [activeModal, setActiveModal] = useState<{type: 'rename'|'move'|'chmod'|'archive'|'delete'|'create-folder', file?: any} | null>(null)
+  const [activeModal, setActiveModal] = useState<{type: 'rename'|'move'|'chmod'|'archive'|'unarchive'|'delete'|'create-folder', file?: any} | null>(null)
   const [modalInput, setModalInput] = useState("")
   const [openDropdownId, setOpenDropdownId] = useState<string | null>(null)
 
@@ -186,6 +186,12 @@ export default function FilesPage() {
           files: [file.name]
         })
         alert("Archive created successfully")
+      } else if (type === 'unarchive') {
+        await api.post(`/servers/${server.id}/panel/files/decompress`, {
+          root: currentPath,
+          file: file.name
+        })
+        alert("Extracted successfully")
       } else if (type === 'delete') {
         await api.post(`/servers/${server.id}/panel/files/delete`, {
           root: currentPath,
@@ -289,6 +295,9 @@ export default function FilesPage() {
                       <button className="px-4 py-2 hover:bg-foreground/10 text-sm" onClick={(e) => { e.stopPropagation(); setActiveModal({type: 'move', file}); setModalInput('/'); setOpenDropdownId(null); }}>Move</button>
                       <button className="px-4 py-2 hover:bg-foreground/10 text-sm" onClick={(e) => { e.stopPropagation(); setActiveModal({type: 'chmod', file}); setModalInput(file.mode || "644"); setOpenDropdownId(null); }}>Permissions</button>
                       <button className="px-4 py-2 hover:bg-foreground/10 text-sm" onClick={(e) => { e.stopPropagation(); setActiveModal({type: 'archive', file}); setOpenDropdownId(null); }}>Archive</button>
+                      {/\.(zip|tar|tar\.gz|gz|rar)$/i.test(file.name) && (
+                        <button className="px-4 py-2 hover:bg-foreground/10 text-sm" onClick={(e) => { e.stopPropagation(); setActiveModal({type: 'unarchive', file}); setOpenDropdownId(null); }}>Unarchive</button>
+                      )}
                       <button className="px-4 py-2 hover:bg-red-500/10 text-red-500 text-sm" onClick={(e) => { e.stopPropagation(); setActiveModal({type: 'delete', file}); setOpenDropdownId(null); }}>Delete</button>
                     </div>
                   )}
@@ -311,7 +320,7 @@ export default function FilesPage() {
               {activeModal.type.replace('-', ' ')} {activeModal.file ? `"${activeModal.file.name}"` : ''}
             </h3>
             
-            {activeModal.type !== 'delete' && activeModal.type !== 'archive' && (
+            {activeModal.type !== 'delete' && activeModal.type !== 'archive' && activeModal.type !== 'unarchive' && (
               <div className="mb-4">
                 <label className="block text-sm font-medium mb-1 text-foreground/70">
                   {activeModal.type === 'rename' ? 'New Name' : activeModal.type === 'move' ? 'Destination Path' : activeModal.type === 'chmod' ? 'Permissions (e.g. 644, 755)' : 'Name'}
@@ -327,6 +336,10 @@ export default function FilesPage() {
             
             {activeModal.type === 'archive' && (
               <p className="mb-6 text-foreground/80">Are you sure you want to archive <strong>{activeModal.file.name}</strong>?</p>
+            )}
+
+            {activeModal.type === 'unarchive' && (
+              <p className="mb-6 text-foreground/80">Are you sure you want to extract <strong>{activeModal.file.name}</strong> into the current directory?</p>
             )}
 
             <div className="flex justify-end gap-2">

@@ -23,6 +23,7 @@ router.post('/files/create-folder', requireServerAccess('files'), ServerPanelCon
 router.post('/files/delete', requireServerAccess('files'), ServerPanelController.deleteFiles);
 router.post('/files/chmod', requireServerAccess('files'), ServerPanelController.chmodFiles);
 router.post('/files/archive', requireServerAccess('files'), ServerPanelController.compressFiles);
+router.post('/files/decompress', requireServerAccess('files'), ServerPanelController.decompressFile);
 router.get('/files/upload', requireServerAccess('files'), ServerPanelController.getUploadUrl);
 router.get('/files/download', requireServerAccess('files'), ServerPanelController.getDownloadUrl);
 

@@ -202,6 +202,15 @@ class ServerPanelController {
         await logActivity(server.id, req.user.id, 'file.archive', req.ip || null, `Archived ${files.length} items in ${root}`);
         res.json({ success: true });
     }
+    static async decompressFile(req, res) {
+        const server = req.server;
+        const { root, file } = req.body;
+        if (!server.pterodactylIdentifier)
+            return res.status(400).json({ error: 'Not provisioned' });
+        await pterodactyl_service_1.PterodactylService.decompressFile(server.pterodactylIdentifier, root, file);
+        await logActivity(server.id, req.user.id, 'file.unarchive', req.ip || null, `Extracted ${file} in ${root}`);
+        res.json({ success: true });
+    }
     static async createFolder(req, res) {
         const server = req.server;
         const { root, name } = req.body;
