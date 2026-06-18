@@ -18,6 +18,12 @@ export class QueueController {
         return res.status(403).json({ error: 'Server not found or unauthorized' });
       }
 
+      const owner = await db.user.findUnique({ where: { id: server.userId } });
+      if (!owner || owner.balance <= 0) {
+        console.log(`[CREDITS] Insufficient balance blocked start (Queue Endpoint)`);
+        return res.status(400).json({ error: 'Insufficient credits. Please top up your balance.' });
+      }
+
       const data = await QueueService.addStartJob(userId, serverId);
       res.json(data);
     } catch (error: any) {
@@ -37,6 +43,12 @@ export class QueueController {
       const server = await db.server.findUnique({ where: { id: serverId } });
       if (!server || server.userId !== userId) {
         return res.status(403).json({ error: 'Server not found or unauthorized' });
+      }
+
+      const owner = await db.user.findUnique({ where: { id: server.userId } });
+      if (!owner || owner.balance <= 0) {
+        console.log(`[CREDITS] Insufficient balance blocked start (Queue Endpoint)`);
+        return res.status(400).json({ error: 'Insufficient credits. Please top up your balance.' });
       }
 
       const data = await QueueService.addRestartJob(userId, serverId);

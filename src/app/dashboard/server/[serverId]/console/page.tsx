@@ -8,10 +8,12 @@ import { FitAddon } from 'xterm-addon-fit'
 import 'xterm/css/xterm.css'
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
-import { Play, Square, RotateCcw } from "lucide-react"
+import { Play, Square, RotateCcw, AlertTriangle } from "lucide-react"
+import { useAuth } from "@/components/AuthProvider"
 
 export default function ConsolePage() {
   const { server, status, refetch } = useContext(ServerContext)
+  const { user } = useAuth()
   const terminalRef = useRef<HTMLDivElement>(null)
   const [socket, setSocket] = useState<WebSocket | null>(null)
   const [command, setCommand] = useState("")
@@ -165,10 +167,16 @@ export default function ConsolePage() {
   return (
     <>
       <div className="flex flex-col h-full gap-4">
+      {user && user.balance <= 0 && (
+        <div className="bg-red-500/10 border border-red-500/50 rounded-lg p-3 flex items-center gap-3 text-red-500">
+          <AlertTriangle className="w-5 h-5" />
+          <span className="font-medium text-sm">Your balance is 0 credits. Add credits to continue running servers.</span>
+        </div>
+      )}
       <div className="flex gap-2 mb-2">
-        <Button onClick={() => handlePower('start')} disabled={status?.currentState === 'running'} variant="outline" className="text-success border-success/30 hover:bg-success/10"><Play className="w-4 h-4 mr-2" /> Start</Button>
+        <Button onClick={() => handlePower('start')} disabled={status?.currentState === 'running' || !!(user && user.balance <= 0)} variant="outline" className="text-success border-success/30 hover:bg-success/10"><Play className="w-4 h-4 mr-2" /> Start</Button>
         <Button onClick={() => handlePower('stop')} disabled={status?.currentState === 'offline'} variant="outline" className="text-yellow-500 border-yellow-500/30 hover:bg-yellow-500/10"><Square className="w-4 h-4 mr-2" /> Stop</Button>
-        <Button onClick={() => handlePower('restart')} disabled={status?.currentState === 'offline'} variant="outline" className="text-primary border-primary/30 hover:bg-primary/10"><RotateCcw className="w-4 h-4 mr-2" /> Restart</Button>
+        <Button onClick={() => handlePower('restart')} disabled={status?.currentState === 'offline' || !!(user && user.balance <= 0)} variant="outline" className="text-primary border-primary/30 hover:bg-primary/10"><RotateCcw className="w-4 h-4 mr-2" /> Restart</Button>
         <Button onClick={() => handlePower('kill')} disabled={status?.currentState === 'offline'} variant="outline" className="text-red-500 border-red-500/30 hover:bg-red-500/10"><Square className="w-4 h-4 mr-2" /> Kill</Button>
       </div>
 

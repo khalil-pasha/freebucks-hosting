@@ -26,6 +26,11 @@ export class ServerController {
         return res.status(404).json({ error: 'User not found' });
       }
 
+      if (user.balance <= 0) {
+        console.log(`[CREDITS] Server creation blocked due to insufficient credits`);
+        return res.status(400).json({ error: 'Insufficient credits to create a server. Please top up your balance.' });
+      }
+
       if (user.premiumOrders.length === 0 && user.servers.length >= 1) {
         return res.status(403).json({ error: 'You already have an active free server. Upgrade to premium to create more servers.' });
       }

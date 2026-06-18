@@ -233,6 +233,13 @@ export default function ServersPage() {
         )}
       </AnimatePresence>
 
+      {user && user.balance <= 0 && (
+        <div className="bg-red-500/10 border border-red-500/50 rounded-lg p-4 flex items-center gap-3 text-red-500 mb-6 shadow-lg shadow-red-500/5">
+          <ShieldAlert className="w-6 h-6 flex-shrink-0" />
+          <span className="font-bold">Your balance is 0 credits. Add credits to continue running servers.</span>
+        </div>
+      )}
+
       <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
         {servers.map((server, i) => {
           const localState = startingServers[server.id];
@@ -338,7 +345,7 @@ export default function ServersPage() {
 
               <CardFooter className="pt-4 border-t border-border/50 bg-card/30 flex flex-wrap gap-2">
                 {displayStatus === "STOPPED" ? (
-                  <Button disabled={actionLoading === server.id} onClick={(e) => { e.stopPropagation(); handleAction('start-server', server.id)}} size="sm" className="bg-success hover:bg-success/90 text-white shadow-lg shadow-success/20 flex-1 sm:flex-none">
+                  <Button disabled={actionLoading === server.id || !!(user && user.balance <= 0)} onClick={(e) => { e.stopPropagation(); handleAction('start-server', server.id)}} size="sm" className="bg-success hover:bg-success/90 text-white shadow-lg shadow-success/20 flex-1 sm:flex-none">
                     {actionLoading === server.id ? (
                       <><RefreshCw className="w-4 h-4 mr-2 animate-spin" /> Starting...</>
                     ) : (
@@ -347,10 +354,10 @@ export default function ServersPage() {
                   </Button>
                 ) : (
                   <>
-                    <Button disabled={isLocallyStarting && elapsedSecs <= 120} onClick={(e) => { e.stopPropagation(); handleAction('cancel', server.id)}} size="sm" className="bg-red-500 hover:bg-red-600 text-white flex-1 sm:flex-none">
+                    <Button disabled={!!(isLocallyStarting && elapsedSecs <= 120)} onClick={(e) => { e.stopPropagation(); handleAction('cancel', server.id)}} size="sm" className="bg-red-500 hover:bg-red-600 text-white flex-1 sm:flex-none">
                       <Power className="w-4 h-4 mr-2" /> Stop
                     </Button>
-                    <Button disabled={isLocallyStarting && elapsedSecs <= 120} onClick={(e) => { e.stopPropagation(); handleAction('restart-server', server.id)}} size="sm" variant="outline" className="flex-1 sm:flex-none border-primary/50 text-primary hover:bg-primary/10">
+                    <Button disabled={!!((isLocallyStarting && elapsedSecs <= 120) || (user && user.balance <= 0))} onClick={(e) => { e.stopPropagation(); handleAction('restart-server', server.id)}} size="sm" variant="outline" className="flex-1 sm:flex-none border-primary/50 text-primary hover:bg-primary/10">
                       <RefreshCw className="w-4 h-4 mr-2" /> Restart
                     </Button>
                   </>

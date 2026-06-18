@@ -80,6 +80,13 @@ class ServerPanelController {
         const { action } = req.body; // start, stop, restart, kill
         if (!server.pterodactylIdentifier)
             return res.status(400).json({ error: 'Not provisioned' });
+        if (action === 'start' || action === 'restart') {
+            const owner = await db_1.db.user.findUnique({ where: { id: server.userId } });
+            if (!owner || owner.balance <= 0) {
+                console.log(`[CREDITS] Insufficient balance blocked start`);
+                return res.status(400).json({ error: 'Insufficient credits. Please top up your balance.' });
+            }
+        }
         if (action === 'start')
             await pterodactyl_service_1.PterodactylService.startServer(server.pterodactylIdentifier);
         else if (action === 'stop')

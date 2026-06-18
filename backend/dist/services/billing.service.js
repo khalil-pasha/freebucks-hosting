@@ -3,6 +3,7 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.BillingService = void 0;
 const db_1 = require("../utils/db");
 const notification_service_1 = require("./notification.service");
+const pterodactyl_service_1 = require("./pterodactyl.service");
 class BillingService {
     /**
      * Attempts to deduct the hourly cost for a server.
@@ -19,19 +20,47 @@ class BillingService {
                 throw new Error('Server or User not found for billing');
             }
             // Check balance
-            if (server.user.balance < server.costPerHour) {
-                // Insufficient funds -> Stop the server
+            if (server.user.balance <= 0) {
+                // Insufficient funds -> Stop the server immediately
                 await tx.server.update({
                     where: { id: serverId },
                     data: { status: 'STOPPED' }
                 });
-                // Log the stop event
                 await tx.serverBillingLog.create({
                     data: {
                         serverId,
                         amountDeducted: 0,
                         reason: 'INSUFFICIENT_CREDITS_STOP'
                     }
+                });
+                await notification_service_1.NotificationService.createNotification(server.userId, 'Server Auto-Stopped', `Your server '${server.name}' was automatically stopped due to insufficient credits.`, 'SERVER_AUTO_STOP');
+                return false;
+            }
+            else if (server.user.balance < server.costPerHour) {
+                // Partial drain -> set balance to 0 and stop
+                const drainAmount = server.user.balance;
+                await tx.user.update({
+                    where: { id: server.user.id },
+                    data: { balance: 0 }
+                });
+                await tx.serverBillingLog.create({
+                    data: {
+                        serverId,
+                        amountDeducted: drainAmount,
+                        reason: 'INSUFFICIENT_CREDITS_STOP_PARTIAL'
+                    }
+                });
+                await tx.creditsTransaction.create({
+                    data: {
+                        userId: server.user.id,
+                        amount: drainAmount,
+                        type: 'SPENT',
+                        source: 'SERVER_BILLING_PARTIAL'
+                    }
+                });
+                await tx.server.update({
+                    where: { id: serverId },
+                    data: { status: 'STOPPED' }
                 });
                 await notification_service_1.NotificationService.createNotification(server.userId, 'Server Auto-Stopped', `Your server '${server.name}' was automatically stopped due to insufficient credits.`, 'SERVER_AUTO_STOP');
                 return false;
@@ -80,7 +109,20 @@ class BillingService {
                 // If no log exists for some reason, or it's been >= 60 mins
                 if (!lastLog || (now.getTime() - lastLog.timestamp.getTime()) >= ONE_HOUR_MS) {
                     console.log(`[BillingService] Processing hourly deduction for Server ${server.id}`);
-                    await this.deductCost(server.id, 'HOURLY_DEDUCTION');
+                    const success = await this.deductCost(server.id, 'HOURLY_DEDUCTION');
+                    if (!success) {
+                        // Stop all running/starting servers for this user
+                        const allActive = await db_1.db.server.findMany({
+                            where: { userId: server.userId, status: { in: ['RUNNING', 'STARTING'] } }
+                        });
+                        for (const active of allActive) {
+                            console.log(`[CREDITS] Auto-stopped server due to insufficient credits (Server ${active.id})`);
+                            await db_1.db.server.update({ where: { id: active.id }, data: { status: 'STOPPED' } });
+                            if (active.pterodactylIdentifier) {
+                                await pterodactyl_service_1.PterodactylService.powerServer(active.pterodactylIdentifier, 'stop').catch(console.error);
+                            }
+                        }
+                    }
                 }
             }
         }

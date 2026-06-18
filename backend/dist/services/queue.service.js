@@ -37,6 +37,19 @@ exports.worker = new bullmq_1.Worker('server-queue', async (job) => {
     const server = await db_1.db.server.findUnique({ where: { id: serverId } });
     if (!server)
         return;
+    const owner = await db_1.db.user.findUnique({ where: { id: server.userId } });
+    if (!owner || owner.balance <= 0) {
+        console.log(`[CREDITS] Insufficient balance blocked start (Queue Worker)`);
+        await db_1.db.queueJob.update({
+            where: { id: queueJobId },
+            data: { status: 'FAILED' },
+        });
+        await db_1.db.server.update({
+            where: { id: serverId },
+            data: { status: 'STOPPED' },
+        });
+        return;
+    }
     // Power on Pterodactyl
     if (server.pterodactylIdentifier) {
         if (action === 'START') {

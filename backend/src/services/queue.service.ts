@@ -39,6 +39,20 @@ export const worker = new Worker('server-queue', async (job: Job) => {
   const server = await db.server.findUnique({ where: { id: serverId } });
   if (!server) return;
 
+  const owner = await db.user.findUnique({ where: { id: server.userId } });
+  if (!owner || owner.balance <= 0) {
+    console.log(`[CREDITS] Insufficient balance blocked start (Queue Worker)`);
+    await db.queueJob.update({
+      where: { id: queueJobId },
+      data: { status: 'FAILED' },
+    });
+    await db.server.update({
+      where: { id: serverId },
+      data: { status: 'STOPPED' },
+    });
+    return;
+  }
+
   // Power on Pterodactyl
   if (server.pterodactylIdentifier) {
     if (action === 'START') {
