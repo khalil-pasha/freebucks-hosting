@@ -27,6 +27,12 @@ router.post('/files/decompress', requireServerAccess('files'), ServerPanelContro
 router.get('/files/upload', requireServerAccess('files'), ServerPanelController.getUploadUrl);
 router.get('/files/download', requireServerAccess('files'), ServerPanelController.getDownloadUrl);
 
+// Plugins
+router.get('/plugins', requireServerAccess('files'), ServerPanelController.listPlugins);
+router.post('/plugins/install-url', requireServerAccess('files'), ServerPanelController.installPluginUrl);
+router.delete('/plugins', requireServerAccess('files'), ServerPanelController.deletePlugin);
+router.post('/plugins/rename', requireServerAccess('files'), ServerPanelController.renamePlugin);
+
 // Users & Invites
 router.get('/users', requireServerAccess('settings'), ServerPanelController.listUsers);
 router.post('/users', requireServerAccess('settings'), ServerPanelController.inviteUser);

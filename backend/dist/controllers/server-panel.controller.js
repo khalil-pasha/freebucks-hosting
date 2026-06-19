@@ -236,6 +236,115 @@ class ServerPanelController {
         const url = await pterodactyl_service_1.PterodactylService.getUploadUrl(server.pterodactylIdentifier);
         res.json({ url });
     }
+    // PLUGINS
+    static async listPlugins(req, res) {
+        const server = req.server;
+        if (!server.pterodactylIdentifier)
+            return res.status(400).json({ error: 'Not provisioned' });
+        try {
+            const files = await pterodactyl_service_1.PterodactylService.listFiles(server.pterodactylIdentifier, '/plugins');
+            const mappedFiles = files
+                .filter((f) => f.is_file && f.name.endsWith('.jar'))
+                .map((f) => ({
+                name: f.name,
+                size: f.size,
+                modifiedAt: f.modified_at
+            }));
+            res.json(mappedFiles);
+        }
+        catch (err) {
+            if (err.response && err.response.status === 404) {
+                return res.status(404).json({ error: 'Plugins are available only for Paper/Spigot/Bukkit servers.' });
+            }
+            res.status(400).json({ error: err.message });
+        }
+    }
+    static async deletePlugin(req, res) {
+        const server = req.server;
+        const { file } = req.body;
+        if (!server.pterodactylIdentifier)
+            return res.status(400).json({ error: 'Not provisioned' });
+        if (!file || !file.endsWith('.jar'))
+            return res.status(400).json({ error: 'Invalid plugin file' });
+        await pterodactyl_service_1.PterodactylService.deleteFiles(server.pterodactylIdentifier, '/plugins', [file]);
+        await logActivity(server.id, req.user.id, 'plugin.delete', req.ip || null, `Deleted plugin ${file}`);
+        res.json({ success: true });
+    }
+    static async renamePlugin(req, res) {
+        const server = req.server;
+        const { file, newName } = req.body;
+        if (!server.pterodactylIdentifier)
+            return res.status(400).json({ error: 'Not provisioned' });
+        if (!file || !file.endsWith('.jar'))
+            return res.status(400).json({ error: 'Invalid source plugin file' });
+        if (!newName || !newName.endsWith('.jar'))
+            return res.status(400).json({ error: 'New name must end with .jar' });
+        await pterodactyl_service_1.PterodactylService.renameFiles(server.pterodactylIdentifier, '/plugins', [{ from: file, to: newName }]);
+        await logActivity(server.id, req.user.id, 'plugin.rename', req.ip || null, `Renamed plugin ${file} to ${newName}`);
+        res.json({ success: true });
+    }
+    static async installPluginUrl(req, res) {
+        const server = req.server;
+        const { url } = req.body;
+        if (!server.pterodactylIdentifier)
+            return res.status(400).json({ error: 'Not provisioned' });
+        try {
+            const parsedUrl = new URL(url);
+            if (parsedUrl.protocol !== 'http:' && parsedUrl.protocol !== 'https:') {
+                return res.status(400).json({ error: 'Invalid URL protocol' });
+            }
+            const lookup = await require('dns').promises.lookup(parsedUrl.hostname, { family: 4 });
+            const ip = lookup.address;
+            if (parsedUrl.hostname === 'localhost' || !ip) {
+                return res.status(400).json({ error: 'Invalid hostname' });
+            }
+            const parts = ip.split('.').map(Number);
+            let isPrivate = false;
+            if (parts[0] === 10)
+                isPrivate = true;
+            if (parts[0] === 127)
+                isPrivate = true;
+            if (parts[0] === 172 && parts[1] >= 16 && parts[1] <= 31)
+                isPrivate = true;
+            if (parts[0] === 192 && parts[1] === 168)
+                isPrivate = true;
+            if (parts[0] === 169 && parts[1] === 254)
+                isPrivate = true;
+            if (parts[0] === 0)
+                isPrivate = true;
+            if (isPrivate) {
+                return res.status(400).json({ error: 'Cannot download from private IP addresses' });
+            }
+            let filename = parsedUrl.pathname.split('/').pop() || 'plugin.jar';
+            if (!filename.endsWith('.jar')) {
+                filename += '.jar';
+            }
+            const axios = require('axios');
+            const axiosRes = await axios.get(url, {
+                responseType: 'arraybuffer',
+                maxRedirects: 0,
+                maxContentLength: 50 * 1024 * 1024,
+                timeout: 30000
+            });
+            const buffer = axiosRes.data;
+            const uploadUrl = await pterodactyl_service_1.PterodactylService.getUploadUrl(server.pterodactylIdentifier);
+            const FormData = require('form-data');
+            const form = new FormData();
+            form.append('files', buffer, filename);
+            await axios.post(`${uploadUrl}&directory=/plugins`, form, {
+                headers: form.getHeaders(),
+                maxBodyLength: 50 * 1024 * 1024,
+            });
+            await logActivity(server.id, req.user.id, 'plugin.install', req.ip || null, `Installed plugin ${filename} from URL`);
+            res.json({ success: true });
+        }
+        catch (err) {
+            if (err.response && [301, 302, 307, 308].includes(err.response.status)) {
+                return res.status(400).json({ error: 'Redirects are not allowed for security reasons' });
+            }
+            res.status(400).json({ error: 'Failed to download or upload plugin: ' + err.message });
+        }
+    }
     static async getDownloadUrl(req, res) {
         const server = req.server;
         const file = req.query.file;

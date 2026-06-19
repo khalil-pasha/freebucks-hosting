@@ -23,6 +23,11 @@ router.post('/files/archive', (0, server_access_1.requireServerAccess)('files'),
 router.post('/files/decompress', (0, server_access_1.requireServerAccess)('files'), server_panel_controller_1.ServerPanelController.decompressFile);
 router.get('/files/upload', (0, server_access_1.requireServerAccess)('files'), server_panel_controller_1.ServerPanelController.getUploadUrl);
 router.get('/files/download', (0, server_access_1.requireServerAccess)('files'), server_panel_controller_1.ServerPanelController.getDownloadUrl);
+// Plugins
+router.get('/plugins', (0, server_access_1.requireServerAccess)('files'), server_panel_controller_1.ServerPanelController.listPlugins);
+router.post('/plugins/install-url', (0, server_access_1.requireServerAccess)('files'), server_panel_controller_1.ServerPanelController.installPluginUrl);
+router.delete('/plugins', (0, server_access_1.requireServerAccess)('files'), server_panel_controller_1.ServerPanelController.deletePlugin);
+router.post('/plugins/rename', (0, server_access_1.requireServerAccess)('files'), server_panel_controller_1.ServerPanelController.renamePlugin);
 // Users & Invites
 router.get('/users', (0, server_access_1.requireServerAccess)('settings'), server_panel_controller_1.ServerPanelController.listUsers);
 router.post('/users', (0, server_access_1.requireServerAccess)('settings'), server_panel_controller_1.ServerPanelController.inviteUser);
