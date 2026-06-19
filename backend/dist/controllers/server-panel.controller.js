@@ -663,8 +663,36 @@ class ServerPanelController {
         if (!server.pterodactylIdentifier)
             return res.status(400).json({ error: 'Not provisioned' });
         await pterodactyl_service_1.PterodactylService.reinstallServer(server.pterodactylIdentifier);
-        await logActivity(server.id, req.user.id, 'server.reinstall', req.ip || null, 'Triggered reinstallation');
+        await logActivity(server.id, req.user.id, 'server.reinstall', req.ip || null, 'Triggered server reinstallation');
         res.json({ success: true });
+    }
+    static async resetWorld(req, res) {
+        const server = req.server;
+        if (!server.pterodactylIdentifier)
+            return res.status(400).json({ error: 'Not provisioned' });
+        try {
+            await pterodactyl_service_1.PterodactylService.powerServer(server.pterodactylIdentifier, 'stop');
+            const files = await pterodactyl_service_1.PterodactylService.listFiles(server.pterodactylIdentifier, '/');
+            const timestamp = Date.now();
+            const renamePayload = [];
+            for (const file of files) {
+                if (!file.is_file && ['world', 'world_nether', 'world_the_end'].includes(file.name)) {
+                    renamePayload.push({
+                        from: `/${file.name}`,
+                        to: `/${file.name}_old_${timestamp}`
+                    });
+                }
+            }
+            await new Promise(r => setTimeout(r, 2000));
+            if (renamePayload.length > 0) {
+                await pterodactyl_service_1.PterodactylService.renameFiles(server.pterodactylIdentifier, '/', renamePayload);
+            }
+            await logActivity(server.id, req.user.id, 'server.reset_world', req.ip || null, 'Reset world data and backed up old worlds');
+            res.json({ success: true });
+        }
+        catch (err) {
+            res.status(400).json({ error: 'Failed to reset world: ' + (err.response?.data?.error || err.message) });
+        }
     }
     // --- Startup ---
     static async getStartup(req, res) {

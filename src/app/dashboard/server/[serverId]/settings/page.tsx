@@ -41,6 +41,18 @@ export default function SettingsPage() {
     }
   }
 
+  const handleResetWorld = async () => {
+    if (!confirm("WARNING: This will generate a fresh world. Old world will be backed up by renaming.\nAre you sure you want to proceed?")) return
+    try {
+      await api.post(`/servers/${server.id}/panel/settings/reset-world`)
+      if (confirm("World reset successfully! Your old world has been backed up.\nDo you want to start the server now to generate the new world?")) {
+        await api.post(`/servers/${server.id}/panel/power`, { action: 'start' })
+      }
+    } catch (err: any) {
+      alert(handleApiError(err))
+    }
+  }
+
   const handleAcceptEula = async () => {
     try {
       setAcceptingEula(true)
@@ -85,6 +97,9 @@ export default function SettingsPage() {
         <p className="text-foreground/70 text-sm mb-6">These actions are destructive and cannot be undone.</p>
         
         <div className="flex flex-col sm:flex-row gap-4">
+          <Button variant="outline" className="border-red-500/50 text-red-500 hover:bg-red-500 hover:text-white" onClick={handleResetWorld}>
+            Reset World
+          </Button>
           <Button variant="outline" className="border-red-500/50 text-red-500 hover:bg-red-500 hover:text-white" onClick={handleReinstall}>
             Reinstall Server
           </Button>

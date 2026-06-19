@@ -49,6 +49,7 @@ router.get('/activity', requireServerAccess('activity'), ServerPanelController.g
 // Settings
 router.patch('/settings', requireServerAccess('settings'), ServerPanelController.updateSettings);
 router.post('/reinstall', requireServerAccess('settings'), ServerPanelController.reinstallServer);
+router.post('/settings/reset-world', requireServerAccess('settings'), ServerPanelController.resetWorld);
 
 // Startup
 router.get('/startup', requireServerAccess('settings'), ServerPanelController.getStartup);

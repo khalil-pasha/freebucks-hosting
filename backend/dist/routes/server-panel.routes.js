@@ -41,6 +41,7 @@ router.get('/activity', (0, server_access_1.requireServerAccess)('activity'), se
 // Settings
 router.patch('/settings', (0, server_access_1.requireServerAccess)('settings'), server_panel_controller_1.ServerPanelController.updateSettings);
 router.post('/reinstall', (0, server_access_1.requireServerAccess)('settings'), server_panel_controller_1.ServerPanelController.reinstallServer);
+router.post('/settings/reset-world', (0, server_access_1.requireServerAccess)('settings'), server_panel_controller_1.ServerPanelController.resetWorld);
 // Startup
 router.get('/startup', (0, server_access_1.requireServerAccess)('settings'), server_panel_controller_1.ServerPanelController.getStartup);
 router.post('/startup', (0, server_access_1.requireServerAccess)('settings'), server_panel_controller_1.ServerPanelController.updateStartup);
