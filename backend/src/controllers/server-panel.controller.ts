@@ -252,6 +252,45 @@ export class ServerPanelController {
   }
 
   // PLUGINS
+  public static async detectSoftware(req: Request, res: Response) {
+    const server = (req as any).server;
+    if (!server.pterodactylIdentifier) return res.status(400).json({ error: 'Not provisioned' });
+
+    try {
+      const vars = await PterodactylService.getStartupVariables(server.pterodactylIdentifier);
+      const serverDetails = await require('axios').get(`${process.env.PTERODACTYL_PANEL_URL}/api/application/servers/${server.pterodactylServerId}`, {
+        headers: PterodactylService.getAppHeaders()
+      }).catch(() => null);
+
+      const eggId = serverDetails?.data?.attributes?.egg?.toString() || '';
+      
+      let softwareStr = '';
+      for (const v of vars) {
+        if (v.env_variable === 'SERVER_JARFILE' || v.env_variable === 'MINECRAFT_VERSION' || v.env_variable === 'BUILD_NUMBER' || v.env_variable === 'MC_VERSION') {
+          softwareStr += ` ${(v.server_value || '').toLowerCase()}`;
+        }
+      }
+
+      // FreeBucks Egg mappings (example checks) or filename detection
+      const loaders: string[] = [];
+      if (softwareStr.includes('paper') || eggId === '15') loaders.push('paper');
+      if (softwareStr.includes('purpur') || eggId === '17') loaders.push('purpur');
+      if (softwareStr.includes('spigot') || eggId === '16') loaders.push('spigot');
+      if (softwareStr.includes('bukkit') || loaders.length > 0) loaders.push('bukkit'); // If it has one of the above, it's bukkit compatible
+
+      // Fallback
+      if (loaders.length === 0) {
+        loaders.push('paper', 'spigot', 'purpur', 'bukkit');
+      }
+
+      // Deduplicate loaders
+      const uniqueLoaders = Array.from(new Set(loaders));
+      res.json({ loaders: uniqueLoaders });
+    } catch (err: any) {
+      res.json({ loaders: ['paper', 'spigot', 'purpur', 'bukkit'] });
+    }
+  }
+
   public static async listPlugins(req: Request, res: Response) {
     const server = (req as any).server;
     if (!server.pterodactylIdentifier) return res.status(400).json({ error: 'Not provisioned' });
@@ -327,7 +366,8 @@ export class ServerPanelController {
         return res.status(400).json({ error: 'Cannot download from private IP addresses' });
       }
 
-      let filename = parsedUrl.pathname.split('/').pop() || 'plugin.jar';
+      let filename = req.body.filename || parsedUrl.pathname.split('/').pop() || 'plugin.jar';
+      filename = filename.replace(/[^a-zA-Z0-9.\-_\[\]]/g, '');
       if (!filename.endsWith('.jar')) {
         filename += '.jar';
       }

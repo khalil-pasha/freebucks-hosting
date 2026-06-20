@@ -25,6 +25,7 @@ router.get('/files/upload', (0, server_access_1.requireServerAccess)('files'), s
 router.get('/files/download', (0, server_access_1.requireServerAccess)('files'), server_panel_controller_1.ServerPanelController.getDownloadUrl);
 // Plugins
 router.get('/plugins', (0, server_access_1.requireServerAccess)('files'), server_panel_controller_1.ServerPanelController.listPlugins);
+router.get('/software', (0, server_access_1.requireServerAccess)('files'), server_panel_controller_1.ServerPanelController.detectSoftware);
 router.post('/plugins/install-url', (0, server_access_1.requireServerAccess)('files'), server_panel_controller_1.ServerPanelController.installPluginUrl);
 router.delete('/plugins', (0, server_access_1.requireServerAccess)('files'), server_panel_controller_1.ServerPanelController.deletePlugin);
 router.post('/plugins/rename', (0, server_access_1.requireServerAccess)('files'), server_panel_controller_1.ServerPanelController.renamePlugin);

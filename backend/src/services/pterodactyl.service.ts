@@ -9,7 +9,7 @@ export class PterodactylService {
     return !!(process.env.PTERODACTYL_PANEL_URL && process.env.PTERODACTYL_CLIENT_KEY);
   }
 
-  private static getAppHeaders() {
+  public static getAppHeaders() {
     return {
       'Authorization': `Bearer ${process.env.PTERODACTYL_API_KEY}`,
       'Accept': 'Application/vnd.pterodactyl.v1+json',

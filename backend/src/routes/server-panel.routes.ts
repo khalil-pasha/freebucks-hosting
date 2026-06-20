@@ -29,6 +29,7 @@ router.get('/files/download', requireServerAccess('files'), ServerPanelControlle
 
 // Plugins
 router.get('/plugins', requireServerAccess('files'), ServerPanelController.listPlugins);
+router.get('/software', requireServerAccess('files'), ServerPanelController.detectSoftware);
 router.post('/plugins/install-url', requireServerAccess('files'), ServerPanelController.installPluginUrl);
 router.delete('/plugins', requireServerAccess('files'), ServerPanelController.deletePlugin);
 router.post('/plugins/rename', requireServerAccess('files'), ServerPanelController.renamePlugin);
