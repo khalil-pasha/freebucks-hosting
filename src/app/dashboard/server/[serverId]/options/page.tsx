@@ -32,7 +32,7 @@ export default function OptionsPage() {
         'gamemode': res.data['gamemode'] || 'survival',
         'difficulty': res.data['difficulty'] || 'easy',
         'white-list': res.data['white-list'] === 'true',
-        'online-mode': res.data['online-mode'] !== 'false', // Default true
+        'cracked': res.data['online-mode'] === 'false',
         'allow-flight': res.data['allow-flight'] === 'true',
         'pvp': res.data['pvp'] !== 'false',
         'force-gamemode': res.data['force-gamemode'] === 'true',
@@ -77,7 +77,7 @@ export default function OptionsPage() {
         'gamemode': payload['gamemode'],
         'difficulty': payload['difficulty'],
         'white-list': payload['white-list'] ? 'true' : 'false',
-        'online-mode': payload['online-mode'] ? 'true' : 'false',
+        'online-mode': payload['cracked'] ? 'false' : 'true',
         'allow-flight': payload['allow-flight'] ? 'true' : 'false',
         'pvp': payload['pvp'] ? 'true' : 'false',
         'force-gamemode': payload['force-gamemode'] ? 'true' : 'false',
@@ -199,7 +199,11 @@ export default function OptionsPage() {
           </div>
 
           <ToggleCard title="Whitelist" desc="Only let approved players join" objKey="white-list" />
-          <ToggleCard title="Cracked / Online Mode" desc="Verify authentic Minecraft accounts" objKey="online-mode" />
+          <ToggleCard 
+            title="Cracked" 
+            desc={options['cracked'] ? "Allows players without premium Minecraft accounts to join." : "Only authentic Minecraft accounts can join."} 
+            objKey="cracked" 
+          />
           <ToggleCard title="Allow Flight" desc="Allow flying in survival mode" objKey="allow-flight" />
           <ToggleCard title="PvP" desc="Player versus Player combat" objKey="pvp" />
           <ToggleCard title="Force Gamemode" desc="Force players into default gamemode on join" objKey="force-gamemode" />
