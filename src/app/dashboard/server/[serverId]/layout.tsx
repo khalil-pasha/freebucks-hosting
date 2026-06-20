@@ -22,6 +22,7 @@ export default function ServerPanelLayout({ children }: { children: React.ReactN
     { name: "Console", icon: Terminal, href: `/dashboard/server/${serverId}/console`, perm: 'console' },
     { name: "Files", icon: Folder, href: `/dashboard/server/${serverId}/files`, perm: 'files' },
     { name: "Users", icon: Users, href: `/dashboard/server/${serverId}/users`, perm: 'settings' },
+    { name: "Players", icon: Users, href: `/dashboard/server/${serverId}/players`, perm: 'console' },
     { name: "Plugins", icon: Puzzle, href: `/dashboard/server/${serverId}/plugins`, perm: 'files' },
     { name: "Startup", icon: PlayCircle, href: `/dashboard/server/${serverId}/startup`, perm: 'settings' },
     { name: "Settings", icon: Settings, href: `/dashboard/server/${serverId}/settings`, perm: 'settings' },

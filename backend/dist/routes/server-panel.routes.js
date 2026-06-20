@@ -29,6 +29,9 @@ router.get('/software', (0, server_access_1.requireServerAccess)('files'), serve
 router.post('/plugins/install-url', (0, server_access_1.requireServerAccess)('files'), server_panel_controller_1.ServerPanelController.installPluginUrl);
 router.delete('/plugins', (0, server_access_1.requireServerAccess)('files'), server_panel_controller_1.ServerPanelController.deletePlugin);
 router.post('/plugins/rename', (0, server_access_1.requireServerAccess)('files'), server_panel_controller_1.ServerPanelController.renamePlugin);
+// Players
+router.get('/players', (0, server_access_1.requireServerAccess)('console'), server_panel_controller_1.ServerPanelController.getPlayers);
+router.post('/players/command', (0, server_access_1.requireServerAccess)('console'), server_panel_controller_1.ServerPanelController.playerCommand);
 // Users & Invites
 router.get('/users', (0, server_access_1.requireServerAccess)('settings'), server_panel_controller_1.ServerPanelController.listUsers);
 router.post('/users', (0, server_access_1.requireServerAccess)('settings'), server_panel_controller_1.ServerPanelController.inviteUser);

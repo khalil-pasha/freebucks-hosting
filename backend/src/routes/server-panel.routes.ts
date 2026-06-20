@@ -34,6 +34,10 @@ router.post('/plugins/install-url', requireServerAccess('files'), ServerPanelCon
 router.delete('/plugins', requireServerAccess('files'), ServerPanelController.deletePlugin);
 router.post('/plugins/rename', requireServerAccess('files'), ServerPanelController.renamePlugin);
 
+// Players
+router.get('/players', requireServerAccess('console'), ServerPanelController.getPlayers);
+router.post('/players/command', requireServerAccess('console'), ServerPanelController.playerCommand);
+
 // Users & Invites
 router.get('/users', requireServerAccess('settings'), ServerPanelController.listUsers);
 router.post('/users', requireServerAccess('settings'), ServerPanelController.inviteUser);

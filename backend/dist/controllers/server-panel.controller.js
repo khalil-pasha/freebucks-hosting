@@ -236,6 +236,145 @@ class ServerPanelController {
         const url = await pterodactyl_service_1.PterodactylService.getUploadUrl(server.pterodactylIdentifier);
         res.json({ url });
     }
+    // PLAYERS
+    static async getPlayers(req, res) {
+        const server = req.server;
+        if (!server.pterodactylIdentifier)
+            return res.status(400).json({ error: 'Not provisioned' });
+        const fetchJson = async (filename) => {
+            try {
+                const content = await pterodactyl_service_1.PterodactylService.getFileContent(server.pterodactylIdentifier, `/${filename}`);
+                return JSON.parse(content);
+            }
+            catch (err) {
+                return [];
+            }
+        };
+        const [whitelist, ops, bannedPlayers, bannedIps] = await Promise.all([
+            fetchJson('whitelist.json'),
+            fetchJson('ops.json'),
+            fetchJson('banned-players.json'),
+            fetchJson('banned-ips.json'),
+        ]);
+        res.json({ whitelist, ops, bannedPlayers, bannedIps });
+    }
+    static async playerCommand(req, res) {
+        const server = req.server;
+        if (!server.pterodactylIdentifier)
+            return res.status(400).json({ error: 'Not provisioned' });
+        const { action, username, ip, x, y, z } = req.body;
+        if (!action)
+            return res.status(400).json({ error: 'Missing action' });
+        // Validate Username
+        if (username && !/^[a-zA-Z0-9_]{3,16}$/.test(username)) {
+            return res.status(400).json({ error: 'Invalid Minecraft username' });
+        }
+        // Validate IP
+        if (ip && !/^(?:[0-9]{1,3}\.){3}[0-9]{1,3}$/.test(ip)) {
+            return res.status(400).json({ error: 'Invalid IP address' });
+        }
+        let commandStr = '';
+        let logAction = '';
+        switch (action) {
+            case 'kick':
+                if (!username)
+                    return res.status(400).json({ error: 'Missing username' });
+                commandStr = `kick ${username}`;
+                logAction = 'player.kick';
+                break;
+            case 'kill':
+                if (!username)
+                    return res.status(400).json({ error: 'Missing username' });
+                commandStr = `kill ${username}`;
+                logAction = 'player.kill';
+                break;
+            case 'heal':
+                if (!username)
+                    return res.status(400).json({ error: 'Missing username' });
+                commandStr = `effect give ${username} minecraft:instant_health 1 255`;
+                logAction = 'player.heal';
+                break;
+            case 'feed':
+                if (!username)
+                    return res.status(400).json({ error: 'Missing username' });
+                commandStr = `effect give ${username} minecraft:saturation 1 255`;
+                logAction = 'player.feed';
+                break;
+            case 'op':
+                if (!username)
+                    return res.status(400).json({ error: 'Missing username' });
+                commandStr = `op ${username}`;
+                logAction = 'player.op';
+                break;
+            case 'deop':
+                if (!username)
+                    return res.status(400).json({ error: 'Missing username' });
+                commandStr = `deop ${username}`;
+                logAction = 'player.deop';
+                break;
+            case 'whitelist_add':
+                if (!username)
+                    return res.status(400).json({ error: 'Missing username' });
+                commandStr = `whitelist add ${username}`;
+                logAction = 'player.whitelist';
+                break;
+            case 'whitelist_remove':
+                if (!username)
+                    return res.status(400).json({ error: 'Missing username' });
+                commandStr = `whitelist remove ${username}`;
+                logAction = 'player.whitelist';
+                break;
+            case 'ban':
+                if (!username)
+                    return res.status(400).json({ error: 'Missing username' });
+                commandStr = `ban ${username}`;
+                logAction = 'player.ban';
+                break;
+            case 'pardon':
+                if (!username)
+                    return res.status(400).json({ error: 'Missing username' });
+                commandStr = `pardon ${username}`;
+                logAction = 'player.ban'; // or unban
+                break;
+            case 'ban_ip':
+                if (!ip)
+                    return res.status(400).json({ error: 'Missing ip' });
+                commandStr = `ban-ip ${ip}`;
+                logAction = 'player.ban';
+                break;
+            case 'pardon_ip':
+                if (!ip)
+                    return res.status(400).json({ error: 'Missing ip' });
+                commandStr = `pardon-ip ${ip}`;
+                logAction = 'player.ban';
+                break;
+            case 'tp':
+                if (!username || x === undefined || y === undefined || z === undefined) {
+                    return res.status(400).json({ error: 'Missing username or coordinates' });
+                }
+                if (isNaN(Number(x)) || isNaN(Number(y)) || isNaN(Number(z))) {
+                    return res.status(400).json({ error: 'Coordinates must be numeric' });
+                }
+                commandStr = `tp ${username} ${x} ${y} ${z}`;
+                logAction = 'player.teleport';
+                break;
+            default:
+                return res.status(400).json({ error: 'Invalid action' });
+        }
+        try {
+            await pterodactyl_service_1.PterodactylService.sendCommand(server.pterodactylIdentifier, commandStr);
+            try {
+                const AuditService = require('../services/audit.service').AuditService;
+                await AuditService.log(req.user.id, logAction, `Executed ${commandStr} on server ${server.id}`, { serverId: server.id, command: commandStr }, req);
+            }
+            catch (e) { }
+            res.json({ success: true, command: commandStr });
+        }
+        catch (err) {
+            console.error('[Players] Command failed:', err);
+            res.status(500).json({ error: 'Failed to send command to server' });
+        }
+    }
     // PLUGINS
     static async detectSoftware(req, res) {
         const server = req.server;
