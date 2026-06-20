@@ -38,6 +38,10 @@ router.post('/plugins/rename', requireServerAccess('files'), ServerPanelControll
 router.get('/players', requireServerAccess('console'), ServerPanelController.getPlayers);
 router.post('/players/command', requireServerAccess('console'), ServerPanelController.playerCommand);
 
+// Options
+router.get('/options', requireServerAccess('settings'), ServerPanelController.getOptions);
+router.post('/options', requireServerAccess('settings'), ServerPanelController.saveOptions);
+
 // Users & Invites
 router.get('/users', requireServerAccess('settings'), ServerPanelController.listUsers);
 router.post('/users', requireServerAccess('settings'), ServerPanelController.inviteUser);

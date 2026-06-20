@@ -375,6 +375,82 @@ class ServerPanelController {
             res.status(500).json({ error: 'Failed to send command to server' });
         }
     }
+    // OPTIONS
+    static async getOptions(req, res) {
+        const server = req.server;
+        if (!server.pterodactylIdentifier)
+            return res.status(400).json({ error: 'Not provisioned' });
+        try {
+            const content = await pterodactyl_service_1.PterodactylService.getFileContent(server.pterodactylIdentifier, '/server.properties');
+            const lines = content.split('\n');
+            const parsed = {};
+            for (const line of lines) {
+                if (line.trim().startsWith('#') || !line.includes('='))
+                    continue;
+                const [k, ...v] = line.split('=');
+                parsed[k.trim()] = v.join('=').trim();
+            }
+            res.json(parsed);
+        }
+        catch (err) {
+            if (err.response?.status === 404) {
+                return res.status(404).json({ error: 'server.properties not found' });
+            }
+            res.status(500).json({ error: 'Failed to read options' });
+        }
+    }
+    static async saveOptions(req, res) {
+        const server = req.server;
+        if (!server.pterodactylIdentifier)
+            return res.status(400).json({ error: 'Not provisioned' });
+        const updates = req.body;
+        if (!updates || typeof updates !== 'object') {
+            return res.status(400).json({ error: 'Invalid payload' });
+        }
+        try {
+            // 1. Fetch current file to preserve comments
+            const content = await pterodactyl_service_1.PterodactylService.getFileContent(server.pterodactylIdentifier, '/server.properties');
+            const lines = content.split('\n');
+            const newLines = [];
+            const updatedKeys = new Set();
+            for (let line of lines) {
+                if (line.trim().startsWith('#') || !line.includes('=')) {
+                    newLines.push(line);
+                    continue;
+                }
+                const [k, ...vRaw] = line.split('=');
+                const key = k.trim();
+                if (updates.hasOwnProperty(key)) {
+                    newLines.push(`${key}=${updates[key]}`);
+                    updatedKeys.add(key);
+                }
+                else {
+                    newLines.push(line);
+                }
+            }
+            // 2. Append any new keys that weren't in the file originally
+            for (const key of Object.keys(updates)) {
+                if (!updatedKeys.has(key)) {
+                    newLines.push(`${key}=${updates[key]}`);
+                }
+            }
+            // 3. Write file back
+            await pterodactyl_service_1.PterodactylService.saveFileContent(server.pterodactylIdentifier, '/server.properties', newLines.join('\n'));
+            // 4. Log activity
+            try {
+                const AuditService = require('../services/audit.service').AuditService;
+                await AuditService.log(req.user.id, 'server.options.update', `Updated server.properties on server ${server.id}`, { serverId: server.id }, req);
+            }
+            catch (e) { }
+            res.json({ success: true });
+        }
+        catch (err) {
+            if (err.response?.status === 404) {
+                return res.status(404).json({ error: 'server.properties not found' });
+            }
+            res.status(500).json({ error: 'Failed to write options' });
+        }
+    }
     // PLUGINS
     static async detectSoftware(req, res) {
         const server = req.server;

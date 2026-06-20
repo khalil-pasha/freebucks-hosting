@@ -2,7 +2,7 @@
 import { createContext, useContext, useEffect, useState } from "react"
 import { useParams, usePathname, useRouter } from "next/navigation"
 import api from "@/lib/api"
-import { Terminal, Folder, Users, Puzzle, PlayCircle, Settings, Globe, Activity, ArrowLeft } from "lucide-react"
+import { Terminal, Folder, Users, Puzzle, PlayCircle, Settings, Globe, Activity, ArrowLeft, Settings2 } from "lucide-react"
 import Link from "next/link"
 import { Button } from "@/components/ui/button"
 
@@ -23,6 +23,7 @@ export default function ServerPanelLayout({ children }: { children: React.ReactN
     { name: "Files", icon: Folder, href: `/dashboard/server/${serverId}/files`, perm: 'files' },
     { name: "Users", icon: Users, href: `/dashboard/server/${serverId}/users`, perm: 'settings' },
     { name: "Players", icon: Users, href: `/dashboard/server/${serverId}/players`, perm: 'console' },
+    { name: "Options", icon: Settings2, href: `/dashboard/server/${serverId}/options`, perm: 'settings' },
     { name: "Plugins", icon: Puzzle, href: `/dashboard/server/${serverId}/plugins`, perm: 'files' },
     { name: "Startup", icon: PlayCircle, href: `/dashboard/server/${serverId}/startup`, perm: 'settings' },
     { name: "Settings", icon: Settings, href: `/dashboard/server/${serverId}/settings`, perm: 'settings' },
