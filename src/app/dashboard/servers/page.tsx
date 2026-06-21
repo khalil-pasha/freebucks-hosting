@@ -163,7 +163,7 @@ export default function ServersPage() {
 
   const handlePlanSelect = (plan: any) => {
     if (plan.isPremium) {
-      router.push('/dashboard/premium')
+      router.push('/pricing')
       return
     }
     setSelectedPlan(plan)
@@ -469,7 +469,7 @@ export default function ServersPage() {
                           <p className="text-sm text-foreground/60">Calculated Price</p>
                           <p className="text-3xl font-bold text-foreground">₹{customPrice}<span className="text-lg text-foreground/50 font-normal">/month</span></p>
                         </div>
-                        <Button className="mt-4 sm:mt-0 bg-[#FFD700] hover:bg-[#FFD700]/90 text-black px-8" onClick={() => router.push('/dashboard/premium')}>
+                        <Button className="mt-4 sm:mt-0 bg-[#FFD700] hover:bg-[#FFD700]/90 text-black px-8" onClick={() => router.push('/pricing')}>
                           Buy Custom Plan
                         </Button>
                       </div>
