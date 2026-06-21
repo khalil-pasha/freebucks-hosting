@@ -45,15 +45,13 @@ function PricingContent() {
     if (user) {
       router.push('/dashboard/servers')
     } else {
-      localStorage.setItem('post_login_redirect', '/dashboard/servers')
-      router.push('/login')
+      router.push('/login?redirect=' + encodeURIComponent('/pricing?buyPremium=true&plan=premium'))
     }
   }
 
   const handlePremiumPurchase = async () => {
     if (!user) {
-      localStorage.setItem('post_login_redirect', '/pricing?buyPremium=true&plan=premium')
-      router.push('/login')
+      router.push('/login?redirect=' + encodeURIComponent('/pricing?buyPremium=true&plan=premium'))
       return
     }
 

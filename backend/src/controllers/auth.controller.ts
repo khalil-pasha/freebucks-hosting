@@ -19,6 +19,11 @@ export class AuthController {
     // Store state in a cookie to support PM2 cluster mode seamlessly
     res.cookie('oauth_state', state, cookieOptions);
 
+    const redirectUrl = req.query.redirect;
+    if (redirectUrl && typeof redirectUrl === 'string') {
+      res.cookie('oauth_redirect', redirectUrl, cookieOptions);
+    }
+
     const authUrl = AuthService.getDiscordAuthUrl(state);
     res.redirect(authUrl);
   }
@@ -27,6 +32,7 @@ export class AuthController {
     try {
       const { code, state } = req.query;
       const savedState = req.cookies?.oauth_state;
+      const savedRedirect = req.cookies?.oauth_redirect;
 
       if (!code || !state) {
         return res.status(400).send('Missing code or state');
@@ -47,6 +53,9 @@ export class AuthController {
 
       // Clear the state cookie after successful verification
       res.clearCookie('oauth_state', cookieOptions);
+      if (savedRedirect) {
+        res.clearCookie('oauth_redirect', cookieOptions);
+      }
 
       // Exchange code
       const tokenData = await AuthService.exchangeCodeForToken(code as string);
@@ -64,7 +73,13 @@ export class AuthController {
 
       // Redirect to frontend with token
       const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:3000';
-      res.redirect(`${frontendUrl}/dashboard?token=${token}`);
+      
+      if (savedRedirect && savedRedirect.startsWith('/')) {
+        const separator = savedRedirect.includes('?') ? '&' : '?';
+        res.redirect(`${frontendUrl}${savedRedirect}${separator}token=${token}`);
+      } else {
+        res.redirect(`${frontendUrl}/dashboard?token=${token}`);
+      }
     } catch (error: any) {
       console.error('OAuth Callback Error:', error.response?.data || error.message);
       res.status(500).send('Authentication failed');
