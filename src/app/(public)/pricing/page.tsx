@@ -4,7 +4,7 @@ import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter }
 import { Button } from "@/components/ui/button"
 import { Zap } from "lucide-react"
 import { useRouter, useSearchParams } from "next/navigation"
-import { Suspense, useState, useEffect } from "react"
+import { Suspense, useState, useEffect, useRef } from "react"
 import { useAuth } from "@/components/AuthProvider"
 import Script from "next/script"
 import api, { handleApiError } from "@/lib/api"
@@ -22,9 +22,17 @@ function PricingContent() {
 
   const searchParams = useSearchParams()
   const [loading, setLoading] = useState(false)
+  const hasAutoOpened = useRef(false)
 
   useEffect(() => {
-    if (user && searchParams.get('buyPremium') === 'true') {
+    if (user && searchParams.get('buyPremium') === 'true' && !hasAutoOpened.current) {
+      hasAutoOpened.current = true
+      
+      const url = new URL(window.location.href)
+      url.searchParams.delete('buyPremium')
+      url.searchParams.delete('plan')
+      window.history.replaceState({}, '', url.toString())
+
       handlePremiumPurchase()
     }
   }, [user, searchParams])
@@ -44,7 +52,7 @@ function PricingContent() {
 
   const handlePremiumPurchase = async () => {
     if (!user) {
-      localStorage.setItem('post_login_redirect', '/pricing?buyPremium=true')
+      localStorage.setItem('post_login_redirect', '/pricing?buyPremium=true&plan=premium')
       router.push('/login')
       return
     }
@@ -79,6 +87,11 @@ function PricingContent() {
         },
         theme: {
           color: "#3b82f6"
+        },
+        modal: {
+          ondismiss: function() {
+            alert("Payment cancelled. You can try again.")
+          }
         }
       }
 
