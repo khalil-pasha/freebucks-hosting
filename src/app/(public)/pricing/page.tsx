@@ -3,8 +3,11 @@ import { motion } from "framer-motion"
 import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Zap } from "lucide-react"
-import { useRouter } from "next/navigation"
+import { useRouter, useSearchParams } from "next/navigation"
+import { Suspense, useState, useEffect } from "react"
 import { useAuth } from "@/components/AuthProvider"
+import Script from "next/script"
+import api, { handleApiError } from "@/lib/api"
 
 const fixedPlans = [
   { name: "Free Starter", ram: 2, cpu: 100, disk: 5, cost: "1.5 credits/hr", isPremium: false },
@@ -13,11 +16,24 @@ const fixedPlans = [
   { name: "Premium", ram: 8, cpu: 300, disk: 30, cost: "₹549/month", isPremium: true, desc: "Dedicated CPU & NVMe" },
 ]
 
-export default function PricingPage() {
+function PricingContent() {
   const router = useRouter()
   const { user } = useAuth()
 
-  const handlePlanSelect = () => {
+  const searchParams = useSearchParams()
+  const [loading, setLoading] = useState(false)
+
+  useEffect(() => {
+    if (user && searchParams.get('buyPremium') === 'true') {
+      handlePremiumPurchase()
+    }
+  }, [user, searchParams])
+
+  const handlePlanSelect = (plan: any) => {
+    if (plan.isPremium) {
+      handlePremiumPurchase()
+      return
+    }
     if (user) {
       router.push('/dashboard/servers')
     } else {
@@ -26,7 +42,61 @@ export default function PricingPage() {
     }
   }
 
+  const handlePremiumPurchase = async () => {
+    if (!user) {
+      localStorage.setItem('post_login_redirect', '/pricing?buyPremium=true')
+      router.push('/login')
+      return
+    }
+
+    try {
+      setLoading(true)
+      const res = await api.post('/premium/create-order')
+      const { id, amount, currency } = res.data
+
+      const options = {
+        key: process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID,
+        amount: amount.toString(),
+        currency: currency,
+        name: "FreeBucks Hosting",
+        description: "Premium Minecraft Server Plan",
+        order_id: id,
+        handler: async function (response: any) {
+          try {
+            await api.post('/premium/verify-payment', {
+              razorpay_order_id: response.razorpay_order_id,
+              razorpay_payment_id: response.razorpay_payment_id,
+              razorpay_signature: response.razorpay_signature
+            })
+            router.push('/dashboard/servers?premium_success=1')
+          } catch (err: any) {
+            alert(handleApiError(err) || 'Payment verification failed')
+          }
+        },
+        prefill: {
+          name: user.username,
+          email: user.email,
+        },
+        theme: {
+          color: "#3b82f6"
+        }
+      }
+
+      const rzp = new (window as any).Razorpay(options)
+      rzp.on('payment.failed', function (response: any) {
+        alert("Payment failed: " + response.error.description)
+      })
+      rzp.open()
+    } catch (err: any) {
+      alert(handleApiError(err) || 'Failed to initialize payment')
+    } finally {
+      setLoading(false)
+    }
+  }
+
   return (
+    <>
+    <Script src="https://checkout.razorpay.com/v1/checkout.js" strategy="lazyOnload" />
     <div className="flex flex-col items-center w-full py-20 min-h-[80vh]">
       <div className="container mx-auto px-4 md:px-6">
         <div className="text-center mb-16 max-w-2xl mx-auto">
@@ -67,10 +137,11 @@ export default function PricingPage() {
               </CardContent>
               <CardFooter>
                 <Button 
-                  onClick={handlePlanSelect}
+                  onClick={() => handlePlanSelect(plan)}
+                  disabled={loading && plan.isPremium}
                   className={`w-full ${plan.isPremium ? 'bg-[#FFD700] hover:bg-[#FFD700]/90 text-black' : 'bg-primary hover:bg-primary/90 text-white'}`}
                 >
-                  {plan.isPremium ? 'Buy Premium' : 'Deploy Server'}
+                  {plan.isPremium && loading ? 'Processing...' : plan.isPremium ? 'Buy Premium' : 'Deploy Server'}
                 </Button>
               </CardFooter>
             </Card>
@@ -99,5 +170,14 @@ export default function PricingPage() {
         </motion.div>
       </div>
     </div>
+    </>
+  )
+}
+
+export default function PricingPage() {
+  return (
+    <Suspense fallback={<div className="py-20 text-center">Loading plans...</div>}>
+      <PricingContent />
+    </Suspense>
   )
 }

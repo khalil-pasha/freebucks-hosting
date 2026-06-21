@@ -17,7 +17,12 @@ export class ServerController {
       const user = await db.user.findUnique({
         where: { id: userId },
         include: { 
-          premiumOrders: { where: { status: 'COMPLETED' } },
+          premiumOrders: { 
+            where: { 
+              status: 'COMPLETED',
+              expiresAt: { gt: new Date() }
+            } 
+          },
           servers: { where: { status: { notIn: ['ARCHIVED'] } } }
         }
       });
@@ -42,14 +47,16 @@ export class ServerController {
       }
 
       let costPerHour = 0;
+      const isPremium = user.premiumOrders.length > 0;
+
       if (ramGB === 2 && cpu === 100 && disk === 5) costPerHour = await SettingsService.getNumber('serverRate2GB');
       else if (ramGB === 4 && cpu === 150 && disk === 10) costPerHour = await SettingsService.getNumber('serverRate4GB');
       else if (ramGB === 6 && cpu === 200 && disk === 15) costPerHour = await SettingsService.getNumber('serverRate6GB');
-      else {
-        if (user.premiumOrders.length === 0) {
-          return res.status(403).json({ error: '8GB+ or Custom servers require an active Premium Order.' });
-        }
-        costPerHour = 0; // Premium users don't burn credits for their allocated limits
+      else if (ramGB === 8 && cpu === 300 && disk === 30) {
+        if (!isPremium) return res.status(403).json({ error: 'Premium Plan requires an active Premium Subscription.' });
+        costPerHour = 0;
+      } else {
+        return res.status(400).json({ error: 'Invalid server plan selected.' });
       }
 
       let pteroUserId = user.pterodactylUserId;
@@ -73,7 +80,6 @@ export class ServerController {
         });
       }
 
-      const isPremium = user.premiumOrders.length > 0;
       let finalEgg = 'paper';
 
       if (isPremium && selectedEgg) {
@@ -136,18 +142,26 @@ export class ServerController {
 
       const user = await db.user.findUnique({
         where: { id: userId },
-        include: { premiumOrders: { where: { status: 'COMPLETED' } } }
+        include: { 
+          premiumOrders: { 
+            where: { 
+              status: 'COMPLETED',
+              expiresAt: { gt: new Date() }
+            } 
+          } 
+        }
       });
+      const isPremium = !!(user && user.premiumOrders.length > 0);
 
       let costPerHour = 0;
       if (ramGB === 2 && cpu === 100 && disk === 5) costPerHour = await SettingsService.getNumber('serverRate2GB');
       else if (ramGB === 4 && cpu === 150 && disk === 10) costPerHour = await SettingsService.getNumber('serverRate4GB');
       else if (ramGB === 6 && cpu === 200 && disk === 15) costPerHour = await SettingsService.getNumber('serverRate6GB');
-      else {
-        if (!user || user.premiumOrders.length === 0) {
-          return res.status(403).json({ error: '8GB+ or Custom servers require an active Premium Order.' });
-        }
+      else if (ramGB === 8 && cpu === 300 && disk === 30) {
+        if (!isPremium) return res.status(403).json({ error: 'Premium Plan requires an active Premium Subscription.' });
         costPerHour = 0;
+      } else {
+        return res.status(400).json({ error: 'Invalid server plan selected.' });
       }
 
       await PterodactylService.updateServerBuild(server.pterodactylServerId as number, ramGB, cpu, disk);

@@ -6,7 +6,7 @@ import { Input } from "@/components/ui/input"
 import { Server, Power, RefreshCw, Zap, Clock, Coins, MapPin, Activity, ExternalLink, X, Cpu, HardDrive, ShieldAlert, Settings } from "lucide-react"
 
 import { useEffect, useState } from "react"
-import { useRouter } from "next/navigation"
+import { useRouter, useSearchParams } from "next/navigation"
 import api, { handleApiError } from "@/lib/api"
 import { useAuth } from "@/components/AuthProvider"
 
@@ -19,6 +19,7 @@ export default function ServersPage() {
   const [toastMessage, setToastMessage] = useState<string | null>(null)
   const [startingServers, setStartingServers] = useState<Record<string, { startedAt: number, isStarting: boolean }>>({})
   const [now, setNow] = useState(Date.now())
+  const searchParams = useSearchParams()
 
   // Modal States
   const [isPlanModalOpen, setIsPlanModalOpen] = useState(false)
@@ -79,6 +80,16 @@ export default function ServersPage() {
     fetchServers()
     fetchRates()
     const interval = setInterval(fetchServers, 3000)
+    
+    if (searchParams.get('premium_success') === '1') {
+      setToastMessage("Premium activated successfully. You can now create premium servers.")
+      setTimeout(() => setToastMessage(null), 5000)
+      // Cleanup URL
+      const url = new URL(window.location.href)
+      url.searchParams.delete('premium_success')
+      window.history.replaceState({}, '', url.toString())
+    }
+    
     return () => clearInterval(interval)
   }, [])
 
@@ -228,8 +239,28 @@ export default function ServersPage() {
 
   const customPrice = (customRAM * 30) + ((customCPU / 50) * 30) + ((customDisk / 5) * 10)
 
+  const isPremiumExpiringSoon = () => {
+    if (!user?.premiumExpiresAt) return false;
+    const expiresAt = new Date(user.premiumExpiresAt);
+    const now = new Date();
+    const daysLeft = (expiresAt.getTime() - now.getTime()) / (1000 * 3600 * 24);
+    return daysLeft > 0 && daysLeft <= 7;
+  }
+
   return (
     <div className="space-y-8 relative">
+      {isPremiumExpiringSoon() && (
+        <div className="bg-[#FFD700]/10 border border-[#FFD700]/50 rounded-lg p-4 flex items-center justify-between mb-6 shadow-lg shadow-[#FFD700]/5">
+          <div className="flex items-center gap-3">
+            <Zap className="w-6 h-6 text-[#FFD700] flex-shrink-0" />
+            <span className="font-bold text-[#FFD700]">Your Premium Subscription is expiring in less than 7 days.</span>
+          </div>
+          <Button size="sm" className="bg-[#FFD700] hover:bg-[#FFD700]/90 text-black" onClick={() => router.push('/pricing')}>
+            Renew Now
+          </Button>
+        </div>
+      )}
+
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div>
           <h1 className="text-3xl font-bold tracking-tight">Your Servers</h1>

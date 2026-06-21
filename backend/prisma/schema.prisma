@@ -217,13 +217,19 @@ model TicketMessage {
 }
 
 model PremiumOrder {
-  id          String             @id @default(uuid())
-  userId      String
-  user        User               @relation(fields: [userId], references: [id])
-  status      PremiumOrderStatus @default(PENDING)
-  processedAt DateTime?
-  createdAt   DateTime           @default(now())
-  updatedAt   DateTime           @updatedAt
+  id                String             @id @default(uuid())
+  userId            String
+  user              User               @relation(fields: [userId], references: [id])
+  plan              String             @default("Premium")
+  amount            Float              @default(549)
+  razorpayOrderId   String?            @unique
+  razorpayPaymentId String?            @unique
+  status            PremiumOrderStatus @default(PENDING)
+  startsAt          DateTime?
+  expiresAt         DateTime?
+  processedAt       DateTime?
+  createdAt         DateTime           @default(now())
+  updatedAt         DateTime           @updatedAt
 }
 
 model Setting {

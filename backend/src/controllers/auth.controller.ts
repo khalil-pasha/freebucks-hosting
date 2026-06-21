@@ -87,8 +87,11 @@ export class AuthController {
           pterodactylUserId: true,
           createdAt: true,
           premiumOrders: {
-            where: { status: 'COMPLETED' },
-            select: { id: true }
+            where: { 
+              status: 'COMPLETED',
+              expiresAt: { gt: new Date() }
+            },
+            select: { id: true, expiresAt: true }
           }
         }
       });
@@ -99,8 +102,9 @@ export class AuthController {
 
       const { premiumOrders, ...userData } = user;
       const isPremium = premiumOrders.length > 0;
+      const premiumExpiresAt = isPremium ? premiumOrders[0].expiresAt : null;
 
-      res.json({ ...userData, isPremium });
+      res.json({ ...userData, isPremium, premiumExpiresAt });
     } catch (error: any) {
       res.status(500).json({ error: 'Failed to fetch user' });
     }

@@ -15,6 +15,7 @@ interface User {
   pterodactylUserId?: number;
   createdAt: string;
   isPremium?: boolean;
+  premiumExpiresAt?: string;
 }
 
 interface AuthContextType {
