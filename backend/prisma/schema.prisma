@@ -112,6 +112,7 @@ model Server {
   costPerHour  Float
   createdAt    DateTime     @default(now())
   updatedAt    DateTime     @updatedAt
+  eggType      String       @default("paper")
 
   pterodactylServerId   Int?
   pterodactylIdentifier String?

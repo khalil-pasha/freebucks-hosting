@@ -14,6 +14,7 @@ interface User {
   balance: number;
   pterodactylUserId?: number;
   createdAt: string;
+  isPremium?: boolean;
 }
 
 interface AuthContextType {

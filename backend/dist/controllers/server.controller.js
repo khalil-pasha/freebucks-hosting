@@ -9,7 +9,7 @@ class ServerController {
     static async createServer(req, res) {
         try {
             const userId = req.user.id;
-            const { name, ramGB, cpu, disk, pterodactyl } = req.body;
+            const { name, ramGB, cpu, disk, pterodactyl, selectedEgg } = req.body;
             if (!name || !ramGB || !cpu || !disk) {
                 return res.status(400).json({ error: 'Missing required server parameters' });
             }
@@ -59,7 +59,16 @@ class ServerController {
                     data: { pterodactylUserId: pteroUserId }
                 });
             }
-            const pteroData = await pterodactyl_service_1.PterodactylService.createServer(name, ramGB, cpu, disk, pteroUserId);
+            const isPremium = user.premiumOrders.length > 0;
+            let finalEgg = 'paper';
+            if (isPremium && selectedEgg) {
+                const allowedEggs = ['paper', 'forge', 'vanilla', 'bungeecord', 'sponge'];
+                if (!allowedEggs.includes(selectedEgg.toLowerCase())) {
+                    return res.status(400).json({ error: 'Invalid server software selected.' });
+                }
+                finalEgg = selectedEgg.toLowerCase();
+            }
+            const pteroData = await pterodactyl_service_1.PterodactylService.createServer(name, ramGB, cpu, disk, pteroUserId, finalEgg);
             const server = await db_1.db.server.create({
                 data: {
                     userId,
@@ -69,6 +78,7 @@ class ServerController {
                     disk,
                     costPerHour,
                     status: 'STOPPED',
+                    eggType: finalEgg,
                     pterodactylServerId: pteroData.id,
                     pterodactylIdentifier: pteroData.identifier,
                 }

@@ -75,13 +75,19 @@ class AuthController {
                     role: true,
                     balance: true,
                     pterodactylUserId: true,
-                    createdAt: true
+                    createdAt: true,
+                    premiumOrders: {
+                        where: { status: 'COMPLETED' },
+                        select: { id: true }
+                    }
                 }
             });
             if (!user) {
                 return res.status(404).json({ error: 'User not found' });
             }
-            res.json(user);
+            const { premiumOrders, ...userData } = user;
+            const isPremium = premiumOrders.length > 0;
+            res.json({ ...userData, isPremium });
         }
         catch (error) {
             res.status(500).json({ error: 'Failed to fetch user' });

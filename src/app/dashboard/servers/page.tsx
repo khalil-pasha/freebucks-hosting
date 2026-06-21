@@ -44,7 +44,8 @@ export default function ServersPage() {
     username: user?.username || '',
     firstName: '',
     lastName: '',
-    password: ''
+    password: '',
+    selectedEgg: 'paper'
   })
   const [isSubmitting, setIsSubmitting] = useState(false)
 
@@ -177,6 +178,7 @@ export default function ServersPage() {
         ramGB: selectedPlan.ram,
         cpu: selectedPlan.cpu,
         disk: selectedPlan.disk,
+        selectedEgg: formData.selectedEgg,
       }
 
       if (upgradeTarget) {
@@ -286,7 +288,12 @@ export default function ServersPage() {
                         <span className="px-2 py-0.5 rounded text-xs font-bold bg-primary/20 text-primary uppercase tracking-wider ml-2">Shared</span>
                       )}
                     </CardTitle>
-                    <p className="text-sm font-mono text-foreground/50 mt-1">{server.id}</p>
+                    <div className="flex items-center gap-2 mt-1">
+                      <p className="text-sm font-mono text-foreground/50">{server.id}</p>
+                      <span className="px-2 py-0.5 bg-foreground/5 rounded text-xs font-bold uppercase border border-border/50 text-foreground/70">
+                        {server.eggType || 'PAPER'}
+                      </span>
+                    </div>
                   </div>
                   <div className={`flex items-center gap-2 px-3 py-1 rounded-full text-xs font-bold uppercase border ${getStatusColor(finalStatus)}`}>
                     <div className={`w-2 h-2 rounded-full ${finalIndicatorColor} animate-pulse`} />
@@ -482,6 +489,30 @@ export default function ServersPage() {
                         <label className="text-sm font-medium mb-1 block">Server Name</label>
                         <Input required disabled={!!upgradeTarget} value={upgradeTarget ? upgradeTarget.name : formData.serverName} onChange={e => !upgradeTarget && setFormData({...formData, serverName: e.target.value})} placeholder="My Awesome Server" />
                       </div>
+
+                      {!upgradeTarget && (
+                        <div>
+                          <label className="text-sm font-medium mb-1 block">Server Software</label>
+                          {user?.isPremium ? (
+                            <select 
+                              className="w-full bg-background border border-border/50 rounded-md p-2 text-sm focus:outline-none focus:border-primary"
+                              value={formData.selectedEgg}
+                              onChange={e => setFormData({...formData, selectedEgg: e.target.value})}
+                            >
+                              <option value="paper">Paper (Default Minecraft)</option>
+                              <option value="forge">Forge (Modded Minecraft)</option>
+                              <option value="vanilla">Vanilla (Pure Minecraft)</option>
+                              <option value="bungeecord">Bungeecord (Proxy)</option>
+                              <option value="sponge">Sponge (SpongeVanilla)</option>
+                            </select>
+                          ) : (
+                            <div className="w-full bg-background/50 border border-border/50 rounded-md p-2 text-sm text-foreground/60 flex items-center justify-between">
+                              <span>Paper (Default Minecraft)</span>
+                              <span className="text-[10px] uppercase font-bold bg-[#FFD700]/20 text-[#FFD700] px-2 py-0.5 rounded">Premium Required to change</span>
+                            </div>
+                          )}
+                        </div>
+                      )}
 
                       {!user?.pterodactylUserId && !upgradeTarget && (
                         <div className="p-4 bg-primary/5 border border-primary/20 rounded-lg space-y-4 mt-6">

@@ -1,0 +1,1 @@
+ALTER TABLE "Server" ADD COLUMN "eggType" TEXT NOT NULL DEFAULT 'paper';

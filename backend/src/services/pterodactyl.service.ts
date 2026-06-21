@@ -61,23 +61,70 @@ export class PterodactylService {
     return true;
   }
 
-  public static async createServer(name: string, ramGB: number, cpu: number, disk: number, pteroUserId: number) {
+  private static getEggConfig(eggType: string) {
+    const type = eggType.toLowerCase();
+    
+    switch (type) {
+      case 'paper':
+        if (!process.env.PAPER_EGG_ID && !process.env.PTERODACTYL_EGG_ID) throw new Error('Egg configuration missing for PAPER_EGG_ID');
+        return {
+          eggId: parseInt(process.env.PAPER_EGG_ID || process.env.PTERODACTYL_EGG_ID || '1', 10),
+          docker_image: 'ghcr.io/pterodactyl/yolks:java_25',
+          startup: 'java -Xms128M -Xmx{{SERVER_MEMORY}}M -jar {{SERVER_JARFILE}}',
+          environment: { SERVER_JARFILE: 'server.jar', BUILD_NUMBER: 'latest', EULA: '1' }
+        };
+      case 'forge':
+        if (!process.env.FORGE_EGG_ID) throw new Error('Egg configuration missing for FORGE_EGG_ID');
+        return {
+          eggId: parseInt(process.env.FORGE_EGG_ID, 10),
+          docker_image: 'ghcr.io/pterodactyl/yolks:java_21',
+          startup: 'java -Xms128M -Xmx{{SERVER_MEMORY}}M -jar {{SERVER_JARFILE}}',
+          environment: { SERVER_JARFILE: 'server.jar', MINECRAFT_VERSION: 'latest', BUILD_TYPE: 'recommended', EULA: '1' }
+        };
+      case 'vanilla':
+        if (!process.env.VANILLA_EGG_ID) throw new Error('Egg configuration missing for VANILLA_EGG_ID');
+        return {
+          eggId: parseInt(process.env.VANILLA_EGG_ID, 10),
+          docker_image: 'ghcr.io/pterodactyl/yolks:java_25',
+          startup: 'java -Xms128M -Xmx{{SERVER_MEMORY}}M -jar {{SERVER_JARFILE}}',
+          environment: { SERVER_JARFILE: 'server.jar', VERSION: 'latest', EULA: '1' }
+        };
+      case 'bungeecord':
+        if (!process.env.BUNGEECORD_EGG_ID) throw new Error('Egg configuration missing for BUNGEECORD_EGG_ID');
+        return {
+          eggId: parseInt(process.env.BUNGEECORD_EGG_ID, 10),
+          docker_image: 'ghcr.io/pterodactyl/yolks:java_21',
+          startup: 'java -Xms128M -Xmx{{SERVER_MEMORY}}M -jar {{BUNGEE_JAR}}',
+          environment: { BUNGEE_JAR: 'bungeecord.jar', BUNGEE_VERSION: 'latest' }
+        };
+      case 'sponge':
+        if (!process.env.SPONGE_EGG_ID) throw new Error('Egg configuration missing for SPONGE_EGG_ID');
+        return {
+          eggId: parseInt(process.env.SPONGE_EGG_ID, 10),
+          docker_image: 'ghcr.io/pterodactyl/yolks:java_21',
+          startup: 'java -Xms128M -Xmx{{SERVER_MEMORY}}M -jar {{SERVER_JARFILE}}',
+          environment: { SERVER_JARFILE: 'server.jar', SPONGE_VERSION: 'latest', EULA: '1' }
+        };
+      default:
+        throw new Error(`Unknown egg type: ${eggType}`);
+    }
+  }
+
+  public static async createServer(name: string, ramGB: number, cpu: number, disk: number, pteroUserId: number, eggType: string = 'paper') {
     if (!this.isAppConfigured()) {
       throw new Error('Pterodactyl Application API is not configured');
     }
+
+    const eggConfig = this.getEggConfig(eggType);
 
     const url = `${process.env.PTERODACTYL_PANEL_URL}/api/application/servers`;
     const data = {
       name,
       user: pteroUserId, // Ensure the Ptero user ID exists, usually linked to DB User
-      egg: parseInt(process.env.PTERODACTYL_EGG_ID || '1', 10),
-      docker_image: 'ghcr.io/pterodactyl/yolks:java_25',
-      startup: 'java -Xms128M -Xmx{{SERVER_MEMORY}}M -jar {{SERVER_JARFILE}}',
-      environment: {
-        SERVER_JARFILE: 'server.jar',
-        BUILD_NUMBER: 'latest',
-        EULA: '1'
-      },
+      egg: eggConfig.eggId,
+      docker_image: eggConfig.docker_image,
+      startup: eggConfig.startup,
+      environment: eggConfig.environment,
       limits: {
         memory: ramGB * 1024,
         swap: 0,
