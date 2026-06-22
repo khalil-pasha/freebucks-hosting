@@ -20,9 +20,7 @@ export class AuthController {
     res.cookie('oauth_state', state, cookieOptions);
 
     const redirectUrl = req.query.redirect;
-    console.log('[Auth Login] req.query.redirect:', req.query.redirect);
     if (redirectUrl && typeof redirectUrl === 'string') {
-      console.log('[Auth Login] Setting oauth_redirect cookie to:', redirectUrl);
       res.cookie('oauth_redirect', redirectUrl, cookieOptions);
     }
 
@@ -33,10 +31,8 @@ export class AuthController {
   public static async callback(req: Request, res: Response) {
     try {
       const { code, state } = req.query;
-      console.log('[Auth Callback] req.cookies:', req.cookies);
       const savedState = req.cookies?.oauth_state;
       const savedRedirect = req.cookies?.oauth_redirect;
-      console.log('[Auth Callback] req.cookies.oauth_redirect:', savedRedirect);
 
       if (!code || !state) {
         return res.status(400).send('Missing code or state');
@@ -81,11 +77,9 @@ export class AuthController {
       if (savedRedirect && savedRedirect.startsWith('/')) {
         const separator = savedRedirect.includes('?') ? '&' : '?';
         const finalUrl = `${frontendUrl}${savedRedirect}${separator}token=${token}`;
-        console.log('[Auth Callback] Redirecting to:', finalUrl);
         res.redirect(finalUrl);
       } else {
         const finalUrl = `${frontendUrl}/dashboard?token=${token}`;
-        console.log('[Auth Callback] Redirecting to:', finalUrl);
         res.redirect(finalUrl);
       }
     } catch (error: any) {

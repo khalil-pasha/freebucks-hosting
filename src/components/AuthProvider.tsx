@@ -65,15 +65,17 @@ export default function AuthProvider({ children }: { children: React.ReactNode }
     
     if (tokenFromUrl) {
       localStorage.setItem('freebucks_token', tokenFromUrl);
-      // Clean URL
-      const newUrl = pathname;
-      window.history.replaceState({}, document.title, newUrl);
+      // Clean URL but preserve other query parameters
+      const url = new URL(window.location.href);
+      url.searchParams.delete('token');
+      window.history.replaceState({}, document.title, url.pathname + url.search + url.hash);
       
       const postLoginRedirect = localStorage.getItem('post_login_redirect');
       if (postLoginRedirect) {
         localStorage.removeItem('post_login_redirect');
-        router.push(postLoginRedirect);
-        // We still want to fetch the user, but router.push will handle navigation
+        if (pathname === '/dashboard') {
+          router.push(postLoginRedirect);
+        }
       }
     }
 
