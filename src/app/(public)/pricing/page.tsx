@@ -39,14 +39,14 @@ function PricingContent() {
   }, [user, searchParams])
 
   const handlePlanSelect = (plan: any) => {
-    if (plan.isPremium) {
+    if (plan && plan.isPremium) {
       handlePremiumPurchase()
       return
     }
     if (user) {
-      router.push('/dashboard/servers')
+      router.push('/dashboard')
     } else {
-      router.push('/login?redirect=' + encodeURIComponent('/pricing?buyPremium=true&plan=premium'))
+      router.push('/login')
     }
   }
 
