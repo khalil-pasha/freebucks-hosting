@@ -18,25 +18,30 @@ const fixedPlans = [
 
 function PricingContent() {
   const router = useRouter()
-  const { user } = useAuth()
+  const { user, loading: authLoading } = useAuth()
 
   const searchParams = useSearchParams()
   const [loading, setLoading] = useState(false)
   const hasAutoOpened = useRef(false)
 
   useEffect(() => {
-    console.log('[Pricing] Effect triggered. user:', !!user, 'buyPremium:', searchParams.get('buyPremium'), 'hasAutoOpened:', hasAutoOpened.current);
-    if (user && searchParams.get('buyPremium') === 'true' && !hasAutoOpened.current) {
+    console.log('[Pricing] Effect triggered. user:', !!user, 'authLoading:', authLoading, 'buyPremium:', searchParams.get('buyPremium'), 'hasAutoOpened:', hasAutoOpened.current);
+    
+    if (authLoading) return; // Wait for AuthProvider to finish loading user
+
+    if (user && searchParams.get('buyPremium') === 'true' && searchParams.get('plan') === 'premium' && !hasAutoOpened.current) {
       hasAutoOpened.current = true
       
-      const url = new URL(window.location.href)
-      url.searchParams.delete('buyPremium')
-      url.searchParams.delete('plan')
-      window.history.replaceState({}, '', url.toString())
-
       handlePremiumPurchase()
+
+      // Remove token only, keep buyPremium and plan
+      const url = new URL(window.location.href)
+      if (url.searchParams.has('token')) {
+        url.searchParams.delete('token')
+        window.history.replaceState({}, '', url.toString())
+      }
     }
-  }, [user, searchParams])
+  }, [user, authLoading, searchParams])
 
   const handlePlanSelect = (plan: any) => {
     if (plan && plan.isPremium) {
@@ -60,6 +65,12 @@ function PricingContent() {
       setLoading(true)
       const res = await api.post('/premium/create-order')
       const { id, amount, currency } = res.data
+
+      if (!(window as any).Razorpay) {
+        alert("Razorpay failed to load. Please refresh and try again.")
+        setLoading(false)
+        return
+      }
 
       const options = {
         key: process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID,
