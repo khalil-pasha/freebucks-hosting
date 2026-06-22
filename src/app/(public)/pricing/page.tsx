@@ -24,6 +24,11 @@ function PricingContent() {
   const [loading, setLoading] = useState(false)
   const hasAutoOpened = useRef(false)
 
+  console.log('[Pricing] buyPremium:', searchParams.get('buyPremium'));
+  console.log('[Pricing] plan:', searchParams.get('plan'));
+  console.log('[Pricing] user:', !!user);
+  console.log('[Pricing] authLoading:', authLoading);
+
   useEffect(() => {
     console.log('[Pricing] Effect triggered. user:', !!user, 'authLoading:', authLoading, 'buyPremium:', searchParams.get('buyPremium'), 'hasAutoOpened:', hasAutoOpened.current);
     
@@ -56,6 +61,7 @@ function PricingContent() {
   }
 
   const handlePremiumPurchase = async () => {
+    console.log('[Pricing] handlePremiumPurchase called');
     if (!user) {
       router.push('/login?redirect=' + encodeURIComponent('/pricing?buyPremium=true&plan=premium'))
       return
@@ -139,6 +145,26 @@ function PricingContent() {
             Deploy your Minecraft server instantly.
           </motion.p>
         </div>
+
+        {searchParams.get('buyPremium') === 'true' && searchParams.get('plan') === 'premium' && (
+          <motion.div
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="mb-12 text-center"
+          >
+            <div className="bg-[#FFD700]/10 border border-[#FFD700]/50 rounded-lg p-6 max-w-lg mx-auto shadow-[0_0_30px_rgba(255,215,0,0.1)]">
+              <h3 className="text-xl font-bold text-foreground mb-2">Resume Your Premium Purchase</h3>
+              <p className="text-foreground/70 mb-4">Click below to manually open the payment gateway if it didn't open automatically.</p>
+              <Button 
+                onClick={() => handlePremiumPurchase()}
+                disabled={loading}
+                className="bg-[#FFD700] hover:bg-[#FFD700]/90 text-black font-bold px-8 py-6 text-lg w-full"
+              >
+                {loading ? 'Processing...' : 'Continue to Razorpay Payment'}
+              </Button>
+            </div>
+          </motion.div>
+        )}
 
         <motion.div 
           initial={{ opacity: 0, scale: 0.95 }}
