@@ -1,7 +1,7 @@
 "use client";
 
 import React, { createContext, useContext, useEffect, useState } from 'react';
-import { useRouter, useSearchParams, usePathname } from 'next/navigation';
+import { useRouter, usePathname } from 'next/navigation';
 import api from '@/lib/api';
 
 interface User {
@@ -39,7 +39,6 @@ export default function AuthProvider({ children }: { children: React.ReactNode }
   const [loading, setLoading] = useState(true);
   
   const router = useRouter();
-  const searchParams = useSearchParams();
   const pathname = usePathname();
 
   const fetchUser = async () => {
@@ -61,7 +60,12 @@ export default function AuthProvider({ children }: { children: React.ReactNode }
   };
 
   useEffect(() => {
-    const tokenFromUrl = searchParams.get('token');
+    if (typeof window === 'undefined') return;
+
+    console.log('[Auth] Effect triggered. Pathname:', pathname);
+    const params = new URLSearchParams(window.location.search);
+    console.log('[Auth] Search params:', params.toString());
+    const tokenFromUrl = params.get('token');
     
     if (tokenFromUrl) {
       localStorage.setItem('freebucks_token', tokenFromUrl);
@@ -73,8 +77,12 @@ export default function AuthProvider({ children }: { children: React.ReactNode }
       const postLoginRedirect = localStorage.getItem('post_login_redirect');
       if (postLoginRedirect) {
         localStorage.removeItem('post_login_redirect');
+        console.log('[Auth] Found post_login_redirect:', postLoginRedirect);
         if (pathname === '/dashboard') {
+          console.log('[Auth] Redirecting to postLoginRedirect:', postLoginRedirect, 'Reason: pathname is /dashboard');
           router.push(postLoginRedirect);
+        } else {
+          console.log('[Auth] Skipping postLoginRedirect push because pathname is:', pathname);
         }
       }
     }
@@ -87,10 +95,11 @@ export default function AuthProvider({ children }: { children: React.ReactNode }
       setLoading(false);
       // If no token and not on public pages, you could redirect to /
       if (pathname.startsWith('/dashboard') || pathname.startsWith('/admin')) {
+        console.log('[Auth] Redirecting to / because no token and trying to access:', pathname);
         router.push('/');
       }
     }
-  }, [pathname, searchParams, router]);
+  }, [pathname, router]);
 
   const logout = () => {
     localStorage.removeItem('freebucks_token');

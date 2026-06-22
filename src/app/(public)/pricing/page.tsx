@@ -25,6 +25,7 @@ function PricingContent() {
   const hasAutoOpened = useRef(false)
 
   useEffect(() => {
+    console.log('[Pricing] Effect triggered. user:', !!user, 'buyPremium:', searchParams.get('buyPremium'), 'hasAutoOpened:', hasAutoOpened.current);
     if (user && searchParams.get('buyPremium') === 'true' && !hasAutoOpened.current) {
       hasAutoOpened.current = true
       
