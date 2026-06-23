@@ -64,11 +64,12 @@ export default function AuthProvider({ children }: { children: React.ReactNode }
 
     console.log('[Auth] Effect triggered. Pathname:', pathname);
     const params = new URLSearchParams(window.location.search);
-    console.log('[Auth] Search params:', params.toString());
     const tokenFromUrl = params.get('token');
+    console.log('[Auth] Search params token:', tokenFromUrl ? 'exists' : 'missing');
     
     if (tokenFromUrl) {
       localStorage.setItem('freebucks_token', tokenFromUrl);
+      console.log('[Auth] Token saved to localStorage.');
       // Clean URL but preserve other query parameters
       const url = new URL(window.location.href);
       url.searchParams.delete('token');
@@ -77,12 +78,8 @@ export default function AuthProvider({ children }: { children: React.ReactNode }
       const postLoginRedirect = localStorage.getItem('post_login_redirect');
       if (postLoginRedirect) {
         localStorage.removeItem('post_login_redirect');
-        console.log('[Auth] Found post_login_redirect:', postLoginRedirect);
         if (pathname === '/dashboard') {
-          console.log('[Auth] Redirecting to postLoginRedirect:', postLoginRedirect, 'Reason: pathname is /dashboard');
           router.push(postLoginRedirect);
-        } else {
-          console.log('[Auth] Skipping postLoginRedirect push because pathname is:', pathname);
         }
       }
     }
@@ -90,12 +87,12 @@ export default function AuthProvider({ children }: { children: React.ReactNode }
     const currentToken = localStorage.getItem('freebucks_token');
     
     if (currentToken) {
+      console.log('[Auth] Fetching user...');
       fetchUser();
     } else {
+      console.log('[Auth] No token found, setting loading to false.');
       setLoading(false);
-      // If no token and not on public pages, you could redirect to /
       if (pathname.startsWith('/dashboard') || pathname.startsWith('/admin')) {
-        console.log('[Auth] Redirecting to / because no token and trying to access:', pathname);
         router.push('/');
       }
     }

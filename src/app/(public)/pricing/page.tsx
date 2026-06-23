@@ -30,23 +30,28 @@ function PricingContent() {
   console.log('[Pricing] authLoading:', authLoading);
 
   useEffect(() => {
-    console.log('[Pricing] Effect triggered. user:', !!user, 'authLoading:', authLoading, 'buyPremium:', searchParams.get('buyPremium'), 'hasAutoOpened:', hasAutoOpened.current);
-    
     if (authLoading) return; // Wait for AuthProvider to finish loading user
 
-    if (user && searchParams.get('buyPremium') === 'true' && searchParams.get('plan') === 'premium' && !hasAutoOpened.current) {
-      hasAutoOpened.current = true
-      
-      handlePremiumPurchase()
+    const isPremiumIntent = searchParams.get('buyPremium') === 'true' && searchParams.get('plan') === 'premium';
+    
+    if (isPremiumIntent && !hasAutoOpened.current) {
+      if (!user) {
+        // Only redirect to login when authLoading is false AND user is null
+        router.push('/login?redirect=' + encodeURIComponent('/pricing?buyPremium=true&plan=premium'));
+        return;
+      }
+
+      hasAutoOpened.current = true;
+      handlePremiumPurchase();
 
       // Remove token only, keep buyPremium and plan
-      const url = new URL(window.location.href)
+      const url = new URL(window.location.href);
       if (url.searchParams.has('token')) {
-        url.searchParams.delete('token')
-        window.history.replaceState({}, '', url.toString())
+        url.searchParams.delete('token');
+        window.history.replaceState({}, '', url.toString());
       }
     }
-  }, [user, authLoading, searchParams])
+  }, [user, authLoading, searchParams, router]);
 
   const handlePlanSelect = (plan: any) => {
     if (plan && plan.isPremium) {
@@ -69,6 +74,7 @@ function PricingContent() {
 
     try {
       setLoading(true)
+      console.log('[Pricing] create-order API is called');
       const res = await api.post('/premium/create-order')
       const { id, amount, currency } = res.data
 
@@ -156,7 +162,13 @@ function PricingContent() {
               <h3 className="text-xl font-bold text-foreground mb-2">Resume Your Premium Purchase</h3>
               <p className="text-foreground/70 mb-4">Click below to manually open the payment gateway if it didn't open automatically.</p>
               <Button 
-                onClick={() => handlePremiumPurchase()}
+                onClick={() => {
+                  if (!user && !authLoading) {
+                    router.push('/login?redirect=' + encodeURIComponent('/pricing?buyPremium=true&plan=premium'));
+                  } else {
+                    handlePremiumPurchase();
+                  }
+                }}
                 disabled={loading}
                 className="bg-[#FFD700] hover:bg-[#FFD700]/90 text-black font-bold px-8 py-6 text-lg w-full"
               >
