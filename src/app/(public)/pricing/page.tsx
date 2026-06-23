@@ -64,6 +64,19 @@ function PricingContent() {
     }
   }
 
+  const handleCustomPlanClick = () => {
+    const hasToken = typeof window !== 'undefined' && !!localStorage.getItem('freebucks_token');
+    console.log("[Pricing Custom] auth decision", { user: !!user, authLoading, hasToken });
+    
+    if (authLoading) return; // Wait for session check
+
+    if (user || hasToken) {
+      router.push('/dashboard/servers');
+    } else {
+      router.push('/login?redirect=' + encodeURIComponent('/dashboard/servers'));
+    }
+  }
+
   const loadRazorpayScript = (): Promise<boolean> => {
     return new Promise((resolve) => {
       if (typeof window === 'undefined') {
@@ -285,8 +298,8 @@ function PricingContent() {
                 Need specific hardware? You can fully customize RAM, CPU, and Disk allocations directly from the dashboard to perfectly match your community's needs.
               </p>
             </div>
-            <Button size="lg" className="bg-secondary hover:bg-secondary/90 text-white shadow-lg shadow-secondary/20 whitespace-nowrap" onClick={handlePlanSelect}>
-              Customize in Dashboard
+            <Button size="lg" disabled={authLoading} className="bg-secondary hover:bg-secondary/90 text-white shadow-lg shadow-secondary/20 whitespace-nowrap" onClick={handleCustomPlanClick}>
+              {authLoading ? 'Verifying Session...' : 'Customize in Dashboard'}
             </Button>
           </div>
         </motion.div>
