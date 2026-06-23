@@ -16,7 +16,12 @@ class ServerController {
             const user = await db_1.db.user.findUnique({
                 where: { id: userId },
                 include: {
-                    premiumOrders: { where: { status: 'COMPLETED' } },
+                    premiumOrders: {
+                        where: {
+                            status: 'COMPLETED',
+                            expiresAt: { gt: new Date() }
+                        }
+                    },
                     servers: { where: { status: { notIn: ['ARCHIVED'] } } }
                 }
             });
@@ -36,17 +41,20 @@ class ServerController {
                 return res.status(403).json({ error: 'Global server capacity reached. Please try again later.' });
             }
             let costPerHour = 0;
+            const isPremium = user.premiumOrders.length > 0;
             if (ramGB === 2 && cpu === 100 && disk === 5)
                 costPerHour = await settings_service_1.SettingsService.getNumber('serverRate2GB');
             else if (ramGB === 4 && cpu === 150 && disk === 10)
                 costPerHour = await settings_service_1.SettingsService.getNumber('serverRate4GB');
             else if (ramGB === 6 && cpu === 200 && disk === 15)
                 costPerHour = await settings_service_1.SettingsService.getNumber('serverRate6GB');
+            else if (ramGB === 8 && cpu === 300 && disk === 30) {
+                if (!isPremium)
+                    return res.status(403).json({ error: 'Premium Plan requires an active Premium Subscription.' });
+                costPerHour = 0;
+            }
             else {
-                if (user.premiumOrders.length === 0) {
-                    return res.status(403).json({ error: '8GB+ or Custom servers require an active Premium Order.' });
-                }
-                costPerHour = 0; // Premium users don't burn credits for their allocated limits
+                return res.status(400).json({ error: 'Invalid server plan selected.' });
             }
             let pteroUserId = user.pterodactylUserId;
             if (!pteroUserId) {
@@ -59,7 +67,6 @@ class ServerController {
                     data: { pterodactylUserId: pteroUserId }
                 });
             }
-            const isPremium = user.premiumOrders.length > 0;
             let finalEgg = 'paper';
             if (isPremium && selectedEgg) {
                 const allowedEggs = ['paper', 'forge', 'vanilla', 'bungeecord', 'sponge'];
@@ -114,8 +121,16 @@ class ServerController {
             }
             const user = await db_1.db.user.findUnique({
                 where: { id: userId },
-                include: { premiumOrders: { where: { status: 'COMPLETED' } } }
+                include: {
+                    premiumOrders: {
+                        where: {
+                            status: 'COMPLETED',
+                            expiresAt: { gt: new Date() }
+                        }
+                    }
+                }
             });
+            const isPremium = !!(user && user.premiumOrders.length > 0);
             let costPerHour = 0;
             if (ramGB === 2 && cpu === 100 && disk === 5)
                 costPerHour = await settings_service_1.SettingsService.getNumber('serverRate2GB');
@@ -123,11 +138,13 @@ class ServerController {
                 costPerHour = await settings_service_1.SettingsService.getNumber('serverRate4GB');
             else if (ramGB === 6 && cpu === 200 && disk === 15)
                 costPerHour = await settings_service_1.SettingsService.getNumber('serverRate6GB');
-            else {
-                if (!user || user.premiumOrders.length === 0) {
-                    return res.status(403).json({ error: '8GB+ or Custom servers require an active Premium Order.' });
-                }
+            else if (ramGB === 8 && cpu === 300 && disk === 30) {
+                if (!isPremium)
+                    return res.status(403).json({ error: 'Premium Plan requires an active Premium Subscription.' });
                 costPerHour = 0;
+            }
+            else {
+                return res.status(400).json({ error: 'Invalid server plan selected.' });
             }
             await pterodactyl_service_1.PterodactylService.updateServerBuild(server.pterodactylServerId, ramGB, cpu, disk);
             const updatedServer = await db_1.db.server.update({

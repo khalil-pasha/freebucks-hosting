@@ -19,6 +19,17 @@ class BillingService {
             if (!server || !server.user) {
                 throw new Error('Server or User not found for billing');
             }
+            if (server.costPerHour === 0) {
+                // Premium servers don't consume credits, skip balance checks completely
+                await tx.serverBillingLog.create({
+                    data: {
+                        serverId,
+                        amountDeducted: 0,
+                        reason: reason || 'FREE_PREMIUM_TIER'
+                    }
+                });
+                return true;
+            }
             // Check balance
             if (server.user.balance <= 0) {
                 // Insufficient funds -> Stop the server immediately

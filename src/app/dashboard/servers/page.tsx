@@ -180,6 +180,113 @@ export default function ServersPage() {
     setSelectedPlan(plan)
   }
 
+  const loadRazorpayScript = (): Promise<boolean> => {
+    return new Promise((resolve) => {
+      if (typeof window === 'undefined') {
+        resolve(false);
+        return;
+      }
+      if ((window as any).Razorpay) {
+        resolve(true);
+        return;
+      }
+      const script = document.createElement('script');
+      script.src = 'https://checkout.razorpay.com/v1/checkout.js';
+      script.onload = () => resolve(true);
+      script.onerror = () => resolve(false);
+      document.body.appendChild(script);
+    });
+  };
+
+  const handleCustomPlanPurchase = async () => {
+    if (!user) {
+      router.push('/login');
+      return;
+    }
+
+    try {
+      setLoading(true);
+      
+      const isScriptLoaded = await loadRazorpayScript();
+      if (!isScriptLoaded) {
+        alert("Razorpay failed to load. Please refresh and try again.");
+        setLoading(false);
+        return;
+      }
+
+      console.log('[ServersPage] custom create-order API is called');
+      let res;
+      try {
+        res = await api.post('/premium/create-order', {
+          plan: 'custom',
+          ram: customRAM,
+          cpu: customCPU,
+          disk: customDisk
+        });
+      } catch (err: any) {
+        console.error('[ServersPage] create-order API failed:', err);
+        const errorMsg = err.response?.data?.error || err.response?.data || handleApiError(err) || 'Failed to initialize payment';
+        alert(`Payment initialization failed: ${errorMsg}`);
+        setLoading(false);
+        return;
+      }
+      
+      const { id, amount, currency } = res.data;
+
+      if (!id || !amount) {
+        alert('Received invalid payment data from server. Please try again.');
+        setLoading(false);
+        return;
+      }
+
+      const options = {
+        key: process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID,
+        amount: amount.toString(),
+        currency: currency,
+        name: "FreeBucks Hosting",
+        description: `Custom Plan (${customRAM}GB RAM, ${customCPU}% CPU, ${customDisk}GB Disk)`,
+        order_id: id,
+        handler: async function (response: any) {
+          try {
+            await api.post('/premium/verify-payment', {
+              razorpay_order_id: response.razorpay_order_id,
+              razorpay_payment_id: response.razorpay_payment_id,
+              razorpay_signature: response.razorpay_signature
+            });
+            setToastMessage("Custom Plan payment successful!");
+            setTimeout(() => setToastMessage(null), 5000);
+            setIsPlanModalOpen(false);
+            await refetchUser();
+          } catch (err: any) {
+            alert(handleApiError(err) || 'Payment verification failed');
+          }
+        },
+        prefill: {
+          name: user.username,
+          email: user.email,
+        },
+        theme: {
+          color: "#3b82f6"
+        },
+        modal: {
+          ondismiss: function() {
+            alert("Payment cancelled. You can try again.");
+          }
+        }
+      };
+
+      const rzp = new (window as any).Razorpay(options);
+      rzp.on('payment.failed', function (response: any) {
+        alert("Payment failed: " + response.error.description);
+      });
+      rzp.open();
+    } catch (err: any) {
+      alert(handleApiError(err) || 'Failed to initialize payment');
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const handleCreateSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     setIsSubmitting(true)
@@ -500,8 +607,8 @@ export default function ServersPage() {
                           <p className="text-sm text-foreground/60">Calculated Price</p>
                           <p className="text-3xl font-bold text-foreground">₹{customPrice}<span className="text-lg text-foreground/50 font-normal">/month</span></p>
                         </div>
-                        <Button className="mt-4 sm:mt-0 bg-[#FFD700] hover:bg-[#FFD700]/90 text-black px-8" onClick={() => router.push('/pricing')}>
-                          Buy Custom Plan
+                        <Button className="mt-4 sm:mt-0 bg-[#FFD700] hover:bg-[#FFD700]/90 text-black px-8" onClick={handleCustomPlanPurchase} disabled={loading}>
+                          {loading ? 'Processing...' : 'Buy Custom Plan'}
                         </Button>
                       </div>
                     </div>

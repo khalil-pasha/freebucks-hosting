@@ -221,6 +221,9 @@ model PremiumOrder {
   userId            String
   user              User               @relation(fields: [userId], references: [id])
   plan              String             @default("Premium")
+  ram               Float?
+  cpu               Float?
+  disk              Float?
   amount            Float              @default(549)
   razorpayOrderId   String?            @unique
   razorpayPaymentId String?            @unique

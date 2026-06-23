@@ -12,12 +12,37 @@ export class PremiumController {
   public static async createOrder(req: Request, res: Response) {
     try {
       const userId = req.user!.id;
+      const { plan, ram, cpu, disk } = req.body || {};
       
+      let amount = 549; // Default Premium amount
+      let finalRam = 8;
+      let finalCpu = 300;
+      let finalDisk = 30;
+
+      if (plan === 'custom') {
+        if (!ram || !cpu || !disk) {
+          return res.status(400).json({ error: 'Missing custom plan specifications' });
+        }
+        if (ram < 1 || ram > 32 || cpu < 50 || cpu > 800 || disk < 5 || disk > 100) {
+          return res.status(400).json({ error: 'Invalid hardware specifications' });
+        }
+        
+        finalRam = ram;
+        finalCpu = cpu;
+        finalDisk = disk;
+
+        // Recalculate price on backend exactly like frontend:
+        // (RAM * 30) + ((CPU / 50) * 30) + ((Disk / 5) * 10)
+        amount = Math.round((ram * 30) + ((cpu / 50) * 30) + ((disk / 5) * 10));
+      } else if (plan && plan !== 'premium' && plan !== 'Premium') {
+        return res.status(400).json({ error: 'Invalid plan selected' });
+      }
+
       const receipt = `fb_${userId.slice(-10)}_${Date.now()}`;
       console.log("[PremiumController] Receipt:", receipt, receipt.length);
 
       const options = {
-        amount: 549 * 100, // paise
+        amount: amount * 100, // paise
         currency: 'INR',
         receipt: receipt
       };
@@ -27,7 +52,11 @@ export class PremiumController {
       const premiumOrder = await db.premiumOrder.create({
         data: {
           userId,
-          amount: 549,
+          plan: plan === 'custom' ? 'custom' : 'Premium',
+          ram: finalRam,
+          cpu: finalCpu,
+          disk: finalDisk,
+          amount: amount,
           razorpayOrderId: order.id,
           status: 'PENDING'
         }
@@ -37,6 +66,10 @@ export class PremiumController {
         id: order.id,
         currency: order.currency,
         amount: order.amount,
+        plan: premiumOrder.plan,
+        ram: premiumOrder.ram,
+        cpu: premiumOrder.cpu,
+        disk: premiumOrder.disk,
         premiumOrderId: premiumOrder.id
       });
     } catch (error: any) {

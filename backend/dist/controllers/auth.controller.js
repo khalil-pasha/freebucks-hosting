@@ -20,6 +20,10 @@ class AuthController {
         };
         // Store state in a cookie to support PM2 cluster mode seamlessly
         res.cookie('oauth_state', state, cookieOptions);
+        const redirectUrl = req.query.redirect;
+        if (redirectUrl && typeof redirectUrl === 'string') {
+            res.cookie('oauth_redirect', redirectUrl, cookieOptions);
+        }
         const authUrl = auth_service_1.AuthService.getDiscordAuthUrl(state);
         res.redirect(authUrl);
     }
@@ -27,6 +31,7 @@ class AuthController {
         try {
             const { code, state } = req.query;
             const savedState = req.cookies?.oauth_state;
+            const savedRedirect = req.cookies?.oauth_redirect;
             if (!code || !state) {
                 return res.status(400).send('Missing code or state');
             }
@@ -43,6 +48,9 @@ class AuthController {
             };
             // Clear the state cookie after successful verification
             res.clearCookie('oauth_state', cookieOptions);
+            if (savedRedirect) {
+                res.clearCookie('oauth_redirect', cookieOptions);
+            }
             // Exchange code
             const tokenData = await auth_service_1.AuthService.exchangeCodeForToken(code);
             // Get Discord User
@@ -54,7 +62,15 @@ class AuthController {
             await audit_service_1.AuditService.logAction(req, 'LOGIN', undefined, user.id);
             // Redirect to frontend with token
             const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:3000';
-            res.redirect(`${frontendUrl}/dashboard?token=${token}`);
+            if (savedRedirect && savedRedirect.startsWith('/')) {
+                const separator = savedRedirect.includes('?') ? '&' : '?';
+                const finalUrl = `${frontendUrl}${savedRedirect}${separator}token=${token}`;
+                res.redirect(finalUrl);
+            }
+            else {
+                const finalUrl = `${frontendUrl}/dashboard?token=${token}`;
+                res.redirect(finalUrl);
+            }
         }
         catch (error) {
             console.error('OAuth Callback Error:', error.response?.data || error.message);
@@ -77,8 +93,11 @@ class AuthController {
                     pterodactylUserId: true,
                     createdAt: true,
                     premiumOrders: {
-                        where: { status: 'COMPLETED' },
-                        select: { id: true }
+                        where: {
+                            status: 'COMPLETED',
+                            expiresAt: { gt: new Date() }
+                        },
+                        select: { id: true, expiresAt: true }
                     }
                 }
             });
@@ -87,7 +106,8 @@ class AuthController {
             }
             const { premiumOrders, ...userData } = user;
             const isPremium = premiumOrders.length > 0;
-            res.json({ ...userData, isPremium });
+            const premiumExpiresAt = isPremium ? premiumOrders[0].expiresAt : null;
+            res.json({ ...userData, isPremium, premiumExpiresAt });
         }
         catch (error) {
             res.status(500).json({ error: 'Failed to fetch user' });
