@@ -28,180 +28,25 @@ function PricingContent() {
   console.log('[Pricing] user:', !!user);
   console.log('[Pricing] authLoading:', authLoading);
 
-  useEffect(() => {
-    if (authLoading) return; // Wait for AuthProvider to finish loading user
+  console.log('[Pricing] user:', !!user);
+  console.log('[Pricing] authLoading:', authLoading);
 
-    const isPremiumIntent = searchParams.get('buyPremium') === 'true' && searchParams.get('plan') === 'premium';
-    
-    if (isPremiumIntent && !hasAutoOpened.current) {
-      if (!user) {
-        // Only redirect to login when authLoading is false AND user is null
-        router.push('/login?redirect=' + encodeURIComponent('/pricing?buyPremium=true&plan=premium'));
-        return;
-      }
-
-      hasAutoOpened.current = true;
-      handlePremiumPurchase();
-
-      // Remove token only, keep buyPremium and plan
-      const url = new URL(window.location.href);
-      if (url.searchParams.has('token')) {
-        url.searchParams.delete('token');
-        window.history.replaceState({}, '', url.toString());
-      }
-    }
-  }, [user, authLoading, searchParams, router]);
-
-  const handlePlanSelect = (plan: any) => {
-    if (plan && plan.isPremium) {
-      handlePremiumPurchase()
-      return
-    }
-    if (user) {
-      router.push('/dashboard')
-    } else {
-      router.push('/login')
-    }
-  }
-
-  const handleCustomPlanClick = () => {
+  const handlePlanClick = () => {
     const hasToken = typeof window !== 'undefined' && !!localStorage.getItem('freebucks_token');
-    console.log("[Pricing Custom] auth decision", { user: !!user, authLoading, hasToken });
-    
-    if (authLoading) return; // Wait for session check
+    console.log("[Pricing] Plan clicked", { user: !!user, authLoading, hasToken });
+
+    if (authLoading) return;
 
     if (user || hasToken) {
+      console.log("[Pricing] Redirecting logged-in user to /dashboard/servers");
       router.push('/dashboard/servers');
     } else {
+      console.log("[Pricing] Redirecting to login with /dashboard/servers");
       router.push('/login?redirect=' + encodeURIComponent('/dashboard/servers'));
     }
   }
 
-  const loadRazorpayScript = (): Promise<boolean> => {
-    return new Promise((resolve) => {
-      if (typeof window === 'undefined') {
-        resolve(false);
-        return;
-      }
-      if ((window as any).Razorpay) {
-        resolve(true);
-        return;
-      }
-      const script = document.createElement('script');
-      script.src = 'https://checkout.razorpay.com/v1/checkout.js';
-      script.onload = () => resolve(true);
-      script.onerror = () => resolve(false);
-      document.body.appendChild(script);
-    });
-  };
 
-  const handlePremiumPurchase = async () => {
-    const hasToken = typeof window !== 'undefined' && !!localStorage.getItem('freebucks_token');
-    
-    console.log("[Pricing Button] clicked", { user: !!user, authLoading, token: hasToken });
-    console.log("[Pricing] redirect decision", { user: !!user, authLoading, hasToken });
-
-    // If still loading auth state or waiting for token to be verified, wait/abort redirect
-    if (authLoading || (!user && hasToken)) {
-      console.log("[Pricing] Waiting for auth to load, aborting redirect.");
-      alert("Please wait while we verify your session...");
-      return;
-    }
-
-    if (!user) {
-      router.push('/login?redirect=' + encodeURIComponent('/pricing?buyPremium=true&plan=premium'))
-      return
-    }
-
-    console.log("[Pricing] opening Razorpay");
-
-    try {
-      setLoading(true);
-      
-      const isScriptLoaded = await loadRazorpayScript();
-      if (!isScriptLoaded) {
-        alert("Razorpay failed to load. Please refresh and try again.");
-        setLoading(false);
-        return;
-      }
-
-      console.log('[Pricing] create-order API is called');
-      let res;
-      try {
-        res = await api.post('/premium/create-order');
-        console.log('[Pricing] create-order response status:', res.status);
-        console.log('[Pricing] create-order response data:', res.data);
-      } catch (err: any) {
-        console.error('[Pricing] create-order API failed:', err);
-        if (err.response) {
-          console.error('[Pricing] Response status:', err.response.status);
-          console.error('[Pricing] Response data:', err.response.data);
-          
-          if (typeof err.response.data === 'string') {
-            alert(`Payment initialization failed: ${err.response.data}`);
-          } else {
-            alert(handleApiError(err) || 'Failed to initialize payment');
-          }
-        } else {
-          alert('Network error while initializing payment.');
-        }
-        setLoading(false);
-        return;
-      }
-      
-      const { id, amount, currency } = res.data;
-
-      if (!id || !amount) {
-        console.error('[Pricing] Invalid response from create-order API. Expected id and amount but got:', res.data);
-        alert('Received invalid payment data from server. Please try again.');
-        setLoading(false);
-        return;
-      }
-
-      const options = {
-        key: process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID,
-        amount: amount.toString(),
-        currency: currency,
-        name: "FreeBucks Hosting",
-        description: "Premium Minecraft Server Plan",
-        order_id: id,
-        handler: async function (response: any) {
-          try {
-            await api.post('/premium/verify-payment', {
-              razorpay_order_id: response.razorpay_order_id,
-              razorpay_payment_id: response.razorpay_payment_id,
-              razorpay_signature: response.razorpay_signature
-            })
-            router.push('/dashboard/servers?premium_success=1')
-          } catch (err: any) {
-            alert(handleApiError(err) || 'Payment verification failed')
-          }
-        },
-        prefill: {
-          name: user.username,
-          email: user.email,
-        },
-        theme: {
-          color: "#3b82f6"
-        },
-        modal: {
-          ondismiss: function() {
-            alert("Payment cancelled. You can try again.")
-          }
-        }
-      }
-
-      const rzp = new (window as any).Razorpay(options)
-      rzp.on('payment.failed', function (response: any) {
-        alert("Payment failed: " + response.error.description)
-      })
-      rzp.open()
-    } catch (err: any) {
-      alert(handleApiError(err) || 'Failed to initialize payment')
-    } finally {
-      setLoading(false)
-    }
-  }
 
   return (
     <>
@@ -225,32 +70,7 @@ function PricingContent() {
           </motion.p>
         </div>
 
-        {searchParams.get('buyPremium') === 'true' && searchParams.get('plan') === 'premium' && (
-          <motion.div
-            initial={{ opacity: 0, y: 10 }}
-            animate={{ opacity: 1, y: 0 }}
-            className="mb-12 text-center"
-          >
-            <div className="bg-[#FFD700]/10 border border-[#FFD700]/50 rounded-lg p-6 max-w-lg mx-auto shadow-[0_0_30px_rgba(255,215,0,0.1)]">
-              <h3 className="text-xl font-bold text-foreground mb-2">Resume Your Premium Purchase</h3>
-              <p className="text-foreground/70 mb-4">Click below to manually open the payment gateway if it didn't open automatically.</p>
-              <Button 
-                onClick={() => {
-                  if (authLoading) return;
-                  if (!user && !authLoading) {
-                    router.push('/login?redirect=' + encodeURIComponent('/pricing?buyPremium=true&plan=premium'));
-                  } else {
-                    handlePremiumPurchase();
-                  }
-                }}
-                disabled={loading || authLoading}
-                className="bg-[#FFD700] hover:bg-[#FFD700]/90 text-black font-bold px-8 py-6 text-lg w-full"
-              >
-                {authLoading ? 'Verifying Session...' : loading ? 'Processing...' : 'Continue to Razorpay Payment'}
-              </Button>
-            </div>
-          </motion.div>
-        )}
+
 
         <motion.div 
           initial={{ opacity: 0, scale: 0.95 }}
@@ -272,11 +92,11 @@ function PricingContent() {
               </CardContent>
               <CardFooter>
                 <Button 
-                  onClick={() => handlePlanSelect(plan)}
-                  disabled={(loading && plan.isPremium) || authLoading}
+                  onClick={handlePlanClick}
+                  disabled={authLoading}
                   className={`w-full ${plan.isPremium ? 'bg-[#FFD700] hover:bg-[#FFD700]/90 text-black' : 'bg-primary hover:bg-primary/90 text-white'}`}
                 >
-                  {authLoading ? 'Loading...' : plan.isPremium && loading ? 'Processing...' : plan.isPremium ? 'Buy Premium' : 'Deploy Server'}
+                  {authLoading ? 'Verifying...' : plan.isPremium ? 'Buy Premium' : 'Deploy Server'}
                 </Button>
               </CardFooter>
             </Card>
@@ -298,7 +118,7 @@ function PricingContent() {
                 Need specific hardware? You can fully customize RAM, CPU, and Disk allocations directly from the dashboard to perfectly match your community's needs.
               </p>
             </div>
-            <Button size="lg" disabled={authLoading} className="bg-secondary hover:bg-secondary/90 text-white shadow-lg shadow-secondary/20 whitespace-nowrap" onClick={handleCustomPlanClick}>
+            <Button size="lg" disabled={authLoading} className="bg-secondary hover:bg-secondary/90 text-white shadow-lg shadow-secondary/20 whitespace-nowrap" onClick={handlePlanClick}>
               {authLoading ? 'Verifying Session...' : 'Customize in Dashboard'}
             </Button>
           </div>
