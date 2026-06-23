@@ -83,7 +83,7 @@ export default function Home() {
               </p>
               
               <div className="flex flex-col sm:flex-row gap-4 w-full sm:w-auto">
-                <Link href="https://api.freebucks.host/auth/discord" className="w-full sm:w-auto">
+                <Link href="/login?redirect=/dashboard/servers" className="w-full sm:w-auto">
                   <motion.div whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }} className="w-full">
                     <Button size="lg" className="relative overflow-hidden w-full h-14 px-8 text-base bg-[#55FF55] text-[#0a0f14] hover:bg-[#45E545] font-black border-2 border-[#339933] shadow-[inset_2px_2px_0_rgba(255,255,255,0.4),4px_4px_0_rgba(0,0,0,0.6)] hover:shadow-[inset_2px_2px_0_rgba(255,255,255,0.4),0_0_20px_rgba(85,255,85,0.4),4px_4px_0_rgba(0,0,0,0.6)] transition-all rounded-sm uppercase tracking-wider group">
                       <motion.span animate={{ opacity: [0, 0.5, 0], x: [-50, 150] }} transition={{ duration: 2, repeat: Infinity, repeatDelay: 3 }} className="absolute inset-0 w-1/2 bg-gradient-to-r from-transparent via-white to-transparent skew-x-12" />

@@ -16,9 +16,10 @@ export default function DashboardLayout({
   const pathname = usePathname();
 
   useEffect(() => {
-    if (!loading && !user) {
-      console.log("[Dashboard Guard] unauthenticated, redirecting");
-      router.push(`/login?redirect=${encodeURIComponent(pathname)}`);
+    const isManualLogout = typeof window !== 'undefined' && localStorage.getItem('freebucks_manual_logout') === 'true';
+    if ((!loading && !user) || isManualLogout) {
+      console.log("[Dashboard Guard] blocked due to manual logout or unauthenticated");
+      router.replace(`/login?redirect=${encodeURIComponent(pathname)}`);
     }
   }, [user, loading, pathname, router]);
 
@@ -26,7 +27,9 @@ export default function DashboardLayout({
     return <div className="min-h-screen flex items-center justify-center">Loading...</div>;
   }
 
-  if (!user) {
+  const isManualLogout = typeof window !== 'undefined' && localStorage.getItem('freebucks_manual_logout') === 'true';
+
+  if (!user || isManualLogout) {
     return null;
   }
 

@@ -71,6 +71,7 @@ export default function AuthProvider({ children }: { children: React.ReactNode }
     
     if (tokenFromUrl) {
       localStorage.setItem('freebucks_token', tokenFromUrl);
+      localStorage.removeItem('freebucks_manual_logout');
       console.log('[Auth] Token saved to localStorage.');
       // Clean URL but preserve other query parameters
       const url = new URL(window.location.href);
@@ -106,11 +107,12 @@ export default function AuthProvider({ children }: { children: React.ReactNode }
     localStorage.removeItem('token');
     localStorage.removeItem('authToken');
     sessionStorage.clear();
-    console.log("[Auth] Tokens cleared");
+    localStorage.setItem('freebucks_manual_logout', 'true');
+    console.log("[Auth] Tokens cleared and manual logout marker set");
     setUser(null);
     setLoading(false);
     console.log("[Auth] User cleared");
-    router.push('/');
+    router.replace('/');
   };
 
   return (

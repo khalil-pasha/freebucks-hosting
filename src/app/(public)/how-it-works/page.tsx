@@ -140,7 +140,7 @@ export default function HowItWorksPage() {
               Ready to Start Your Minecraft Server?
             </h2>
             <div className="flex flex-col sm:flex-row items-center justify-center gap-6">
-              <Link href="https://api.freebucks.host/auth/discord" className="inline-block bg-[#55FF55] hover:bg-[#44cc44] text-[#0a0f14] font-bold py-4 px-8 rounded-sm transition-colors uppercase tracking-wider text-lg shadow-[inset_-3px_-3px_0_rgba(0,0,0,0.2)] w-full sm:w-auto">
+              <Link href="/login?redirect=/dashboard/servers" className="inline-block bg-[#55FF55] hover:bg-[#44cc44] text-[#0a0f14] font-bold py-4 px-8 rounded-sm transition-colors uppercase tracking-wider text-lg shadow-[inset_-3px_-3px_0_rgba(0,0,0,0.2)] w-full sm:w-auto">
                 Get Started
               </Link>
               <Link href="https://discord.gg/XY25Xgr5fV" target="_blank" className="inline-block bg-[#5865F2] hover:bg-[#4752C4] text-white font-bold py-4 px-8 rounded-sm transition-colors uppercase tracking-wider text-lg shadow-[inset_-3px_-3px_0_rgba(0,0,0,0.2)] w-full sm:w-auto">
