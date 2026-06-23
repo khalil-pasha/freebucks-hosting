@@ -6,7 +6,6 @@ import { Zap } from "lucide-react"
 import { useRouter, useSearchParams } from "next/navigation"
 import { Suspense, useState, useEffect, useRef } from "react"
 import { useAuth } from "@/components/AuthProvider"
-import Script from "next/script"
 import api, { handleApiError } from "@/lib/api"
 
 const fixedPlans = [
@@ -65,6 +64,24 @@ function PricingContent() {
     }
   }
 
+  const loadRazorpayScript = (): Promise<boolean> => {
+    return new Promise((resolve) => {
+      if (typeof window === 'undefined') {
+        resolve(false);
+        return;
+      }
+      if ((window as any).Razorpay) {
+        resolve(true);
+        return;
+      }
+      const script = document.createElement('script');
+      script.src = 'https://checkout.razorpay.com/v1/checkout.js';
+      script.onload = () => resolve(true);
+      script.onerror = () => resolve(false);
+      document.body.appendChild(script);
+    });
+  };
+
   const handlePremiumPurchase = async () => {
     console.log('[Pricing] handlePremiumPurchase called');
     if (!user) {
@@ -73,15 +90,46 @@ function PricingContent() {
     }
 
     try {
-      setLoading(true)
-      console.log('[Pricing] create-order API is called');
-      const res = await api.post('/premium/create-order')
-      const { id, amount, currency } = res.data
+      setLoading(true);
+      
+      const isScriptLoaded = await loadRazorpayScript();
+      if (!isScriptLoaded) {
+        alert("Razorpay failed to load. Please refresh and try again.");
+        setLoading(false);
+        return;
+      }
 
-      if (!(window as any).Razorpay) {
-        alert("Razorpay failed to load. Please refresh and try again.")
-        setLoading(false)
-        return
+      console.log('[Pricing] create-order API is called');
+      let res;
+      try {
+        res = await api.post('/premium/create-order');
+        console.log('[Pricing] create-order response status:', res.status);
+        console.log('[Pricing] create-order response data:', res.data);
+      } catch (err: any) {
+        console.error('[Pricing] create-order API failed:', err);
+        if (err.response) {
+          console.error('[Pricing] Response status:', err.response.status);
+          console.error('[Pricing] Response data:', err.response.data);
+          
+          if (typeof err.response.data === 'string') {
+            alert(`Payment initialization failed: ${err.response.data}`);
+          } else {
+            alert(handleApiError(err) || 'Failed to initialize payment');
+          }
+        } else {
+          alert('Network error while initializing payment.');
+        }
+        setLoading(false);
+        return;
+      }
+      
+      const { id, amount, currency } = res.data;
+
+      if (!id || !amount) {
+        console.error('[Pricing] Invalid response from create-order API. Expected id and amount but got:', res.data);
+        alert('Received invalid payment data from server. Please try again.');
+        setLoading(false);
+        return;
       }
 
       const options = {
@@ -131,7 +179,6 @@ function PricingContent() {
 
   return (
     <>
-    <Script src="https://checkout.razorpay.com/v1/checkout.js" strategy="lazyOnload" />
     <div className="flex flex-col items-center w-full py-20 min-h-[80vh]">
       <div className="container mx-auto px-4 md:px-6">
         <div className="text-center mb-16 max-w-2xl mx-auto">
