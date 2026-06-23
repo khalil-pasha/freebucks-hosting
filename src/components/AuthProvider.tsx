@@ -50,8 +50,10 @@ export default function AuthProvider({ children }: { children: React.ReactNode }
       setUser(null);
       if (error.response?.status === 401) {
         localStorage.removeItem('freebucks_token');
+        localStorage.removeItem('token');
+        localStorage.removeItem('authToken');
         if (pathname.startsWith('/dashboard') || pathname.startsWith('/admin')) {
-          router.push('/');
+          router.push(`/login?redirect=${encodeURIComponent(pathname)}`);
         }
       }
     } finally {
@@ -93,14 +95,21 @@ export default function AuthProvider({ children }: { children: React.ReactNode }
       console.log('[Auth] No token found, setting loading to false.');
       setLoading(false);
       if (pathname.startsWith('/dashboard') || pathname.startsWith('/admin')) {
-        router.push('/');
+        router.push(`/login?redirect=${encodeURIComponent(pathname)}`);
       }
     }
   }, [pathname, router]);
 
   const logout = () => {
+    console.log("[Auth] Logout clicked");
     localStorage.removeItem('freebucks_token');
+    localStorage.removeItem('token');
+    localStorage.removeItem('authToken');
+    sessionStorage.clear();
+    console.log("[Auth] Tokens cleared");
     setUser(null);
+    setLoading(false);
+    console.log("[Auth] User cleared");
     router.push('/');
   };
 

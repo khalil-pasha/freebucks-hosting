@@ -1,7 +1,9 @@
 "use client"
 import { DashboardSidebar } from "@/components/layout/sidebar"
 import { Menu } from "lucide-react"
-import { Suspense, useState } from "react"
+import { Suspense, useState, useEffect } from "react"
+import { useAuth } from "@/components/AuthProvider"
+import { useRouter, usePathname } from "next/navigation"
 
 export default function DashboardLayout({
   children,
@@ -9,6 +11,24 @@ export default function DashboardLayout({
   children: React.ReactNode
 }) {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const { user, loading } = useAuth();
+  const router = useRouter();
+  const pathname = usePathname();
+
+  useEffect(() => {
+    if (!loading && !user) {
+      console.log("[Dashboard Guard] unauthenticated, redirecting");
+      router.push(`/login?redirect=${encodeURIComponent(pathname)}`);
+    }
+  }, [user, loading, pathname, router]);
+
+  if (loading) {
+    return <div className="min-h-screen flex items-center justify-center">Loading...</div>;
+  }
+
+  if (!user) {
+    return null;
+  }
 
   return (
     <Suspense fallback={<div className="min-h-screen flex items-center justify-center">Loading...</div>}>
