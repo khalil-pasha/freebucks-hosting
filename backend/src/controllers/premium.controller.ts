@@ -13,10 +13,13 @@ export class PremiumController {
     try {
       const userId = req.user!.id;
       
+      const receipt = `fb_${userId.slice(-10)}_${Date.now()}`;
+      console.log("[PremiumController] Receipt:", receipt, receipt.length);
+
       const options = {
         amount: 549 * 100, // paise
         currency: 'INR',
-        receipt: `receipt_${userId}_${Date.now()}`
+        receipt: receipt
       };
 
       const order = await razorpay.orders.create(options);
@@ -38,7 +41,8 @@ export class PremiumController {
       });
     } catch (error: any) {
       console.error('[PremiumController] createOrder Error:', error);
-      res.status(500).json({ error: 'Failed to create payment order' });
+      const errorMessage = error?.error?.description || error?.description || error?.message || 'Failed to create payment order';
+      res.status(500).json({ error: errorMessage });
     }
   }
 
