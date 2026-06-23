@@ -199,6 +199,7 @@ export default function ServersPage() {
   };
 
   const handleCustomPlanPurchase = async () => {
+    console.log("[CustomPlan] Buy clicked", { ram: customRAM, cpu: customCPU, disk: customDisk, calculatedPrice: customPrice });
     if (!user) {
       router.push('/login');
       return;
@@ -214,7 +215,7 @@ export default function ServersPage() {
         return;
       }
 
-      console.log('[ServersPage] custom create-order API is called');
+      console.log('[CustomPlan] create-order called');
       let res;
       try {
         res = await api.post('/premium/create-order', {
@@ -279,6 +280,7 @@ export default function ServersPage() {
       rzp.on('payment.failed', function (response: any) {
         alert("Payment failed: " + response.error.description);
       });
+      console.log("[CustomPlan] Razorpay opening", amount);
       rzp.open();
     } catch (err: any) {
       alert(handleApiError(err) || 'Failed to initialize payment');
@@ -607,7 +609,7 @@ export default function ServersPage() {
                           <p className="text-sm text-foreground/60">Calculated Price</p>
                           <p className="text-3xl font-bold text-foreground">₹{customPrice}<span className="text-lg text-foreground/50 font-normal">/month</span></p>
                         </div>
-                        <Button className="mt-4 sm:mt-0 bg-[#FFD700] hover:bg-[#FFD700]/90 text-black px-8" onClick={handleCustomPlanPurchase} disabled={loading}>
+                        <Button type="button" className="mt-4 sm:mt-0 bg-[#FFD700] hover:bg-[#FFD700]/90 text-black px-8" onClick={handleCustomPlanPurchase} disabled={loading}>
                           {loading ? 'Processing...' : 'Buy Custom Plan'}
                         </Button>
                       </div>
