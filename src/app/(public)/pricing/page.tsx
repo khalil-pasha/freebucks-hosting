@@ -83,11 +83,24 @@ function PricingContent() {
   };
 
   const handlePremiumPurchase = async () => {
-    console.log('[Pricing] handlePremiumPurchase called');
+    const hasToken = typeof window !== 'undefined' && !!localStorage.getItem('freebucks_token');
+    
+    console.log("[Pricing Button] clicked", { user: !!user, authLoading, token: hasToken });
+    console.log("[Pricing] redirect decision", { user: !!user, authLoading, hasToken });
+
+    // If still loading auth state or waiting for token to be verified, wait/abort redirect
+    if (authLoading || (!user && hasToken)) {
+      console.log("[Pricing] Waiting for auth to load, aborting redirect.");
+      alert("Please wait while we verify your session...");
+      return;
+    }
+
     if (!user) {
       router.push('/login?redirect=' + encodeURIComponent('/pricing?buyPremium=true&plan=premium'))
       return
     }
+
+    console.log("[Pricing] opening Razorpay");
 
     try {
       setLoading(true);
@@ -210,16 +223,17 @@ function PricingContent() {
               <p className="text-foreground/70 mb-4">Click below to manually open the payment gateway if it didn't open automatically.</p>
               <Button 
                 onClick={() => {
+                  if (authLoading) return;
                   if (!user && !authLoading) {
                     router.push('/login?redirect=' + encodeURIComponent('/pricing?buyPremium=true&plan=premium'));
                   } else {
                     handlePremiumPurchase();
                   }
                 }}
-                disabled={loading}
+                disabled={loading || authLoading}
                 className="bg-[#FFD700] hover:bg-[#FFD700]/90 text-black font-bold px-8 py-6 text-lg w-full"
               >
-                {loading ? 'Processing...' : 'Continue to Razorpay Payment'}
+                {authLoading ? 'Verifying Session...' : loading ? 'Processing...' : 'Continue to Razorpay Payment'}
               </Button>
             </div>
           </motion.div>
@@ -246,10 +260,10 @@ function PricingContent() {
               <CardFooter>
                 <Button 
                   onClick={() => handlePlanSelect(plan)}
-                  disabled={loading && plan.isPremium}
+                  disabled={(loading && plan.isPremium) || authLoading}
                   className={`w-full ${plan.isPremium ? 'bg-[#FFD700] hover:bg-[#FFD700]/90 text-black' : 'bg-primary hover:bg-primary/90 text-white'}`}
                 >
-                  {plan.isPremium && loading ? 'Processing...' : plan.isPremium ? 'Buy Premium' : 'Deploy Server'}
+                  {authLoading ? 'Loading...' : plan.isPremium && loading ? 'Processing...' : plan.isPremium ? 'Buy Premium' : 'Deploy Server'}
                 </Button>
               </CardFooter>
             </Card>
