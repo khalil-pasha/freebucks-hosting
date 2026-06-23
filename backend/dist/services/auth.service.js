@@ -8,11 +8,15 @@ const axios_1 = __importDefault(require("axios"));
 const jsonwebtoken_1 = __importDefault(require("jsonwebtoken"));
 const db_1 = require("../utils/db");
 class AuthService {
-    static getDiscordAuthUrl(state) {
+    static getDiscordAuthUrl(state, forcePrompt = false) {
         const clientId = process.env.DISCORD_CLIENT_ID;
         const redirectUri = encodeURIComponent(process.env.DISCORD_REDIRECT_URI);
         // Scopes needed: identify (username/avatar), email
-        return `https://discord.com/api/oauth2/authorize?client_id=${clientId}&redirect_uri=${redirectUri}&response_type=code&scope=identify%20email&state=${state}`;
+        let url = `https://discord.com/api/oauth2/authorize?client_id=${clientId}&redirect_uri=${redirectUri}&response_type=code&scope=identify%20email&state=${state}`;
+        if (forcePrompt) {
+            url += '&prompt=consent';
+        }
+        return url;
     }
     static async exchangeCodeForToken(code) {
         const params = new URLSearchParams({

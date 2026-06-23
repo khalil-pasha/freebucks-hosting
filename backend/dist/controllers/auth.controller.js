@@ -24,7 +24,8 @@ class AuthController {
         if (redirectUrl && typeof redirectUrl === 'string') {
             res.cookie('oauth_redirect', redirectUrl, cookieOptions);
         }
-        const authUrl = auth_service_1.AuthService.getDiscordAuthUrl(state);
+        const forcePrompt = req.query.forcePrompt === 'true';
+        const authUrl = auth_service_1.AuthService.getDiscordAuthUrl(state, forcePrompt);
         res.redirect(authUrl);
     }
     static async callback(req, res) {

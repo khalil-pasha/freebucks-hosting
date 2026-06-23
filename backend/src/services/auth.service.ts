@@ -3,11 +3,15 @@ import jwt from 'jsonwebtoken';
 import { db } from '../utils/db';
 
 export class AuthService {
-  public static getDiscordAuthUrl(state: string) {
+  public static getDiscordAuthUrl(state: string, forcePrompt: boolean = false) {
     const clientId = process.env.DISCORD_CLIENT_ID!;
     const redirectUri = encodeURIComponent(process.env.DISCORD_REDIRECT_URI!);
     // Scopes needed: identify (username/avatar), email
-    return `https://discord.com/api/oauth2/authorize?client_id=${clientId}&redirect_uri=${redirectUri}&response_type=code&scope=identify%20email&state=${state}`;
+    let url = `https://discord.com/api/oauth2/authorize?client_id=${clientId}&redirect_uri=${redirectUri}&response_type=code&scope=identify%20email&state=${state}`;
+    if (forcePrompt) {
+      url += '&prompt=consent';
+    }
+    return url;
   }
 
   public static async exchangeCodeForToken(code: string) {

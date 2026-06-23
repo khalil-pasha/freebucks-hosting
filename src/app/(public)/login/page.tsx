@@ -32,7 +32,10 @@ function LoginContent() {
   const handleLoginClick = () => {
     console.log("[Login] manual Discord login clicked");
     localStorage.removeItem('freebucks_manual_logout');
-    window.location.href = authUrl;
+    
+    // Append forcePrompt=true to backend auth URL so it prompts for account
+    const separator = authUrl.includes('?') ? '&' : '?';
+    window.location.href = `${authUrl}${separator}forcePrompt=true`;
   };
 
   if (checking) {
