@@ -26,6 +26,9 @@ export class AuthController {
 
     const forcePrompt = req.query.forcePrompt === 'true';
     const authUrl = AuthService.getDiscordAuthUrl(state, forcePrompt);
+    
+    console.log(`[OAuth] Redirecting to Discord OAuth URL:`, new URL(authUrl).search);
+    
     res.redirect(authUrl);
   }
 
