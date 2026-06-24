@@ -32,6 +32,7 @@ export class SupportController {
       const userId = req.user!.id;
       const ticketId = req.params.id as string;
       const ticket = await SupportService.getTicketById(userId, ticketId);
+      console.log("[SupportAPI] returning messages count", ticket.messages.length);
       res.json(ticket);
     } catch (error: any) {
       res.status(404).json({ error: error.message });

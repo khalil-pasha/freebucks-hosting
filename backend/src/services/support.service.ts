@@ -10,7 +10,7 @@ export class SupportService {
         data: {
           userId,
           subject,
-          status: 'OPEN',
+          status: 'PENDING',
         },
       });
 
@@ -91,7 +91,7 @@ export class SupportService {
 
       await tx.supportTicket.update({
         where: { id: ticketId },
-        data: { status: 'OPEN', updatedAt: new Date() }, // Set back to OPEN if they reply
+        data: { status: 'PENDING', updatedAt: new Date() }, // Set back to PENDING if they reply
       });
 
       return msg;
@@ -148,7 +148,7 @@ export class SupportService {
 
       await tx.supportTicket.update({
         where: { id: ticketId },
-        data: { status: 'PENDING', updatedAt: new Date() }, // PENDING means waiting on user
+        data: { status: 'OPEN', updatedAt: new Date() }, // OPEN means waiting on user
       });
 
       await NotificationService.createNotification(

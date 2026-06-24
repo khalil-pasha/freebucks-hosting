@@ -30,9 +30,26 @@ export default function SupportPage() {
   const fetchTickets = async () => {
     try {
       const res = await api.get('/support/tickets')
+      console.log("[Support] tickets loaded", res.data);
       setTickets(res.data)
-      if (res.data.length > 0 && !selectedTicketId && !isCreating) {
-        setSelectedTicketId(res.data[0].id)
+      
+      if (res.data.length > 0 && !isCreating) {
+        // If we don't have a selected ticket, try to pick one
+        if (!selectedTicketId) {
+          const stored = localStorage.getItem('freebucks_last_ticket');
+          const exists = res.data.find((t: any) => t.id === stored);
+          
+          let selectedId;
+          if (stored && exists) {
+            selectedId = stored;
+          } else {
+            // Pick latest OPEN/PENDING or just the first one
+            const active = res.data.find((t: any) => t.status !== 'CLOSED');
+            selectedId = active ? active.id : res.data[0].id;
+          }
+          console.log("[Support] selected ticket", selectedId);
+          setSelectedTicketId(selectedId);
+        }
       } else if (res.data.length === 0) {
         setIsCreating(true)
       }
@@ -44,6 +61,7 @@ export default function SupportPage() {
   const fetchSelectedTicket = async (id: string) => {
     try {
       const res = await api.get(`/support/tickets/${id}`)
+      console.log("[Support] messages loaded", res.data.messages);
       setSelectedTicket(res.data)
     } catch (err) {
       console.error(err)
@@ -61,6 +79,7 @@ export default function SupportPage() {
 
   useEffect(() => {
     if (selectedTicketId && !isCreating) {
+      localStorage.setItem('freebucks_last_ticket', selectedTicketId);
       fetchSelectedTicket(selectedTicketId)
       // Poll active ticket every 3 seconds
       const interval = setInterval(() => {
@@ -162,7 +181,11 @@ export default function SupportPage() {
             ) : tickets.map((t) => (
               <div 
                 key={t.id} 
-                onClick={() => { setSelectedTicketId(t.id); setIsCreating(false); }}
+                onClick={() => { 
+                  setSelectedTicketId(t.id); 
+                  localStorage.setItem('freebucks_last_ticket', t.id);
+                  setIsCreating(false); 
+                }}
                 className={`p-4 rounded-xl cursor-pointer border transition-colors ${
                   t.id === selectedTicketId && !isCreating ? "bg-primary/10 border-primary/30" : "bg-background border-border/50 hover:bg-foreground/5"
                 }`}

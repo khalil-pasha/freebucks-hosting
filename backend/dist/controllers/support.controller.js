@@ -32,6 +32,7 @@ class SupportController {
             const userId = req.user.id;
             const ticketId = req.params.id;
             const ticket = await support_service_1.SupportService.getTicketById(userId, ticketId);
+            console.log("[SupportAPI] returning messages count", ticket.messages.length);
             res.json(ticket);
         }
         catch (error) {

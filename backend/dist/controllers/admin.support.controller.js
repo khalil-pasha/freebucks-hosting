@@ -31,6 +31,7 @@ class AdminSupportController {
                 return res.status(400).json({ error: 'Message is required' });
             }
             const reply = await support_service_1.SupportService.adminReplyToTicket(adminId, ticketId, message);
+            console.log("[AdminSupport] reply persisted", reply);
             res.status(201).json(reply);
         }
         catch (error) {

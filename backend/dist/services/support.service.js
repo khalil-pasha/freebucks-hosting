@@ -11,7 +11,7 @@ class SupportService {
                 data: {
                     userId,
                     subject,
-                    status: 'OPEN',
+                    status: 'PENDING',
                 },
             });
             await tx.ticketMessage.create({
@@ -76,7 +76,7 @@ class SupportService {
             });
             await tx.supportTicket.update({
                 where: { id: ticketId },
-                data: { status: 'OPEN', updatedAt: new Date() }, // Set back to OPEN if they reply
+                data: { status: 'PENDING', updatedAt: new Date() }, // Set back to PENDING if they reply
             });
             return msg;
         });
@@ -125,7 +125,7 @@ class SupportService {
             });
             await tx.supportTicket.update({
                 where: { id: ticketId },
-                data: { status: 'PENDING', updatedAt: new Date() }, // PENDING means waiting on user
+                data: { status: 'OPEN', updatedAt: new Date() }, // OPEN means waiting on user
             });
             await notification_service_1.NotificationService.createNotification(ticket.userId, 'Support Ticket Updated', `A staff member has replied to your ticket: ${ticket.subject}`, 'TICKET_UPDATE');
             return msg;

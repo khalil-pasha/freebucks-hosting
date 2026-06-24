@@ -119,9 +119,9 @@ export default function AdminSupportPage() {
                />
              </div>
              <div className="flex gap-2">
-               <Button size="sm" variant={filter === 'OPEN' ? 'default' : 'ghost'} onClick={() => setFilter('OPEN')} className={filter === 'OPEN' ? "bg-primary/20 text-primary hover:bg-primary/30 flex-1" : "text-foreground/60 hover:text-foreground flex-1"}>Open</Button>
-               <Button size="sm" variant={filter === 'PENDING' ? 'default' : 'ghost'} onClick={() => setFilter('PENDING')} className={filter === 'PENDING' ? "bg-primary/20 text-primary hover:bg-primary/30 flex-1" : "text-foreground/60 hover:text-foreground flex-1"}>Pending</Button>
-               <Button size="sm" variant={filter === 'CLOSED' ? 'default' : 'ghost'} onClick={() => setFilter('CLOSED')} className={filter === 'CLOSED' ? "bg-primary/20 text-primary hover:bg-primary/30 flex-1" : "text-foreground/60 hover:text-foreground flex-1"}>Closed</Button>
+               <Button size="sm" variant={filter === 'PENDING' ? 'default' : 'ghost'} onClick={() => setFilter('PENDING')} className={filter === 'PENDING' ? "bg-primary/20 text-primary hover:bg-primary/30 flex-1 text-xs" : "text-foreground/60 hover:text-foreground flex-1 text-xs"}>Wait Admin</Button>
+               <Button size="sm" variant={filter === 'OPEN' ? 'default' : 'ghost'} onClick={() => setFilter('OPEN')} className={filter === 'OPEN' ? "bg-primary/20 text-primary hover:bg-primary/30 flex-1 text-xs" : "text-foreground/60 hover:text-foreground flex-1 text-xs"}>Wait User</Button>
+               <Button size="sm" variant={filter === 'CLOSED' ? 'default' : 'ghost'} onClick={() => setFilter('CLOSED')} className={filter === 'CLOSED' ? "bg-primary/20 text-primary hover:bg-primary/30 flex-1 text-xs" : "text-foreground/60 hover:text-foreground flex-1 text-xs"}>Closed</Button>
              </div>
           </div>
           <div className="flex-1 overflow-y-auto p-2 space-y-2">
@@ -144,11 +144,11 @@ export default function AdminSupportPage() {
                 <div className="flex justify-between items-start mb-1">
                   <span className={`font-bold text-sm truncate pr-2 ${t.id === selectedTicketId ? "text-primary" : ""}`}>{t.user?.username}</span>
                   <span className={`px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider shrink-0 ${
-                    t.status === 'OPEN' ? 'bg-success/20 text-success' :
                     t.status === 'PENDING' ? 'bg-orange-500/20 text-orange-500' :
+                    t.status === 'OPEN' ? 'bg-blue-500/20 text-blue-500' :
                     'bg-foreground/10 text-foreground/50'
                   }`}>
-                    {t.status}
+                    {t.status === 'PENDING' ? 'WAIT ADMIN' : t.status === 'OPEN' ? 'WAIT USER' : t.status}
                   </span>
                 </div>
                 <p className={`text-sm mb-2 truncate ${t.id === selectedTicketId ? "text-foreground" : "text-foreground/70"}`}>
@@ -172,10 +172,10 @@ export default function AdminSupportPage() {
                   <div className="flex items-center gap-2">
                     <h2 className="text-lg font-bold">{selectedTicket.subject}</h2>
                     <span className={`px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider ${
-                      selectedTicket.status === 'OPEN' ? 'bg-success/20 text-success' :
                       selectedTicket.status === 'PENDING' ? 'bg-orange-500/20 text-orange-500' :
+                      selectedTicket.status === 'OPEN' ? 'bg-blue-500/20 text-blue-500' :
                       'bg-foreground/10 text-foreground/50'
-                    }`}>{selectedTicket.status}</span>
+                    }`}>{selectedTicket.status === 'PENDING' ? 'WAIT ADMIN' : selectedTicket.status === 'OPEN' ? 'WAIT USER' : selectedTicket.status}</span>
                   </div>
                   <p className="text-xs text-foreground/50 mt-1">Ticket #{selectedTicket.id.slice(-4)} • {selectedTicket.user?.username}</p>
                 </div>

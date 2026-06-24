@@ -32,6 +32,7 @@ export class AdminSupportController {
       }
 
       const reply = await SupportService.adminReplyToTicket(adminId, ticketId, message);
+      console.log("[AdminSupport] reply persisted", reply);
       res.status(201).json(reply);
     } catch (error: any) {
       res.status(400).json({ error: error.message });
