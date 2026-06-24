@@ -43,9 +43,26 @@ export default function ContactPage() {
             </div>
 
             <section className="pt-8 border-t border-[#1f2937] mt-8">
-              <h2 className="text-2xl font-bold text-white uppercase tracking-wide mb-4">Business Inquiries</h2>
-              <p>For partnerships, business propositions, or legal matters, you can reach us via email.</p>
-              <p className="mt-4 font-bold text-[#55FF55]">Email: support@freebucks.host</p>
+              <h2 className="text-2xl font-bold text-white uppercase tracking-wide mb-4">Business Information</h2>
+              <div className="space-y-4 text-gray-300">
+                <div>
+                  <span className="font-bold text-gray-400 uppercase tracking-wider text-xs">Business Name:</span>
+                  <p className="font-medium text-white">Free Bucks Hosting</p>
+                </div>
+                <div>
+                  <span className="font-bold text-gray-400 uppercase tracking-wider text-xs">Business Email:</span>
+                  <p className="font-medium text-white">freebuckshost@gmail.com</p>
+                </div>
+                <div>
+                  <span className="font-bold text-gray-400 uppercase tracking-wider text-xs">Business Type:</span>
+                  <p className="font-medium text-white">Minecraft Server Hosting & Infrastructure Services</p>
+                </div>
+                <div>
+                  <span className="font-bold text-gray-400 uppercase tracking-wider text-xs">Support Hours:</span>
+                  <p className="font-medium text-white">Monday – Saturday<br/>10:00 AM – 7:00 PM IST</p>
+                </div>
+              </div>
+              <p className="mt-8">For billing issues, technical support, premium hosting plans, or business inquiries, please contact us via email or Discord.</p>
             </section>
 
           </div>

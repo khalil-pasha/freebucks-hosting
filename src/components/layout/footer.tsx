@@ -19,7 +19,7 @@ export function Footer() {
               </div>
             </Link>
             <p className="text-sm text-gray-400 leading-relaxed max-w-sm font-medium mx-auto lg:mx-0">
-              Enterprise-grade Minecraft server hosting powered by a fair credit economy. High performance, DDoS protected, and accessible for everyone.
+              Enterprise-grade Minecraft server hosting with high-performance infrastructure, NVMe storage, and DDoS protection. Reliable, scalable, and built for gaming communities.
             </p>
           </div>
           

@@ -40,7 +40,9 @@ export default function PrivacyPage() {
 
             <section>
               <h2 className="text-2xl font-bold text-white uppercase tracking-wide mb-4">4. Payment Processing</h2>
-              <p>All financial transactions are handled securely via Razorpay. We do not store or process your credit card numbers, UPI IDs, or direct bank details on our servers. Razorpay's privacy policy governs the processing of your billing information.</p>
+              <p className="mb-4">All financial transactions are handled securely via Razorpay. We do not store or process your credit card numbers, UPI IDs, or direct bank details on our servers. Razorpay's privacy policy governs the processing of your billing information.</p>
+              <p className="mb-4">Free Bucks processes payments exclusively for hosting services, server infrastructure resources, and premium hosting plans.</p>
+              <p>Free Bucks does not provide financial services, money transfer services, cryptocurrency services, gambling services, betting services, or cash-equivalent products.</p>
             </section>
 
             <section>

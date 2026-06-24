@@ -21,7 +21,9 @@ export default function RefundPage() {
           <div className="space-y-8 text-gray-300 font-medium leading-relaxed">
             <section>
               <h2 className="text-2xl font-bold text-white uppercase tracking-wide mb-4">1. Digital Goods</h2>
-              <p>Free Bucks provides digital services, specifically Virtual Credits and VIP Premium Tiers, allowing users to provision Minecraft hosting servers. Due to the immediate delivery and digital nature of these services, all sales are considered final once the credits or perks have been applied to your account.</p>
+              <p className="mb-4">Free Bucks provides digital services, specifically Minecraft Hosting Services, Premium Hosting Plans, and Infrastructure Resource Upgrades, allowing users to provision Minecraft hosting servers.</p>
+              <p className="mb-4">Payments are made solely for hosting services and infrastructure resources.</p>
+              <p>Due to the immediate delivery and digital nature of these services, all sales are considered final once the credits or perks have been applied to your account.</p>
             </section>
 
             <section>

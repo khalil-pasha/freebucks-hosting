@@ -41,13 +41,24 @@ export default function TermsPage() {
             </section>
 
             <section>
-              <h2 className="text-2xl font-bold text-white uppercase tracking-wide mb-4">4. Virtual Credits Economy</h2>
-              <p>Free Bucks operates on a virtual credit system. Credits hold no real-world monetary value and cannot be exchanged for cash. We reserve the right to modify credit earning rates, server burn rates, and daily limits at any time to preserve platform stability.</p>
+              <h2 className="text-2xl font-bold text-white uppercase tracking-wide mb-4">4. Hosting Credit System</h2>
+              <p>Free Bucks operates on an internal Hosting Credit system. Hosting Credits are internal platform units used only for service management and resource allocation. Hosting Credits hold no real-world monetary value, cannot be exchanged, transferred, redeemed, withdrawn, or converted into cash. We reserve the right to modify credit earning rates, server burn rates, and daily limits at any time to preserve platform stability.</p>
             </section>
 
             <section>
-              <h2 className="text-2xl font-bold text-white uppercase tracking-wide mb-4">5. Payments & Razorpay</h2>
-              <p>Premium tier upgrades and manual credit purchases are securely processed through Razorpay. By initiating a transaction, you agree to Razorpay's processing terms. Once a payment is completed, virtual credits or premium statuses are applied to your account automatically.</p>
+              <h2 className="text-2xl font-bold text-white uppercase tracking-wide mb-4">5. Payments & Hosting Services</h2>
+              <p className="mb-4">Free Bucks provides Minecraft server hosting services and related infrastructure resources.</p>
+              <p className="mb-2">Payments made through the platform are solely for:</p>
+              <ul className="list-disc pl-6 mb-4 space-y-2 text-gray-400">
+                <li>Premium Hosting Plans</li>
+                <li>Server Resource Upgrades</li>
+                <li>RAM Allocation</li>
+                <li>CPU Allocation</li>
+                <li>Storage Resources</li>
+                <li>Hosting Features</li>
+              </ul>
+              <p className="mb-4">Hosting Credits are internal platform units used only for service management and resource allocation.</p>
+              <p>Hosting Credits cannot be exchanged, transferred, redeemed, withdrawn, or converted into cash.</p>
             </section>
 
             <section>
