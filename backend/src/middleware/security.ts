@@ -59,10 +59,19 @@ export const creditsLimiter = rateLimit({
   keyGenerator: customKeyGenerator
 });
 
-export const ticketLimiter = rateLimit({
-  windowMs: 15 * 60 * 1000,
-  max: 20,
-  message: { error: 'Too many ticket requests, please try again later' },
+export const supportApiLimiter = rateLimit({
+  windowMs: 1 * 60 * 1000, // 1 minute
+  max: 100, // Allow high polling rate (40/min expected for single user)
+  message: { error: 'Too many support API requests, please try again later' },
+  standardHeaders: true,
+  legacyHeaders: false,
+  keyGenerator: customKeyGenerator,
+});
+
+export const ticketCreationLimiter = rateLimit({
+  windowMs: 60 * 60 * 1000, // 1 hour
+  max: 5,
+  message: { error: 'You can create up to 5 support tickets per hour. Please wait before creating another ticket.' },
   standardHeaders: true,
   legacyHeaders: false,
   keyGenerator: customKeyGenerator,

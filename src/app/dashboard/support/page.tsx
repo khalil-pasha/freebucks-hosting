@@ -159,7 +159,7 @@ export default function SupportPage() {
   }
 
   return (
-    <div className="max-w-7xl mx-auto h-[calc(100vh-8rem)] flex flex-col space-y-4">
+    <div className="max-w-7xl mx-auto min-h-[calc(100vh-8rem)] lg:h-[calc(100vh-8rem)] flex flex-col space-y-4">
       <div className="flex justify-between items-center shrink-0">
         <div>
           <h1 className="text-3xl font-bold tracking-tight">Support Center</h1>
@@ -167,9 +167,9 @@ export default function SupportPage() {
         </div>
       </div>
 
-      <div className="flex-1 grid grid-cols-1 lg:grid-cols-3 gap-6 overflow-hidden">
+      <div className="flex-1 grid grid-cols-1 lg:grid-cols-3 gap-6 lg:overflow-hidden pb-6 lg:pb-0">
         {/* Left Pane: Ticket List */}
-        <Card className="bg-card border-border/50 col-span-1 flex flex-col overflow-hidden hidden lg:flex">
+        <Card className="bg-card border-border/50 col-span-1 flex flex-col overflow-hidden h-[300px] lg:h-auto">
           <div className="p-4 border-b border-border/50">
             <Button onClick={handleCreateNew} className="w-full bg-primary hover:bg-primary/90 text-white"><Plus className="w-4 h-4 mr-2"/> New Ticket</Button>
           </div>
@@ -210,17 +210,14 @@ export default function SupportPage() {
         </Card>
 
         {/* Right Pane: Chat or Create Form */}
-        <Card className="bg-card border-border/50 col-span-1 lg:col-span-2 flex flex-col overflow-hidden">
+        <Card className="bg-card border-border/50 col-span-1 lg:col-span-2 flex flex-col overflow-hidden min-h-[500px] lg:min-h-0 lg:h-auto">
           {isCreating ? (
-            <div className="flex-1 overflow-y-auto p-6 bg-background">
-              <div className="flex items-center gap-2 mb-6 lg:hidden">
-                <Button variant="ghost" size="sm" onClick={() => setIsCreating(false)}><ChevronLeft className="w-4 h-4 mr-1"/> Back</Button>
-              </div>
+            <div className="flex-1 overflow-y-auto p-4 md:p-6 bg-background">
               <h2 className="text-2xl font-bold mb-6 flex items-center gap-2">
                 <MessageSquare className="w-6 h-6 text-primary" /> Create New Ticket
               </h2>
               
-              <div className="space-y-4 max-w-2xl">
+              <div className="space-y-4 max-w-2xl w-full">
                 <div className="bg-orange-500/10 border border-orange-500/20 p-4 rounded-xl flex items-start gap-3 text-orange-500 text-sm mb-6">
                   <AlertCircle className="w-5 h-5 flex-shrink-0 mt-0.5" />
                   <p>For urgent server down issues, please ping the @Support team directly in our Discord server for immediate assistance.</p>
@@ -275,9 +272,6 @@ export default function SupportPage() {
           ) : selectedTicket ? (
             <>
               <div className="p-4 border-b border-border/50 flex flex-col md:flex-row justify-between items-start md:items-center bg-background/50 gap-4">
-                <div className="flex items-center gap-2 lg:hidden">
-                  <Button variant="ghost" size="sm" onClick={() => setSelectedTicketId(null)} className="-ml-2"><ChevronLeft className="w-4 h-4 mr-1"/> Tickets</Button>
-                </div>
                 <div>
                   <div className="flex items-center gap-2">
                     <h2 className="text-lg font-bold truncate max-w-sm">{selectedTicket.subject}</h2>

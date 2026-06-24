@@ -17,7 +17,7 @@ const app = express();
 app.set("trust proxy", true);
 const port = process.env.PORT || 5000;
 
-import { securityHeaders, voucherLimiter, creditsLimiter, ticketLimiter, adminLimiter } from './middleware/security';
+import { securityHeaders, voucherLimiter, creditsLimiter, supportApiLimiter, adminLimiter } from './middleware/security';
 import { globalErrorHandler } from './middleware/errorHandler';
 import { requestLogger } from './middleware/logger';
 import { db } from './utils/db';
@@ -85,7 +85,7 @@ app.use('/premium', premiumRoutes);
 app.use('/referrals', referralRoutes);
 app.use('/queue', queueRoutes);
 app.use('/notifications', notificationRoutes);
-app.use('/support/tickets', ticketLimiter, supportRoutes);
+app.use('/support/tickets', supportApiLimiter, supportRoutes);
 app.use('/profile', profileRoutes);
 
 // Admin Auth (Public, but rate limited)

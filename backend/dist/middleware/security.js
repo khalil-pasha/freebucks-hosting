@@ -36,7 +36,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.adminLimiter = exports.ticketLimiter = exports.creditsLimiter = exports.voucherLimiter = exports.sensitiveAuthLimiter = exports.generalAuthLimiter = exports.customKeyGenerator = exports.securityHeaders = void 0;
+exports.adminLimiter = exports.ticketCreationLimiter = exports.supportApiLimiter = exports.creditsLimiter = exports.voucherLimiter = exports.sensitiveAuthLimiter = exports.generalAuthLimiter = exports.customKeyGenerator = exports.securityHeaders = void 0;
 const express_rate_limit_1 = __importStar(require("express-rate-limit"));
 const helmet_1 = __importDefault(require("helmet"));
 // Global helmet config
@@ -91,10 +91,18 @@ exports.creditsLimiter = (0, express_rate_limit_1.default)({
     legacyHeaders: false,
     keyGenerator: exports.customKeyGenerator
 });
-exports.ticketLimiter = (0, express_rate_limit_1.default)({
-    windowMs: 15 * 60 * 1000,
-    max: 20,
-    message: { error: 'Too many ticket requests, please try again later' },
+exports.supportApiLimiter = (0, express_rate_limit_1.default)({
+    windowMs: 1 * 60 * 1000, // 1 minute
+    max: 100, // Allow high polling rate (40/min expected for single user)
+    message: { error: 'Too many support API requests, please try again later' },
+    standardHeaders: true,
+    legacyHeaders: false,
+    keyGenerator: exports.customKeyGenerator,
+});
+exports.ticketCreationLimiter = (0, express_rate_limit_1.default)({
+    windowMs: 60 * 60 * 1000, // 1 hour
+    max: 5,
+    message: { error: 'You can create up to 5 support tickets per hour. Please wait before creating another ticket.' },
     standardHeaders: true,
     legacyHeaders: false,
     keyGenerator: exports.customKeyGenerator,

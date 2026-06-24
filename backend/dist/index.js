@@ -80,7 +80,7 @@ app.use('/premium', premium_routes_1.default);
 app.use('/referrals', referral_routes_1.default);
 app.use('/queue', queue_routes_1.default);
 app.use('/notifications', notification_routes_1.default);
-app.use('/support/tickets', security_1.ticketLimiter, support_routes_1.default);
+app.use('/support/tickets', security_1.supportApiLimiter, support_routes_1.default);
 app.use('/profile', profile_routes_1.default);
 // Admin Auth (Public, but rate limited)
 app.use('/admin/auth', security_1.adminLimiter, admin_auth_routes_1.default);
