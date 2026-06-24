@@ -58,7 +58,10 @@ export default function TermsPage() {
                 <li>Hosting Features</li>
               </ul>
               <p className="mb-4">Hosting Credits are internal platform units used only for service management and resource allocation.</p>
-              <p>Hosting Credits cannot be exchanged, transferred, redeemed, withdrawn, or converted into cash.</p>
+              <p className="mb-4">Hosting Credits cannot be exchanged, transferred, redeemed, withdrawn, or converted into cash.</p>
+              <p className="mb-4">Free Bucks is a Minecraft server hosting provider.</p>
+              <p className="mb-4">Payments accepted through the platform are solely for Minecraft hosting services, infrastructure resources, premium hosting plans, and related hosting features.</p>
+              <p>Free Bucks does not provide gambling services, betting services, cryptocurrency services, financial services, money transfer services, or cash-equivalent products.</p>
             </section>
 
             <section>
@@ -68,7 +71,7 @@ export default function TermsPage() {
             
             <section>
               <h2 className="text-2xl font-bold text-white uppercase tracking-wide mb-4">7. Contact & Support</h2>
-              <p>For any questions regarding these Terms, please contact us by joining our official Discord Server or emailing support@freebucks.host.</p>
+              <p>For any questions regarding these Terms, please contact us by joining our official Discord Server or emailing <a href="mailto:freebuckshost@gmail.com" className="hover:underline">freebuckshost@gmail.com</a>.</p>
             </section>
 
             <p className="text-sm text-gray-500 pt-8 border-t border-[#1f2937] mt-12">Last Updated: June 2026</p>

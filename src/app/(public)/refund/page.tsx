@@ -23,7 +23,7 @@ export default function RefundPage() {
               <h2 className="text-2xl font-bold text-white uppercase tracking-wide mb-4">1. Digital Goods</h2>
               <p className="mb-4">Free Bucks provides digital services, specifically Minecraft Hosting Services, Premium Hosting Plans, and Infrastructure Resource Upgrades, allowing users to provision Minecraft hosting servers.</p>
               <p className="mb-4">Payments are made solely for hosting services and infrastructure resources.</p>
-              <p>Due to the immediate delivery and digital nature of these services, all sales are considered final once the credits or perks have been applied to your account.</p>
+              <p>Due to the immediate delivery and digital nature of these services, all sales are considered final once hosting services, premium hosting features, or infrastructure resources have been provisioned to your account.</p>
             </section>
 
             <section>
@@ -31,7 +31,7 @@ export default function RefundPage() {
               <p>Refunds are heavily restricted but may be granted at the sole discretion of the Free Bucks Administration under the following conditions:</p>
               <ul className="list-disc pl-6 mt-3 space-y-2 text-gray-400">
                 <li>A duplicate payment was made accidentally.</li>
-                <li>The credits or VIP perks failed to apply to your account within 24 hours of payment.</li>
+                <li>The hosting service, premium hosting feature, or purchased infrastructure upgrade failed to apply to your account within 24 hours of payment.</li>
                 <li>There is a major, verifiable outage affecting only your Premium node lasting longer than 48 hours.</li>
               </ul>
             </section>

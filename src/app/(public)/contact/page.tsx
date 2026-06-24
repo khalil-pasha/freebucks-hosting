@@ -50,8 +50,12 @@ export default function ContactPage() {
                   <p className="font-medium text-white">Free Bucks Hosting</p>
                 </div>
                 <div>
+                  <span className="font-bold text-gray-400 uppercase tracking-wider text-xs">Business Location:</span>
+                  <p className="font-medium text-white">E-151/1, Shaheen Bagh,<br/>New Delhi, Delhi - 110025<br/>India</p>
+                </div>
+                <div>
                   <span className="font-bold text-gray-400 uppercase tracking-wider text-xs">Business Email:</span>
-                  <p className="font-medium text-white">freebuckshost@gmail.com</p>
+                  <p className="font-medium text-white"><a href="mailto:freebuckshost@gmail.com" className="hover:underline">freebuckshost@gmail.com</a></p>
                 </div>
                 <div>
                   <span className="font-bold text-gray-400 uppercase tracking-wider text-xs">Business Type:</span>
