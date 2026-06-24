@@ -137,14 +137,17 @@ model CreditsTransaction {
 }
 
 model Referral {
-  id           String   @id @default(uuid())
-  referrerId   String
-  referrer     User     @relation("Referrer", fields: [referrerId], references: [id])
-  referredId   String
-  referred     User     @relation("Referred", fields: [referredId], references: [id])
-  status       String   @default("COMPLETED")
-  rewardAmount Float
-  createdAt    DateTime @default(now())
+  id                 String    @id @default(uuid())
+  referrerId         String
+  referrer           User      @relation("Referrer", fields: [referrerId], references: [id])
+  referredId         String    @unique
+  referred           User      @relation("Referred", fields: [referredId], references: [id])
+  status             String    @default("PENDING_INSTALL")
+  rewardAmount       Float     @default(0)
+  createdAt          DateTime  @default(now())
+  referrerRewardedAt DateTime?
+  referredRewardedAt DateTime?
+  completedAt        DateTime?
 }
 
 model Voucher {

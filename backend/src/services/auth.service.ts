@@ -42,7 +42,7 @@ export class AuthService {
     return response.data;
   }
 
-  public static async processDiscordLogin(discordUser: any) {
+  public static async processDiscordLogin(discordUser: any, referralCode?: string) {
     const { id: discordId, username, global_name, avatar, email } = discordUser;
 
     const finalUsername = global_name || username;
@@ -75,6 +75,46 @@ export class AuthService {
           role: 'USER',
         },
       });
+
+      // Handle referral for new users
+      if (referralCode && referralCode !== user.id) {
+        try {
+          const referrer = await db.user.findUnique({ where: { id: referralCode } });
+          if (referrer) {
+            // Check if user was already referred
+            const existingRef = await db.referral.findUnique({ where: { referredId: user.id } });
+            if (!existingRef) {
+              const referredReward = 50; // User gets 50 credits on signup
+
+              await db.$transaction([
+                db.referral.create({
+                  data: {
+                    referrerId: referrer.id,
+                    referredId: user.id,
+                    status: 'PENDING_INSTALL',
+                    rewardAmount: 25, // Referrer gets 25 later
+                    referredRewardedAt: new Date()
+                  }
+                }),
+                db.user.update({
+                  where: { id: user.id },
+                  data: { balance: { increment: referredReward } }
+                }),
+                db.creditsTransaction.create({
+                  data: {
+                    userId: user.id,
+                    amount: referredReward,
+                    type: 'EARNED',
+                    source: 'REFERRAL_BONUS'
+                  }
+                })
+              ]);
+            }
+          }
+        } catch (error) {
+          console.error('[OAuth] Failed to process referral:', error);
+        }
+      }
     }
 
     return user;

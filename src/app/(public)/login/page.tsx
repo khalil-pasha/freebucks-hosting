@@ -10,8 +10,12 @@ import { Suspense, useEffect, useState } from "react"
 function LoginContent() {
   const searchParams = useSearchParams()
   const redirectUrl = searchParams.get('redirect')
+  const refCode = searchParams.get('ref')
   const baseUrl = process.env.NODE_ENV === 'production' ? 'https://api.freebucks.host/auth/discord' : (process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000') + '/auth/discord'
-  const authUrl = redirectUrl ? `${baseUrl}?redirect=${encodeURIComponent(redirectUrl)}` : baseUrl
+  let authUrl = redirectUrl ? `${baseUrl}?redirect=${encodeURIComponent(redirectUrl)}` : baseUrl
+  if (refCode) {
+    authUrl += (authUrl.includes('?') ? '&' : '?') + `ref=${encodeURIComponent(refCode)}`
+  }
 
   const [isManualLogout, setIsManualLogout] = useState(false);
   const [checking, setChecking] = useState(true);

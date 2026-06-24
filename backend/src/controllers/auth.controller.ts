@@ -23,6 +23,11 @@ export class AuthController {
     if (redirectUrl && typeof redirectUrl === 'string') {
       res.cookie('oauth_redirect', redirectUrl, cookieOptions);
     }
+    
+    const refCode = req.query.ref;
+    if (refCode && typeof refCode === 'string') {
+      res.cookie('oauth_ref', refCode, cookieOptions);
+    }
 
     const forcePrompt = req.query.forcePrompt === 'true';
     const authUrl = AuthService.getDiscordAuthUrl(state, forcePrompt);
@@ -37,6 +42,7 @@ export class AuthController {
       const { code, state } = req.query;
       const savedState = req.cookies?.oauth_state;
       const savedRedirect = req.cookies?.oauth_redirect;
+      const savedRef = req.cookies?.oauth_ref;
 
       if (!code || !state) {
         return res.status(400).send('Missing code or state');
@@ -60,6 +66,9 @@ export class AuthController {
       if (savedRedirect) {
         res.clearCookie('oauth_redirect', cookieOptions);
       }
+      if (savedRef) {
+        res.clearCookie('oauth_ref', cookieOptions);
+      }
 
       // Exchange code
       const tokenData = await AuthService.exchangeCodeForToken(code as string);
@@ -67,8 +76,8 @@ export class AuthController {
       // Get Discord User
       const discordUser = await AuthService.getDiscordUser(tokenData.access_token);
       
-      // Process Login/Register
-      const user = await AuthService.processDiscordLogin(discordUser);
+      // Process Login/Register with referral code if present
+      const user = await AuthService.processDiscordLogin(discordUser, savedRef);
       
       // Generate JWT
       const token = AuthService.generateJwt(user);

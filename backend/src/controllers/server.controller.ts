@@ -3,6 +3,7 @@ import { db } from '../utils/db';
 import { PterodactylService } from '../services/pterodactyl.service';
 import { AuditService } from '../services/audit.service';
 import { SettingsService } from '../services/settings.service';
+import { ReferralService } from '../services/referral.service';
 
 export class ServerController {
   public static async createServer(req: Request, res: Response) {
@@ -92,6 +93,8 @@ export class ServerController {
 
       const pteroData = await PterodactylService.createServer(name, ramGB, cpu, disk, pteroUserId, finalEgg);
 
+      const previousServersCount = await db.server.count({ where: { userId } });
+
       const server = await db.server.create({
         data: {
           userId,
@@ -108,6 +111,10 @@ export class ServerController {
       });
 
       await AuditService.logAction(req, 'SERVER_CREATE', server.id, userId);
+
+      if (previousServersCount === 0) {
+        await ReferralService.processFirstServerCreation(userId);
+      }
 
       res.status(201).json(server);
     } catch (error: any) {

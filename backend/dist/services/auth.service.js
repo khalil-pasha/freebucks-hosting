@@ -41,7 +41,7 @@ class AuthService {
         });
         return response.data;
     }
-    static async processDiscordLogin(discordUser) {
+    static async processDiscordLogin(discordUser, referralCode) {
         const { id: discordId, username, global_name, avatar, email } = discordUser;
         const finalUsername = global_name || username;
         const discordAvatarUrl = avatar ? `https://cdn.discordapp.com/avatars/${discordId}/${avatar}.png` : null;
@@ -71,6 +71,45 @@ class AuthService {
                     role: 'USER',
                 },
             });
+            // Handle referral for new users
+            if (referralCode && referralCode !== user.id) {
+                try {
+                    const referrer = await db_1.db.user.findUnique({ where: { id: referralCode } });
+                    if (referrer) {
+                        // Check if user was already referred
+                        const existingRef = await db_1.db.referral.findUnique({ where: { referredId: user.id } });
+                        if (!existingRef) {
+                            const referredReward = 50; // User gets 50 credits on signup
+                            await db_1.db.$transaction([
+                                db_1.db.referral.create({
+                                    data: {
+                                        referrerId: referrer.id,
+                                        referredId: user.id,
+                                        status: 'PENDING_INSTALL',
+                                        rewardAmount: 25, // Referrer gets 25 later
+                                        referredRewardedAt: new Date()
+                                    }
+                                }),
+                                db_1.db.user.update({
+                                    where: { id: user.id },
+                                    data: { balance: { increment: referredReward } }
+                                }),
+                                db_1.db.creditsTransaction.create({
+                                    data: {
+                                        userId: user.id,
+                                        amount: referredReward,
+                                        type: 'EARNED',
+                                        source: 'REFERRAL_BONUS'
+                                    }
+                                })
+                            ]);
+                        }
+                    }
+                }
+                catch (error) {
+                    console.error('[OAuth] Failed to process referral:', error);
+                }
+            }
         }
         return user;
     }

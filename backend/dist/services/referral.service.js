@@ -64,12 +64,51 @@ class ReferralService {
             };
         });
     }
+    static async processFirstServerCreation(userId) {
+        try {
+            const referral = await db_1.db.referral.findUnique({
+                where: {
+                    referredId: userId
+                }
+            });
+            if (referral && referral.status === 'PENDING_INSTALL') {
+                const referrerReward = 25; // Referrer gets 25 credits when friend installs a server
+                await db_1.db.$transaction([
+                    db_1.db.referral.update({
+                        where: { id: referral.id },
+                        data: {
+                            status: 'COMPLETED',
+                            rewardAmount: referrerReward,
+                            referrerRewardedAt: new Date(),
+                            completedAt: new Date()
+                        }
+                    }),
+                    db_1.db.user.update({
+                        where: { id: referral.referrerId },
+                        data: { balance: { increment: referrerReward } }
+                    }),
+                    db_1.db.creditsTransaction.create({
+                        data: {
+                            userId: referral.referrerId,
+                            amount: referrerReward,
+                            type: 'EARNED',
+                            source: 'REFERRAL_REWARD'
+                        }
+                    })
+                ]);
+                await notification_service_1.NotificationService.createNotification(referral.referrerId, 'Referral Completed', `Your referred friend created their first server! You received ${referrerReward} credits.`, 'REFERRAL');
+            }
+        }
+        catch (error) {
+            console.error('[Referral] Failed to process first server creation:', error);
+        }
+    }
     static async getStats(userId) {
         const totalInvited = await db_1.db.referral.count({
             where: { referrerId: userId }
         });
         const pendingInstalls = await db_1.db.referral.count({
-            where: { referrerId: userId, status: 'PENDING' }
+            where: { referrerId: userId, status: 'PENDING_INSTALL' }
         });
         const earnedTransactions = await db_1.db.creditsTransaction.findMany({
             where: { userId, source: 'REFERRAL_REWARD' }
