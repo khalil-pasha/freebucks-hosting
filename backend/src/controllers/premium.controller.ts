@@ -32,8 +32,8 @@ export class PremiumController {
         finalDisk = disk;
 
         // Recalculate price on backend exactly like frontend:
-        // (RAM * 30) + ((CPU / 50) * 30) + ((Disk / 5) * 10)
-        amount = Math.round((ram * 30) + ((cpu / 50) * 30) + ((disk / 5) * 10));
+        // (RAM * 40) + ((CPU / 50) * 30) + ((Disk / 5) * 10)
+        amount = Math.round((ram * 40) + ((cpu / 50) * 30) + ((disk / 5) * 10));
       } else if (plan && plan !== 'premium' && plan !== 'Premium') {
         return res.status(400).json({ error: 'Invalid plan selected' });
       }

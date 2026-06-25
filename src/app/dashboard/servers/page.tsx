@@ -3,7 +3,7 @@ import { motion, AnimatePresence } from "framer-motion"
 import { Card, CardHeader, CardTitle, CardContent, CardFooter, CardDescription } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
-import { Server, Power, RefreshCw, Zap, Clock, Coins, MapPin, Activity, ExternalLink, X, Cpu, HardDrive, ShieldAlert, Settings } from "lucide-react"
+import { Server, Power, RefreshCw, Zap, Clock, Coins, MapPin, Activity, ExternalLink, X, Cpu, HardDrive, ShieldAlert, Settings, CheckCircle2, Lightbulb, LayoutDashboard, Terminal, Folder, Puzzle, Users } from "lucide-react"
 
 import { useEffect, useState } from "react"
 import { useRouter, useSearchParams } from "next/navigation"
@@ -482,7 +482,7 @@ export default function ServersPage() {
     { name: "Premium", ram: 8, cpu: 300, disk: 30, cost: "₹549/month", isPremium: true, desc: "Dedicated CPU & NVMe" },
   ]
 
-  const customPrice = (customRAM * 30) + ((customCPU / 50) * 30) + ((customDisk / 5) * 10)
+  const customPrice = (customRAM * 40) + ((customCPU / 50) * 30) + ((customDisk / 5) * 10)
 
   const isPremiumExpiringSoon = () => {
     if (!user?.premiumExpiresAt) return false;
@@ -724,30 +724,149 @@ export default function ServersPage() {
                       ))}
                     </div>
 
-                    <div className="mt-8 p-6 bg-background rounded-xl border border-border/50 shadow-inner">
-                      <h3 className="text-xl font-bold mb-6 flex items-center gap-2"><Zap className="text-primary w-5 h-5"/> Custom Plan Builder</h3>
-                      <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-                        <div>
-                          <label className="text-sm font-medium flex justify-between mb-2">RAM <span className="text-primary">{customRAM} GB</span></label>
-                          <input type="range" min="1" max="32" step="1" value={customRAM} onChange={(e) => setCustomRAM(Number(e.target.value))} className="w-full accent-primary" />
-                        </div>
-                        <div>
-                          <label className="text-sm font-medium flex justify-between mb-2">CPU <span className="text-primary">{customCPU}%</span></label>
-                          <input type="range" min="50" max="800" step="50" value={customCPU} onChange={(e) => setCustomCPU(Number(e.target.value))} className="w-full accent-primary" />
-                        </div>
-                        <div>
-                          <label className="text-sm font-medium flex justify-between mb-2">Disk <span className="text-primary">{customDisk} GB</span></label>
-                          <input type="range" min="5" max="100" step="5" value={customDisk} onChange={(e) => setCustomDisk(Number(e.target.value))} className="w-full accent-primary" />
+                    <div className="mt-8 grid grid-cols-1 xl:grid-cols-2 gap-8">
+                      {/* Left: Custom Plan Builder */}
+                      <div className="flex flex-col gap-6">
+                        <div className="p-6 bg-background rounded-xl border border-border/50 shadow-inner flex-1 flex flex-col">
+                          <h3 className="text-xl font-bold mb-6 flex items-center gap-2"><Zap className="text-primary w-5 h-5"/> Custom Plan Builder</h3>
+                          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+                            <div>
+                              <label className="text-sm font-medium flex justify-between mb-2">RAM <span className="text-primary">{customRAM} GB</span></label>
+                              <input type="range" min="1" max="32" step="1" value={customRAM} onChange={(e) => setCustomRAM(Number(e.target.value))} className="w-full accent-primary" />
+                            </div>
+                            <div>
+                              <label className="text-sm font-medium flex justify-between mb-2">CPU <span className="text-primary">{customCPU}%</span></label>
+                              <input type="range" min="50" max="800" step="50" value={customCPU} onChange={(e) => setCustomCPU(Number(e.target.value))} className="w-full accent-primary" />
+                            </div>
+                            <div>
+                              <label className="text-sm font-medium flex justify-between mb-2">Disk <span className="text-primary">{customDisk} GB</span></label>
+                              <input type="range" min="5" max="100" step="5" value={customDisk} onChange={(e) => setCustomDisk(Number(e.target.value))} className="w-full accent-primary" />
+                            </div>
+                          </div>
+                          
+                          <div className="mt-8 flex flex-col sm:flex-row items-center justify-between p-4 bg-card/50 rounded-lg border border-border/50">
+                            <div>
+                              <p className="text-sm text-foreground/60">Calculated Price</p>
+                              <p className="text-3xl font-bold text-foreground">₹{customPrice}<span className="text-lg text-foreground/50 font-normal">/month</span></p>
+                            </div>
+                            <Button type="button" className="mt-4 sm:mt-0 bg-[#FFD700] hover:bg-[#FFD700]/90 text-black px-8" onClick={handleCustomPlanPurchase} disabled={loading}>
+                              {loading ? 'Processing...' : 'Buy Custom Plan'}
+                            </Button>
+                          </div>
+
+                          <div className="mt-8 pt-6 border-t border-border/50">
+                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-y-6 gap-x-4">
+                              <div className="flex items-start gap-3">
+                                <CheckCircle2 className="w-5 h-5 text-success flex-shrink-0 mt-0.5" />
+                                <div>
+                                  <p className="text-sm font-bold text-foreground">Fully Customizable Resources</p>
+                                  <p className="text-xs text-foreground/60 mt-1">Choose the perfect RAM, CPU & Storage for your server.</p>
+                                </div>
+                              </div>
+                              <div className="flex items-start gap-3">
+                                <CheckCircle2 className="w-5 h-5 text-success flex-shrink-0 mt-0.5" />
+                                <div>
+                                  <p className="text-sm font-bold text-foreground">Enterprise NVMe Storage</p>
+                                  <p className="text-xs text-foreground/60 mt-1">Blazing fast NVMe SSD storage for maximum performance.</p>
+                                </div>
+                              </div>
+                              <div className="flex items-start gap-3">
+                                <CheckCircle2 className="w-5 h-5 text-success flex-shrink-0 mt-0.5" />
+                                <div>
+                                  <p className="text-sm font-bold text-foreground">DDoS Protected Network</p>
+                                  <p className="text-xs text-foreground/60 mt-1">Advanced DDoS protection to keep your server secure.</p>
+                                </div>
+                              </div>
+                              <div className="flex items-start gap-3">
+                                <CheckCircle2 className="w-5 h-5 text-success flex-shrink-0 mt-0.5" />
+                                <div>
+                                  <p className="text-sm font-bold text-foreground">Instant Server Deployment</p>
+                                  <p className="text-xs text-foreground/60 mt-1">Your server will be ready in seconds after payment.</p>
+                                </div>
+                              </div>
+                              <div className="flex items-start gap-3">
+                                <CheckCircle2 className="w-5 h-5 text-success flex-shrink-0 mt-0.5" />
+                                <div>
+                                  <p className="text-sm font-bold text-foreground">Best Lower Price</p>
+                                  <p className="text-xs text-foreground/60 mt-1">Get maximum performance at the best possible price.</p>
+                                </div>
+                              </div>
+                              <div className="flex items-start gap-3">
+                                <CheckCircle2 className="w-5 h-5 text-success flex-shrink-0 mt-0.5" />
+                                <div>
+                                  <p className="text-sm font-bold text-foreground">Easy Navigation</p>
+                                  <p className="text-xs text-foreground/60 mt-1">Clean, modern and beginner-friendly control panel.</p>
+                                </div>
+                              </div>
+                            </div>
+                          </div>
+
+                          <div className="mt-8 p-4 bg-primary/5 border border-primary/20 rounded-lg flex items-start gap-3">
+                            <Lightbulb className="w-5 h-5 text-primary flex-shrink-0 mt-0.5" />
+                            <div>
+                              <p className="text-sm font-bold text-primary">Pay only for the resources you actually need.</p>
+                              <p className="text-xs text-primary/80 mt-1">Upgrade or downgrade your server anytime with no hidden charges.</p>
+                            </div>
+                          </div>
                         </div>
                       </div>
-                      <div className="mt-8 flex flex-col sm:flex-row items-center justify-between p-4 bg-card/50 rounded-lg border border-border/50">
-                        <div>
-                          <p className="text-sm text-foreground/60">Calculated Price</p>
-                          <p className="text-3xl font-bold text-foreground">₹{customPrice}<span className="text-lg text-foreground/50 font-normal">/month</span></p>
+
+                      {/* Right: Panel Overview (Demo) */}
+                      <div className="flex flex-col gap-6">
+                        <div className="p-6 bg-background rounded-xl border border-border/50 shadow-inner flex-1">
+                          <h3 className="text-xl font-bold mb-6 flex items-center gap-2"><LayoutDashboard className="text-primary w-5 h-5"/> Panel Overview (Demo)</h3>
+                          
+                          {/* Static Console UI Preview */}
+                          <div className="bg-card border border-border/50 rounded-lg p-4 pointer-events-none select-none opacity-90 shadow-lg">
+                            <div className="flex gap-2 mb-3">
+                              <Button variant="outline" size="sm" className="h-8 text-success border-success/30 bg-success/5"><Power className="w-3 h-3 mr-2" /> Start</Button>
+                              <Button variant="outline" size="sm" className="h-8 text-yellow-500 border-yellow-500/30 bg-yellow-500/5"><Power className="w-3 h-3 mr-2" /> Stop</Button>
+                              <Button variant="outline" size="sm" className="h-8 text-primary border-primary/30 bg-primary/5"><RefreshCw className="w-3 h-3 mr-2" /> Restart</Button>
+                            </div>
+                            <div className="bg-[#09090b] rounded-md border border-border/50 p-3 h-40 font-mono text-xs text-foreground/80 overflow-hidden flex flex-col gap-1">
+                              <span className="text-yellow-500">[FreeBucks] Connecting to server daemon...</span>
+                              <span className="text-success">[FreeBucks] Connected and authenticated.</span>
+                              <span className="text-blue-400">[FreeBucks] Server status: starting</span>
+                              <span>Loading libraries, please wait...</span>
+                              <span>[Server thread/INFO]: Starting minecraft server version 1.20.4</span>
+                              <span>[Server thread/INFO]: Loading properties</span>
+                              <span>[Server thread/INFO]: Default game type: SURVIVAL</span>
+                              <span>[Server thread/INFO]: Generating keypair</span>
+                              <span>[Server thread/INFO]: Starting Minecraft server on *:25565</span>
+                            </div>
+                            <div className="flex gap-2 mt-3">
+                              <Input disabled placeholder="Type a command..." className="h-8 text-xs bg-background" />
+                              <Button disabled size="sm" variant="secondary" className="h-8">Send</Button>
+                            </div>
+                          </div>
+
+                          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mt-8">
+                            <div className="p-3 bg-card/50 rounded-lg border border-border/50 hover:border-primary/30 transition-colors">
+                              <p className="text-sm font-bold flex items-center gap-2"><Terminal className="w-4 h-4 text-primary"/> Live Console</p>
+                              <p className="text-xs text-foreground/60 mt-1">Manage your server in real-time.</p>
+                            </div>
+                            <div className="p-3 bg-card/50 rounded-lg border border-border/50 hover:border-primary/30 transition-colors">
+                              <p className="text-sm font-bold flex items-center gap-2"><Folder className="w-4 h-4 text-primary"/> File Manager</p>
+                              <p className="text-xs text-foreground/60 mt-1">Upload, edit and manage server files.</p>
+                            </div>
+                            <div className="p-3 bg-card/50 rounded-lg border border-border/50 hover:border-primary/30 transition-colors">
+                              <p className="text-sm font-bold flex items-center gap-2"><Puzzle className="w-4 h-4 text-primary"/> Plugin Manager</p>
+                              <p className="text-xs text-foreground/60 mt-1">Install and manage plugins easily.</p>
+                            </div>
+                            <div className="p-3 bg-card/50 rounded-lg border border-border/50 hover:border-primary/30 transition-colors">
+                              <p className="text-sm font-bold flex items-center gap-2"><Users className="w-4 h-4 text-primary"/> Player Management</p>
+                              <p className="text-xs text-foreground/60 mt-1">Manage players and permissions.</p>
+                            </div>
+                            <div className="p-3 bg-card/50 rounded-lg border border-border/50 hover:border-primary/30 transition-colors">
+                              <p className="text-sm font-bold flex items-center gap-2"><Power className="w-4 h-4 text-primary"/> One-click Control</p>
+                              <p className="text-xs text-foreground/60 mt-1">Start, Stop, Restart and Kill instantly.</p>
+                            </div>
+                            <div className="p-3 bg-card/50 rounded-lg border border-border/50 hover:border-primary/30 transition-colors">
+                              <p className="text-sm font-bold flex items-center gap-2"><Activity className="w-4 h-4 text-primary"/> Resource Monitor</p>
+                              <p className="text-xs text-foreground/60 mt-1">Monitor CPU, RAM and Disk usage live.</p>
+                            </div>
+                          </div>
                         </div>
-                        <Button type="button" className="mt-4 sm:mt-0 bg-[#FFD700] hover:bg-[#FFD700]/90 text-black px-8" onClick={handleCustomPlanPurchase} disabled={loading}>
-                          {loading ? 'Processing...' : 'Buy Custom Plan'}
-                        </Button>
                       </div>
                     </div>
                   </>
