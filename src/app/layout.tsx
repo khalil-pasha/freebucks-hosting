@@ -48,6 +48,9 @@ export const metadata: Metadata = {
   },
   other: {
     monetag: "bfc704a96f5906f641e23e2984ab7a4c"
+  },
+  verification: {
+    google: "kbsvRYM3Vg8Skm2851PFWcgghjAH4dTMPJsn20QVsew"
   }
 };
 
