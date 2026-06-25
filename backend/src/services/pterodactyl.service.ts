@@ -17,7 +17,7 @@ export class PterodactylService {
     };
   }
 
-  private static getClientHeaders() {
+  public static getClientHeaders() {
     return {
       'Authorization': `Bearer ${process.env.PTERODACTYL_CLIENT_KEY}`,
       'Accept': 'Application/vnd.pterodactyl.v1+json',

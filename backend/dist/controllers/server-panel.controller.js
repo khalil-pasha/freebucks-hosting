@@ -1002,5 +1002,36 @@ class ServerPanelController {
         await logActivity(server.id, req.user.id, 'startup.update', req.ip || null, `Updated ${key}`);
         res.json({ success: true });
     }
+    // --- SFTP ---
+    static async getSftpDetails(req, res) {
+        const server = req.server;
+        if (!server.pterodactylIdentifier)
+            return res.status(400).json({ error: 'Not provisioned' });
+        try {
+            // 1. Get SFTP Details from Pterodactyl Client API
+            const pteroClientRes = await require('axios').get(`${process.env.PTERODACTYL_PANEL_URL}/api/client/servers/${server.pterodactylIdentifier}`, {
+                headers: pterodactyl_service_1.PterodactylService.getClientHeaders()
+            });
+            const sftpDetails = pteroClientRes.data.attributes.sftp_details;
+            // 2. Get User's Pterodactyl Username via Application API
+            const user = await db_1.db.user.findUnique({ where: { id: server.userId } });
+            if (!user || !user.pterodactylUserId) {
+                return res.status(404).json({ error: 'User details not found' });
+            }
+            const pteroAppRes = await require('axios').get(`${process.env.PTERODACTYL_PANEL_URL}/api/application/users/${user.pterodactylUserId}`, {
+                headers: pterodactyl_service_1.PterodactylService.getAppHeaders()
+            });
+            const pteroUsername = pteroAppRes.data.attributes.username;
+            res.json({
+                sftpHost: sftpDetails.ip,
+                sftpPort: sftpDetails.port,
+                sftpUsername: `${pteroUsername}.${server.pterodactylIdentifier}`
+            });
+        }
+        catch (err) {
+            console.error('[SFTP Fetch Error]', err.response?.data || err.message);
+            res.status(500).json({ error: 'Failed to fetch SFTP details.' });
+        }
+    }
 }
 exports.ServerPanelController = ServerPanelController;

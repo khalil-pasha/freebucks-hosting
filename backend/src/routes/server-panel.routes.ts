@@ -59,6 +59,7 @@ router.get('/activity', requireServerAccess('activity'), ServerPanelController.g
 router.patch('/settings', requireServerAccess('settings'), ServerPanelController.updateSettings);
 router.post('/reinstall', requireServerAccess('settings'), ServerPanelController.reinstallServer);
 router.post('/settings/reset-world', requireServerAccess('settings'), ServerPanelController.resetWorld);
+router.get('/sftp', requireServerAccess('settings'), ServerPanelController.getSftpDetails);
 
 // Startup
 router.get('/startup', requireServerAccess('settings'), ServerPanelController.getStartup);

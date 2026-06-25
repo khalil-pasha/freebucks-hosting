@@ -3,7 +3,7 @@
 import { useContext, useState, useEffect } from "react"
 import { ServerContext } from "../layout"
 import api, { handleApiError } from "@/lib/api"
-import { Settings, Save, AlertTriangle } from "lucide-react"
+import { Settings, Save, AlertTriangle, Server, Copy, ExternalLink } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 
@@ -11,10 +11,15 @@ export default function SettingsPage() {
   const { server, refetch } = useContext(ServerContext)
   const [name, setName] = useState(server?.name || "")
   const [saving, setSaving] = useState(false)
-  const [acceptingEula, setAcceptingEula] = useState(false)
+  const [sftpDetails, setSftpDetails] = useState<any>(null)
 
   useEffect(() => {
-    if (server) setName(server.name)
+    if (server) {
+      setName(server.name)
+      api.get(`/servers/${server.id}/panel/sftp`)
+        .then(res => setSftpDetails(res.data))
+        .catch(console.error)
+    }
   }, [server])
 
   const handleSave = async (e: React.FormEvent) => {
@@ -53,16 +58,18 @@ export default function SettingsPage() {
     }
   }
 
-  const handleAcceptEula = async () => {
-    try {
-      setAcceptingEula(true)
-      await api.post(`/servers/${server.id}/panel/eula/accept`)
-      alert("EULA accepted! You can now start the server.")
-    } catch (err: any) {
-      alert(handleApiError(err))
-    } finally {
-      setAcceptingEula(false)
-    }
+  const copyToClipboard = (text: string, type: string) => {
+    navigator.clipboard.writeText(text)
+    // Optional: could add toast here, simple alert for now
+    alert(`${type} copied to clipboard!`)
+  }
+
+  const handleLaunchSftp = () => {
+    if (!sftpDetails) return
+    const url = sftpDetails.sftpUsername 
+      ? `sftp://${sftpDetails.sftpUsername}@${sftpDetails.sftpHost}:${sftpDetails.sftpPort}`
+      : `sftp://${sftpDetails.sftpHost}:${sftpDetails.sftpPort}`
+    window.open(url, '_self')
   }
 
   return (
@@ -85,11 +92,54 @@ export default function SettingsPage() {
       </div>
 
       <div className="bg-card border border-border/50 rounded-xl p-6">
-        <h2 className="text-xl font-bold mb-2">Minecraft® EULA</h2>
-        <p className="text-foreground/70 text-sm mb-4">In order to run a Minecraft server, you must agree to the Mojang EULA.</p>
-        <Button onClick={handleAcceptEula} disabled={acceptingEula} variant="secondary">
-          {acceptingEula ? "Accepting..." : "Accept EULA"}
-        </Button>
+        <h2 className="text-xl font-bold mb-2 flex items-center gap-2"><Server className="w-5 h-5 text-primary" /> SFTP Access</h2>
+        <p className="text-foreground/70 text-sm mb-6">
+          Use SFTP to transfer large files, upload worlds, manage plugins, and edit server files with external tools like WinSCP or FileZilla.
+        </p>
+
+        {sftpDetails ? (
+          <div className="space-y-4">
+            <div>
+              <label className="text-sm font-medium mb-1 block">Server Address</label>
+              <div className="flex gap-2">
+                <Input readOnly value={`sftp://${sftpDetails.sftpHost}:${sftpDetails.sftpPort}`} className="font-mono text-sm" />
+                <Button variant="outline" size="icon" onClick={() => copyToClipboard(`sftp://${sftpDetails.sftpHost}:${sftpDetails.sftpPort}`, 'Server Address')}>
+                  <Copy className="w-4 h-4" />
+                </Button>
+              </div>
+            </div>
+
+            <div>
+              <label className="text-sm font-medium mb-1 block">Username</label>
+              <div className="flex gap-2">
+                <Input readOnly value={sftpDetails.sftpUsername} className="font-mono text-sm" />
+                <Button variant="outline" size="icon" onClick={() => copyToClipboard(sftpDetails.sftpUsername, 'Username')}>
+                  <Copy className="w-4 h-4" />
+                </Button>
+              </div>
+            </div>
+
+            <div>
+              <label className="text-sm font-medium mb-1 block">Password</label>
+              <Input readOnly value="Use your server panel password." className="font-mono text-sm text-foreground/50" />
+              <p className="text-xs text-foreground/50 mt-1">
+                Your SFTP password is the same as your panel password. FreeBucks never displays passwords for security reasons.
+              </p>
+            </div>
+
+            <Button onClick={handleLaunchSftp} className="w-full md:w-auto mt-2">
+              <ExternalLink className="w-4 h-4 mr-2" /> Launch SFTP
+            </Button>
+          </div>
+        ) : (
+          <div className="animate-pulse flex space-x-4">
+            <div className="flex-1 space-y-4 py-1">
+              <div className="h-4 bg-foreground/10 rounded w-3/4"></div>
+              <div className="h-4 bg-foreground/10 rounded"></div>
+              <div className="h-4 bg-foreground/10 rounded w-5/6"></div>
+            </div>
+          </div>
+        )}
       </div>
 
       <div className="bg-red-500/5 border border-red-500/20 rounded-xl p-6">
