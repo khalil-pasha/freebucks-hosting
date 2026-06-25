@@ -11,7 +11,7 @@ import api, { handleApiError } from "@/lib/api"
 import { useAuth } from "@/components/AuthProvider"
 
 export default function ServersPage() {
-  const { user, refetchUser } = useAuth()
+  const { user, loading: authLoading, refetchUser } = useAuth()
   const router = useRouter()
   const [servers, setServers] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
@@ -199,9 +199,25 @@ export default function ServersPage() {
   };
 
   const handlePremiumPurchase = async () => {
+    const token = localStorage.getItem('freebucks_token') || localStorage.getItem('token') || localStorage.getItem('authToken');
+    const manualLogout = localStorage.getItem('freebucks_manual_logout');
+    
+    console.log("[PaymentAuth] user", !!user);
+    console.log("[PaymentAuth] token exists", !!token);
+    console.log("[PaymentAuth] authLoading", authLoading);
+
+    if (manualLogout === 'true' || !token) {
+      router.push('/login?redirect=/dashboard/servers');
+      return;
+    }
+
+    if (authLoading) {
+      return;
+    }
+
     console.log("[Dashboard Premium] Buy clicked");
     if (!user) {
-      router.push('/login');
+      router.push('/login?redirect=/dashboard/servers');
       return;
     }
 
@@ -220,6 +236,10 @@ export default function ServersPage() {
       try {
         res = await api.post('/premium/create-order', {
           plan: 'premium'
+        }, {
+          headers: {
+            Authorization: `Bearer ${token}`
+          }
         });
       } catch (err: any) {
         console.error('[ServersPage] premium create-order API failed:', err);
@@ -250,6 +270,10 @@ export default function ServersPage() {
               razorpay_order_id: response.razorpay_order_id,
               razorpay_payment_id: response.razorpay_payment_id,
               razorpay_signature: response.razorpay_signature
+            }, {
+              headers: {
+                Authorization: `Bearer ${token}`
+              }
             });
             setToastMessage("Premium activated successfully!");
             setTimeout(() => setToastMessage(null), 5000);
@@ -287,9 +311,25 @@ export default function ServersPage() {
   };
 
   const handleCustomPlanPurchase = async () => {
+    const token = localStorage.getItem('freebucks_token') || localStorage.getItem('token') || localStorage.getItem('authToken');
+    const manualLogout = localStorage.getItem('freebucks_manual_logout');
+    
+    console.log("[PaymentAuth] user", !!user);
+    console.log("[PaymentAuth] token exists", !!token);
+    console.log("[PaymentAuth] authLoading", authLoading);
+
+    if (manualLogout === 'true' || !token) {
+      router.push('/login?redirect=/dashboard/servers');
+      return;
+    }
+
+    if (authLoading) {
+      return;
+    }
+
     console.log("[CustomPlan] Buy clicked", { ram: customRAM, cpu: customCPU, disk: customDisk, calculatedPrice: customPrice });
     if (!user) {
-      router.push('/login');
+      router.push('/login?redirect=/dashboard/servers');
       return;
     }
 
@@ -311,6 +351,10 @@ export default function ServersPage() {
           ram: customRAM,
           cpu: customCPU,
           disk: customDisk
+        }, {
+          headers: {
+            Authorization: `Bearer ${token}`
+          }
         });
       } catch (err: any) {
         console.error('[ServersPage] create-order API failed:', err);
@@ -341,6 +385,10 @@ export default function ServersPage() {
               razorpay_order_id: response.razorpay_order_id,
               razorpay_payment_id: response.razorpay_payment_id,
               razorpay_signature: response.razorpay_signature
+            }, {
+              headers: {
+                Authorization: `Bearer ${token}`
+              }
             });
             setToastMessage("Custom Plan payment successful!");
             setTimeout(() => setToastMessage(null), 5000);
