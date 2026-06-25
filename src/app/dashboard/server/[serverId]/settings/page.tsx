@@ -120,10 +120,8 @@ export default function SettingsPage() {
             </div>
 
             <div>
-              <label className="text-sm font-medium mb-1 block">Password</label>
-              <Input readOnly value="Use your server panel password." className="font-mono text-sm text-foreground/50" />
-              <p className="text-xs text-foreground/50 mt-1">
-                Your SFTP password is the same as your panel password. FreeBucks never displays passwords for security reasons.
+              <p className="text-xs text-foreground/50">
+                Your SFTP client will ask for your panel password when connecting. FreeBucks never displays passwords for security reasons.
               </p>
             </div>
 
