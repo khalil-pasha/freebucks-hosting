@@ -79,8 +79,11 @@ export class AuthController {
       // Process Login/Register with referral code if present
       const user = await AuthService.processDiscordLogin(discordUser, savedRef);
       
+      // Create session
+      const session = await AuthService.createSession(user.id, req);
+
       // Generate JWT
-      const token = AuthService.generateJwt(user);
+      const token = AuthService.generateJwt(user, session.id);
       
       await AuditService.logAction(req, 'LOGIN', undefined, user.id);
 

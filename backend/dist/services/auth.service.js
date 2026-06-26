@@ -113,11 +113,37 @@ class AuthService {
         }
         return user;
     }
-    static generateJwt(user) {
+    static async createSession(userId, req) {
+        const UAParser = require('ua-parser-js');
+        const parser = new UAParser(req.headers['user-agent']);
+        const browser = parser.getBrowser();
+        const os = parser.getOS();
+        const device = parser.getDevice();
+        const deviceType = device.type || 'Desktop';
+        const deviceModel = device.model || '';
+        const deviceVendor = device.vendor || '';
+        const deviceString = `${deviceVendor} ${deviceModel} ${deviceType}`.trim();
+        let ipAddress = req.headers['x-forwarded-for'] || req.ip || null;
+        if (Array.isArray(ipAddress))
+            ipAddress = ipAddress[0];
+        const session = await db_1.db.userSession.create({
+            data: {
+                userId,
+                ipAddress: ipAddress,
+                browser: browser.name ? `${browser.name} ${browser.version || ''}`.trim() : null,
+                os: os.name ? `${os.name} ${os.version || ''}`.trim() : null,
+                device: deviceString || null,
+                userAgent: req.headers['user-agent'] || null,
+            }
+        });
+        return session;
+    }
+    static generateJwt(user, sessionId) {
         const payload = {
             userId: user.id,
             discordId: user.discordId,
             role: user.role,
+            sessionId,
         };
         const secret = process.env.JWT_SECRET;
         return jsonwebtoken_1.default.sign(payload, secret, { expiresIn: '7d' });

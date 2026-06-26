@@ -120,11 +120,41 @@ export class AuthService {
     return user;
   }
 
-  public static generateJwt(user: any) {
+  public static async createSession(userId: string, req: any) {
+    const UAParser = require('ua-parser-js');
+    const parser = new UAParser(req.headers['user-agent']);
+    const browser = parser.getBrowser();
+    const os = parser.getOS();
+    const device = parser.getDevice();
+    
+    const deviceType = device.type || 'Desktop';
+    const deviceModel = device.model || '';
+    const deviceVendor = device.vendor || '';
+    const deviceString = `${deviceVendor} ${deviceModel} ${deviceType}`.trim();
+
+    let ipAddress = req.headers['x-forwarded-for'] || req.ip || null;
+    if (Array.isArray(ipAddress)) ipAddress = ipAddress[0];
+
+    const session = await db.userSession.create({
+      data: {
+        userId,
+        ipAddress: ipAddress as string,
+        browser: browser.name ? `${browser.name} ${browser.version || ''}`.trim() : null,
+        os: os.name ? `${os.name} ${os.version || ''}`.trim() : null,
+        device: deviceString || null,
+        userAgent: req.headers['user-agent'] || null,
+      }
+    });
+
+    return session;
+  }
+
+  public static generateJwt(user: any, sessionId: string) {
     const payload = {
       userId: user.id,
       discordId: user.discordId,
       role: user.role,
+      sessionId,
     };
 
     const secret = process.env.JWT_SECRET!;

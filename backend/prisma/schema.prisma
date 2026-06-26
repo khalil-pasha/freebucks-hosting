@@ -85,6 +85,12 @@ model User {
   notifications      Notification[]
   serverAccesses     ServerAccess[]
   serverActivityLogs ServerActivityLog[]
+  sessions           UserSession[]
+
+  emailAlertServerExpiry     Boolean @default(true)
+  emailAlertServerSuspension Boolean @default(true)
+  emailAlertPayment          Boolean @default(true)
+  emailAlertPromotional      Boolean @default(true)
 }
 
 model Admin {
@@ -329,4 +335,22 @@ model PluginInstallLog {
   pluginName  String
   version     String?
   installedAt DateTime @default(now())
+}
+
+model UserSession {
+  id          String   @id @default(uuid())
+  userId      String
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  ipAddress   String?
+  location    String?  
+  device      String?
+  browser     String?
+  os          String?
+  userAgent   String?
+  loginTime   DateTime @default(now())
+  lastActive  DateTime @default(now())
+  isRevoked   Boolean  @default(false)
+
+  @@index([userId])
+  @@index([isRevoked])
 }

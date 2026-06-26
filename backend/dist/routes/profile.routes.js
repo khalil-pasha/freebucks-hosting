@@ -9,4 +9,8 @@ router.post('/avatar', profile_controller_1.ProfileController.uploadAvatar);
 router.patch('/email', profile_controller_1.ProfileController.updateEmail);
 router.post('/send-password-otp', profile_controller_1.ProfileController.sendPasswordOtp);
 router.post('/reset-panel-password', profile_controller_1.ProfileController.resetPanelPassword);
+router.get('/sessions', profile_controller_1.ProfileController.getSessions);
+router.post('/sessions/revoke-all', profile_controller_1.ProfileController.revokeAllSessions);
+router.get('/preferences', profile_controller_1.ProfileController.getPreferences);
+router.patch('/preferences', profile_controller_1.ProfileController.updatePreferences);
 exports.default = router;

@@ -67,8 +67,10 @@ class AuthController {
             const discordUser = await auth_service_1.AuthService.getDiscordUser(tokenData.access_token);
             // Process Login/Register with referral code if present
             const user = await auth_service_1.AuthService.processDiscordLogin(discordUser, savedRef);
+            // Create session
+            const session = await auth_service_1.AuthService.createSession(user.id, req);
             // Generate JWT
-            const token = auth_service_1.AuthService.generateJwt(user);
+            const token = auth_service_1.AuthService.generateJwt(user, session.id);
             await audit_service_1.AuditService.logAction(req, 'LOGIN', undefined, user.id);
             // Redirect to frontend with token
             const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:3000';

@@ -181,4 +181,102 @@ export class ProfileController {
       res.status(500).json({ error: 'Failed to update email.' });
     }
   }
+
+  public static async getSessions(req: Request, res: Response) {
+    try {
+      const userId = req.user!.id;
+      const currentSessionId = req.user!.sessionId;
+      const dbSessions = await db.userSession.findMany({
+        where: { userId, isRevoked: false },
+        orderBy: { loginTime: 'desc' }
+      });
+      
+      const sessions = dbSessions.map(s => ({
+        ...s,
+        isCurrent: s.id === currentSessionId
+      }));
+
+      res.json({ success: true, sessions });
+    } catch (error: any) {
+      console.error('Get sessions error:', error);
+      res.status(500).json({ error: 'Failed to get sessions.' });
+    }
+  }
+
+  public static async revokeAllSessions(req: Request, res: Response) {
+    try {
+      const userId = req.user!.id;
+      const currentSessionId = req.user!.sessionId;
+
+      if (!currentSessionId) {
+        // If backward compatibility token (no sessionId), we can just revoke all sessions.
+        await db.userSession.updateMany({
+          where: { userId, isRevoked: false },
+          data: { isRevoked: true }
+        });
+      } else {
+        await db.userSession.updateMany({
+          where: { userId, isRevoked: false, id: { not: currentSessionId } },
+          data: { isRevoked: true }
+        });
+      }
+
+      res.json({ success: true, message: 'All other devices have been signed out.' });
+    } catch (error: any) {
+      console.error('Revoke sessions error:', error);
+      res.status(500).json({ error: 'Failed to sign out other devices.' });
+    }
+  }
+
+  public static async getPreferences(req: Request, res: Response) {
+    try {
+      const userId = req.user!.id;
+      const user = await db.user.findUnique({
+        where: { id: userId },
+        select: {
+          emailAlertServerExpiry: true,
+          emailAlertServerSuspension: true,
+          emailAlertPayment: true,
+          emailAlertPromotional: true
+        }
+      });
+      res.json({ success: true, preferences: user });
+    } catch (error: any) {
+      console.error('Get preferences error:', error);
+      res.status(500).json({ error: 'Failed to get preferences.' });
+    }
+  }
+
+  public static async updatePreferences(req: Request, res: Response) {
+    try {
+      const userId = req.user!.id;
+      const {
+        emailAlertServerExpiry,
+        emailAlertServerSuspension,
+        emailAlertPayment,
+        emailAlertPromotional
+      } = req.body;
+
+      const user = await db.user.update({
+        where: { id: userId },
+        data: {
+          emailAlertServerExpiry: Boolean(emailAlertServerExpiry),
+          emailAlertServerSuspension: Boolean(emailAlertServerSuspension),
+          emailAlertPayment: Boolean(emailAlertPayment),
+          emailAlertPromotional: Boolean(emailAlertPromotional),
+        },
+        select: {
+          emailAlertServerExpiry: true,
+          emailAlertServerSuspension: true,
+          emailAlertPayment: true,
+          emailAlertPromotional: true
+        }
+      });
+
+      res.json({ success: true, message: 'Preferences saved.', preferences: user });
+    } catch (error: any) {
+      console.error('Update preferences error:', error);
+      res.status(500).json({ error: 'Failed to save preferences.' });
+    }
+  }
 }

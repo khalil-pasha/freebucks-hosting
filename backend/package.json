@@ -33,6 +33,7 @@
     "nodemailer": "^8.0.10",
     "pg": "^8.21.0",
     "razorpay": "^2.9.6",
+    "ua-parser-js": "^2.0.10",
     "ws": "^8.21.0",
     "zod": "^4.4.3"
   },
@@ -48,6 +49,7 @@
     "@types/node-cron": "^3.0.11",
     "@types/nodemailer": "^8.0.0",
     "@types/pg": "^8.20.0",
+    "@types/ua-parser-js": "^0.7.39",
     "@types/ws": "^8.18.1",
     "nodemon": "^3.1.14",
     "prisma": "^7.8.0",

@@ -5,14 +5,8 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { User, Mail, Calendar, Shield, Activity, LogOut, Key, Edit2, Loader2, X } from "lucide-react"
 import { useAuth } from "@/components/AuthProvider"
-import { useState, useRef } from "react"
+import { useState, useRef, useEffect } from "react"
 import api from "@/lib/api"
-
-const loginHistory = [
-  { id: 1, ip: "192.168.1.1", location: "Mumbai, India", date: "Today, 10:42 AM", device: "Windows • Chrome" },
-  { id: 2, ip: "192.168.1.1", location: "Mumbai, India", date: "Yesterday, 08:15 PM", device: "Windows • Chrome" },
-  { id: 3, ip: "10.0.0.45", location: "Delhi, India", date: "May 10, 2026", device: "iOS • Safari" },
-]
 
 export default function ProfilePage() {
   const { user, loading, logout, refetchUser } = useAuth()
@@ -31,6 +25,65 @@ export default function ProfilePage() {
   const [isEditingEmail, setIsEditingEmail] = useState(false)
   const [newEmail, setNewEmail] = useState("")
   const [isSavingEmail, setIsSavingEmail] = useState(false)
+
+  const [sessions, setSessions] = useState<any[]>([])
+  const [preferences, setPreferences] = useState({
+    emailAlertServerExpiry: true,
+    emailAlertServerSuspension: true,
+    emailAlertPayment: true,
+    emailAlertPromotional: true
+  })
+  const [isPrefModalOpen, setIsPrefModalOpen] = useState(false)
+  const [isSavingPref, setIsSavingPref] = useState(false)
+  const [isLoadingData, setIsLoadingData] = useState(true)
+
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        const [sessionsRes, prefRes] = await Promise.all([
+          api.get('/profile/sessions'),
+          api.get('/profile/preferences')
+        ])
+        if (sessionsRes.data.success) {
+          setSessions(sessionsRes.data.sessions)
+        }
+        if (prefRes.data.success) {
+          setPreferences(prefRes.data.preferences)
+        }
+      } catch (error) {
+        console.error("Failed to load profile data", error)
+      } finally {
+        setIsLoadingData(false)
+      }
+    }
+    fetchData()
+  }, [])
+
+  const handleRevokeAll = async () => {
+    if (!confirm("Are you sure you want to sign out from all other devices?")) return;
+    try {
+      await api.post('/profile/sessions/revoke-all')
+      alert("All other devices have been signed out.")
+      const res = await api.get('/profile/sessions')
+      if (res.data.success) setSessions(res.data.sessions)
+    } catch (error) {
+      alert("Failed to sign out other devices.")
+    }
+  }
+
+  const handleSavePreferences = async () => {
+    try {
+      setIsSavingPref(true)
+      const res = await api.patch('/profile/preferences', preferences)
+      setPreferences(res.data.preferences)
+      alert("Preferences saved.")
+      setIsPrefModalOpen(false)
+    } catch (error) {
+      alert("Failed to save preferences.")
+    } finally {
+      setIsSavingPref(false)
+    }
+  }
 
   const handleAvatarClick = () => {
     fileInputRef.current?.click()
@@ -254,7 +307,6 @@ export default function ProfilePage() {
                 <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 p-4 border border-border/50 rounded-xl bg-background/50">
                   <div>
                     <h4 className="font-semibold flex items-center gap-2"><Key className="w-4 h-4 text-primary" /> Panel Password</h4>
-                    <p className="text-sm text-foreground/60 mt-1">Used to login to your Pterodactyl game panel directly.</p>
                   </div>
                   <Button variant="outline" onClick={() => setIsResetModalOpen(true)}>Reset Password</Button>
                 </div>
@@ -262,9 +314,9 @@ export default function ProfilePage() {
                 <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 p-4 border border-border/50 rounded-xl bg-background/50">
                   <div>
                     <h4 className="font-semibold flex items-center gap-2"><Mail className="w-4 h-4 text-primary" /> Email Notifications</h4>
-                    <p className="text-sm text-foreground/60 mt-1">Receive alerts when your server is about to expire.</p>
+                    <p className="text-sm text-foreground/60 mt-1">Receive alerts about your servers and account.</p>
                   </div>
-                  <Button variant="outline">Configure</Button>
+                  <Button variant="outline" onClick={() => setIsPrefModalOpen(true)}>Configure</Button>
                 </div>
               </div>
             </CardContent>
@@ -279,27 +331,38 @@ export default function ProfilePage() {
             </CardHeader>
             <CardContent>
               <div className="space-y-4">
-                {loginHistory.map((login) => (
-                  <div key={login.id} className="flex flex-col sm:flex-row sm:items-center justify-between p-4 bg-background border border-border/50 rounded-xl gap-4">
-                    <div>
-                      <p className="font-bold flex items-center gap-2">
-                        {login.device}
-                        {login.id === 1 && <span className="px-2 py-0.5 rounded text-[10px] uppercase font-bold bg-success/20 text-success border border-success/30">Current</span>}
-                      </p>
-                      <p className="text-xs text-foreground/50 mt-1">{login.location} • {login.ip}</p>
-                    </div>
-                    <div className="text-sm text-foreground/60 whitespace-nowrap">
-                      {login.date}
-                    </div>
+                {isLoadingData ? (
+                  <div className="flex justify-center p-4">
+                    <Loader2 className="w-6 h-6 animate-spin text-foreground/50" />
                   </div>
-                ))}
+                ) : (
+                  sessions.map((session) => (
+                    <div key={session.id} className="flex flex-col sm:flex-row sm:items-center justify-between p-4 bg-background border border-border/50 rounded-xl gap-4">
+                      <div>
+                        <p className="font-bold flex items-center gap-2">
+                          {session.browser || "Unknown Browser"} • {session.os || "Unknown OS"}
+                          {session.isCurrent && <span className="px-2 py-0.5 rounded text-[10px] uppercase font-bold bg-success/20 text-success border border-success/30">Current</span>}
+                        </p>
+                        <p className="text-xs text-foreground/50 mt-1">
+                          {session.device && `${session.device} • `} 
+                          {session.location ? `${session.location} • ` : ""}
+                          {session.ipAddress}
+                        </p>
+                      </div>
+                      <div className="text-right text-sm text-foreground/60 whitespace-nowrap">
+                        <p>Logged in: {new Date(session.loginTime).toLocaleString()}</p>
+                        <p className="text-xs">Last active: {new Date(session.lastActive).toLocaleString()}</p>
+                      </div>
+                    </div>
+                  ))
+                )}
               </div>
             </CardContent>
           </Card>
 
           <div className="flex justify-end pt-4">
-            <Button onClick={logout} className="bg-red-500 hover:bg-red-600 text-white flex items-center gap-2">
-              <LogOut className="w-4 h-4" /> Sign Out from All Devices
+            <Button onClick={handleRevokeAll} className="bg-red-500 hover:bg-red-600 text-white flex items-center gap-2">
+              <LogOut className="w-4 h-4" /> Sign Out from All Other Devices
             </Button>
           </div>
         </div>
@@ -389,6 +452,64 @@ export default function ProfilePage() {
                   Reset Password
                 </Button>
               )}
+            </div>
+          </motion.div>
+        </div>
+      )}
+
+      {/* Preferences Modal */}
+      {isPrefModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
+          <motion.div 
+            initial={{ opacity: 0, scale: 0.95 }}
+            animate={{ opacity: 1, scale: 1 }}
+            className="bg-card border border-border/50 rounded-xl shadow-2xl w-full max-w-md overflow-hidden relative"
+          >
+            <div className="p-6">
+              <div className="flex justify-between items-center mb-4">
+                <h3 className="text-lg font-bold">Email Notifications</h3>
+                <button onClick={() => setIsPrefModalOpen(false)} className="text-foreground/50 hover:text-foreground">
+                  <X className="w-5 h-5" />
+                </button>
+              </div>
+              <p className="text-sm text-foreground/60 mb-6">
+                Choose which emails you'd like to receive from us.
+              </p>
+
+              <div className="space-y-4">
+                {[
+                  { key: 'emailAlertServerExpiry', label: 'Server Expiry Reminders', desc: 'Alerts when your server is about to expire.' },
+                  { key: 'emailAlertServerSuspension', label: 'Server Suspension', desc: 'Alerts if your server gets suspended.' },
+                  { key: 'emailAlertPayment', label: 'Payment Confirmations', desc: 'Receipts and transaction updates.' },
+                  { key: 'emailAlertPromotional', label: 'Promotional & Offers', desc: 'Occasional free credits and discounts.' },
+                ].map((item) => (
+                  <div key={item.key} className="flex items-start justify-between gap-4 p-3 bg-background/50 border border-border/50 rounded-lg">
+                    <div>
+                      <p className="font-medium text-sm">{item.label}</p>
+                      <p className="text-xs text-foreground/60 mt-0.5">{item.desc}</p>
+                    </div>
+                    <label className="relative inline-flex items-center cursor-pointer mt-1">
+                      <input 
+                        type="checkbox" 
+                        className="sr-only peer" 
+                        checked={(preferences as any)[item.key]} 
+                        onChange={(e) => setPreferences({ ...preferences, [item.key]: e.target.checked })} 
+                      />
+                      <div className="w-9 h-5 bg-foreground/20 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-primary"></div>
+                    </label>
+                  </div>
+                ))}
+              </div>
+            </div>
+            
+            <div className="p-4 bg-background/50 border-t border-border/50 flex justify-end gap-3">
+              <Button variant="outline" onClick={() => setIsPrefModalOpen(false)}>
+                Cancel
+              </Button>
+              <Button onClick={handleSavePreferences} disabled={isSavingPref}>
+                {isSavingPref ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : null}
+                Save Preferences
+              </Button>
             </div>
           </motion.div>
         </div>
