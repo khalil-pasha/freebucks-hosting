@@ -238,7 +238,7 @@ export default function DashboardOverview() {
                     <div className="flex-1 flex flex-col sm:flex-row sm:items-center justify-between gap-1">
                       <div>
                         <p className="font-medium text-sm">{activity.source}</p>
-                        <p className="text-xs text-foreground/50">{new Date(activity.createdAt).toLocaleString()}</p>
+                        <p className="text-xs text-foreground/50">{new Date(activity.timestamp).toLocaleString()}</p>
                       </div>
                       <div className={`text-sm font-semibold ${
                         activity.type === 'EARNED' ? 'text-success' : 'text-foreground'
