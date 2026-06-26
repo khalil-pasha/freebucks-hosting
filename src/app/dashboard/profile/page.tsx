@@ -344,9 +344,7 @@ export default function ProfilePage() {
                           {session.isCurrent && <span className="px-2 py-0.5 rounded text-[10px] uppercase font-bold bg-success/20 text-success border border-success/30">Current</span>}
                         </p>
                         <p className="text-xs text-foreground/50 mt-1">
-                          {session.device && `${session.device} • `} 
-                          {session.location ? `${session.location} • ` : ""}
-                          {session.ipAddress}
+                          {[session.device, session.location].filter(Boolean).join(' • ')}
                         </p>
                       </div>
                       <div className="text-right text-sm text-foreground/60 whitespace-nowrap">
