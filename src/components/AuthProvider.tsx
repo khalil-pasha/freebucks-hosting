@@ -52,7 +52,7 @@ export default function AuthProvider({ children }: { children: React.ReactNode }
         localStorage.removeItem('freebucks_token');
         localStorage.removeItem('token');
         localStorage.removeItem('authToken');
-        if (pathname.startsWith('/dashboard') || pathname.startsWith('/admin')) {
+        if (pathname.startsWith('/dashboard')) {
           router.push(`/login?redirect=${encodeURIComponent(pathname)}`);
         }
       }
@@ -95,9 +95,9 @@ export default function AuthProvider({ children }: { children: React.ReactNode }
     } else {
       console.log('[Auth] No token found, setting loading to false.');
       setLoading(false);
-      if (pathname.startsWith('/dashboard') || pathname.startsWith('/admin')) {
-        router.push(`/login?redirect=${encodeURIComponent(pathname)}`);
-      }
+        if (pathname.startsWith('/dashboard')) {
+          router.push(`/login?redirect=${encodeURIComponent(pathname)}`);
+        }
     }
   }, [pathname, router]);
 
