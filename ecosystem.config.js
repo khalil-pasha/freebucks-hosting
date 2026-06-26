@@ -3,10 +3,11 @@ module.exports = {
     {
       name: 'freebucks-frontend',
       cwd: '/var/www/freebucks-hosting',
-      script: 'npm',
-      args: 'start',
+      script: '.next/standalone/server.js',
       env: {
-        NODE_ENV: 'production'
+        NODE_ENV: 'production',
+        PORT: 3000,
+        HOSTNAME: '0.0.0.0'
       }
     },
     {
