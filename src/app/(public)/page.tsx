@@ -337,10 +337,10 @@ export default function Home() {
                 <p className="text-sm text-gray-300 font-semibold mb-8 pb-8 border-b-4 border-[#aa00aa]/30">Dedicated resources, instant starts, and zero queue times.</p>
                 
                 <div className="mt-auto">
-                  <Link href="https://discord.gg/XY25Xgr5fV" target="_blank" className="block">
+                  <Link href="/login?redirect=/dashboard/servers" className="block">
                     <Button className="w-full bg-[#FFAA00] hover:bg-[#FFD500] text-[#0a0f14] border-2 border-[#CC8800] font-black rounded-sm shadow-[inset_2px_2px_0_rgba(255,255,255,0.5),4px_4px_0_rgba(0,0,0,0.6)] active:translate-y-[4px] active:shadow-[inset_2px_2px_0_rgba(255,255,255,0.5),0_0_0_rgba(0,0,0,0.6)] h-14 uppercase tracking-wider text-base relative overflow-hidden group">
                       <motion.span animate={{ opacity: [0, 0.4, 0], x: [-50, 150] }} transition={{ duration: 2.5, repeat: Infinity, repeatDelay: 1 }} className="absolute inset-0 w-1/2 bg-gradient-to-r from-transparent via-white to-transparent skew-x-12" />
-                      Buy on Discord
+                      Buy Now
                     </Button>
                   </Link>
                 </div>
