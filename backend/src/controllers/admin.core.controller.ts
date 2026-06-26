@@ -1,9 +1,19 @@
 import { Request, Response } from 'express';
 import { db } from '../utils/db';
+import NodeCache from 'node-cache';
+
+const statsCache = new NodeCache({ stdTTL: 15 }); // Cache for 15 seconds
 
 export class AdminCoreController {
   public static async getDashboardStats(req: Request, res: Response) {
     try {
+      const cacheKey = 'admin_dashboard_stats';
+      const cachedData = statsCache.get(cacheKey);
+
+      if (cachedData) {
+        return res.json(cachedData);
+      }
+
       const now = new Date();
       const last24Hours = new Date(now.getTime() - 24 * 60 * 60 * 1000);
       const last7Days = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
@@ -23,9 +33,6 @@ export class AdminCoreController {
         _sum: { amount: true }
       });
 
-      // Group new users by day for the last 7 days
-      // Since prisma doesn't support grouping by raw date string out of the box easily across dialects,
-      // we'll fetch them and bucket them manually for the last 7 days.
       const recentUsers = await db.user.findMany({
         where: { createdAt: { gte: last7Days } },
         select: { createdAt: true }
@@ -36,18 +43,20 @@ export class AdminCoreController {
         const diffTime = Math.abs(now.getTime() - u.createdAt.getTime());
         const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24));
         if (diffDays < 7) {
-          // reverse index so day 0 is 7 days ago, day 6 is today
           newUsersHistory[6 - diffDays]++;
         }
       });
 
-      res.json({
+      const responseData = {
         totalUsers,
         activeUsers,
         totalCreditsBurned: creditsBurnedQuery._sum.amount || 0,
         totalCreditsEarned: creditsEarnedQuery._sum.amount || 0,
         newUsersHistory
-      });
+      };
+
+      statsCache.set(cacheKey, responseData);
+      res.json(responseData);
     } catch (error: any) {
       res.status(500).json({ error: error.message });
     }

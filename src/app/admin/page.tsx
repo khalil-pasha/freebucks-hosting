@@ -158,7 +158,7 @@ export default function AdminDashboardPage() {
                 const maxVal = Math.max(...newUsersHistory, 10); // Minimum scale 10
                 const percentage = (val / maxVal) * 100;
                 return (
-                <div key={i} className="w-full flex flex-col items-center gap-2 group">
+                <div key={i} className="w-full h-full flex flex-col items-center justify-end gap-2 group">
                   <motion.div 
                     initial={{ height: "0%" }}
                     animate={{ height: `${percentage}%` }}
@@ -183,7 +183,7 @@ export default function AdminDashboardPage() {
               <CardTitle className="text-lg">Credits Economy (All Time)</CardTitle>
             </CardHeader>
             <CardContent className="flex items-end justify-center h-64 pt-6 gap-12">
-                <div className="w-1/3 flex flex-col items-center gap-2 group">
+                <div className="w-1/3 h-full flex flex-col items-center justify-end gap-2 group">
                   <motion.div 
                     initial={{ height: "0%" }}
                     animate={{ height: `${Math.min(100, Math.max(10, (creditsEarned / Math.max(creditsEarned, creditsBurned, 1)) * 100))}%` }}
@@ -197,7 +197,7 @@ export default function AdminDashboardPage() {
                   <span className="text-xs text-foreground/50 font-medium">Earned</span>
                 </div>
                 
-                <div className="w-1/3 flex flex-col items-center gap-2 group">
+                <div className="w-1/3 h-full flex flex-col items-center justify-end gap-2 group">
                   <motion.div 
                     initial={{ height: "0%" }}
                     animate={{ height: `${Math.min(100, Math.max(10, (creditsBurned / Math.max(creditsEarned, creditsBurned, 1)) * 100))}%` }}

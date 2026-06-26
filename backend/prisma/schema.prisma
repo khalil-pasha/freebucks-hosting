@@ -130,6 +130,10 @@ model Server {
   subdomain    ServerSubdomain?
   pluginLogs   PluginInstallLog[]
   invites      ServerInvite[]
+
+  @@index([userId])
+  @@index([status])
+  @@index([nodeLocation])
 }
 
 model CreditsTransaction {
@@ -140,6 +144,10 @@ model CreditsTransaction {
   type      TransactionType
   source    String // e.g., 'daily_spin', 'hourly_claim', 'server_cost'
   timestamp DateTime        @default(now())
+
+  @@index([userId])
+  @@index([type])
+  @@index([timestamp])
 }
 
 model Referral {
@@ -154,6 +162,9 @@ model Referral {
   referrerRewardedAt DateTime?
   referredRewardedAt DateTime?
   completedAt        DateTime?
+
+  @@index([referrerId])
+  @@index([referredId])
 }
 
 model Voucher {
@@ -191,6 +202,9 @@ model QueueJob {
   priority  Int         @default(10)
   createdAt DateTime    @default(now())
   updatedAt DateTime    @updatedAt
+
+  @@index([status])
+  @@index([serverId])
 }
 
 model ServerBillingLog {
@@ -200,6 +214,8 @@ model ServerBillingLog {
   amountDeducted Float
   reason         String
   timestamp      DateTime @default(now())
+
+  @@index([serverId])
 }
 
 model SupportTicket {
@@ -338,18 +354,18 @@ model PluginInstallLog {
 }
 
 model UserSession {
-  id          String   @id @default(uuid())
-  userId      String
-  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  ipAddress   String?
-  location    String?  
-  device      String?
-  browser     String?
-  os          String?
-  userAgent   String?
-  loginTime   DateTime @default(now())
-  lastActive  DateTime @default(now())
-  isRevoked   Boolean  @default(false)
+  id         String   @id @default(uuid())
+  userId     String
+  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  ipAddress  String?
+  location   String?
+  device     String?
+  browser    String?
+  os         String?
+  userAgent  String?
+  loginTime  DateTime @default(now())
+  lastActive DateTime @default(now())
+  isRevoked  Boolean  @default(false)
 
   @@index([userId])
   @@index([isRevoked])
