@@ -160,7 +160,7 @@ export default function AdminDashboardPage() {
                 return (
                 <div key={i} className="w-full flex flex-col items-center gap-2 group">
                   <motion.div 
-                    initial={{ height: 0 }}
+                    initial={{ height: "0%" }}
                     animate={{ height: `${percentage}%` }}
                     transition={{ duration: 1, delay: i * 0.1 }}
                     className="w-full bg-primary/20 rounded-t-sm group-hover:bg-primary transition-colors relative"
@@ -185,7 +185,7 @@ export default function AdminDashboardPage() {
             <CardContent className="flex items-end justify-center h-64 pt-6 gap-12">
                 <div className="w-1/3 flex flex-col items-center gap-2 group">
                   <motion.div 
-                    initial={{ height: 0 }}
+                    initial={{ height: "0%" }}
                     animate={{ height: `${Math.min(100, Math.max(10, (creditsEarned / Math.max(creditsEarned, creditsBurned, 1)) * 100))}%` }}
                     transition={{ duration: 1 }}
                     className="w-full bg-success/60 rounded-t-sm hover:bg-success relative"
@@ -199,7 +199,7 @@ export default function AdminDashboardPage() {
                 
                 <div className="w-1/3 flex flex-col items-center gap-2 group">
                   <motion.div 
-                    initial={{ height: 0 }}
+                    initial={{ height: "0%" }}
                     animate={{ height: `${Math.min(100, Math.max(10, (creditsBurned / Math.max(creditsEarned, creditsBurned, 1)) * 100))}%` }}
                     transition={{ duration: 1, delay: 0.2 }}
                     className="w-full bg-red-500/60 rounded-t-sm hover:bg-red-500 relative"
