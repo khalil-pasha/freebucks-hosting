@@ -3,7 +3,7 @@
 import { useContext, useEffect, useState, useRef } from "react"
 import { ServerContext } from "../layout"
 import api, { handleApiError } from "@/lib/api"
-import { Folder, FileText, Upload, Plus, ChevronRight, Save, X, MoreVertical } from "lucide-react"
+import { Folder, FileText, Upload, Plus, ChevronRight, Save, X, MoreVertical, Trash } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import axios from "axios"
@@ -17,9 +17,10 @@ export default function FilesPage() {
   const [editingFile, setEditingFile] = useState<{ name: string, content: string } | null>(null)
   const [saving, setSaving] = useState(false)
 
-  const [activeModal, setActiveModal] = useState<{type: 'rename'|'move'|'chmod'|'archive'|'unarchive'|'delete'|'create-folder', file?: any} | null>(null)
+  const [activeModal, setActiveModal] = useState<{type: 'rename'|'move'|'chmod'|'archive'|'unarchive'|'delete'|'create-folder'|'bulk-delete', file?: any} | null>(null)
   const [modalInput, setModalInput] = useState("")
   const [openDropdownId, setOpenDropdownId] = useState<string | null>(null)
+  const [selectedFiles, setSelectedFiles] = useState<string[]>([])
 
   const fetchFiles = async (dir: string = "/") => {
     try {
@@ -27,6 +28,7 @@ export default function FilesPage() {
       const res = await api.get(`/servers/${server.id}/panel/files?directory=${encodeURIComponent(dir)}`)
       setFiles(res.data)
       setCurrentPath(dir)
+      setSelectedFiles([])
     } catch (err) {
       console.error(err)
     } finally {
@@ -198,6 +200,13 @@ export default function FilesPage() {
           files: [file.name]
         })
         alert("Deleted successfully")
+      } else if (type === 'bulk-delete') {
+        await api.post(`/servers/${server.id}/panel/files/delete`, {
+          root: currentPath,
+          files: selectedFiles
+        })
+        alert("Deleted successfully")
+        setSelectedFiles([])
       }
 
       fetchFiles(currentPath)
@@ -249,6 +258,11 @@ export default function FilesPage() {
           ))}
         </div>
         <div className="flex gap-2">
+          {selectedFiles.length > 0 && (
+            <Button variant="destructive" onClick={() => setActiveModal({type: 'bulk-delete'})}>
+              <Trash className="w-4 h-4 mr-2" /> Delete Selected ({selectedFiles.length})
+            </Button>
+          )}
           <input type="file" multiple ref={fileInputRef} className="hidden" onChange={handleFileUpload} />
           <Button variant="outline" onClick={() => { setActiveModal({type: 'create-folder'}); setModalInput("new_folder") }}><Plus className="w-4 h-4 mr-2" /> New Folder</Button>
           <Button variant="default" onClick={() => fileInputRef.current?.click()}><Upload className="w-4 h-4 mr-2" /> Upload</Button>
@@ -259,6 +273,14 @@ export default function FilesPage() {
         <table className="w-full text-left text-sm whitespace-nowrap">
           <thead className="bg-background/50 border-b border-border/50 sticky top-0 z-10">
             <tr>
+              <th className="px-4 py-3 w-10">
+                <input 
+                  type="checkbox" 
+                  className="accent-primary w-4 h-4 rounded cursor-pointer"
+                  checked={files.length > 0 && selectedFiles.length === files.length}
+                  onChange={(e) => setSelectedFiles(e.target.checked ? files.map(f => f.name) : [])}
+                />
+              </th>
               <th className="px-4 py-3 font-medium">Name</th>
               <th className="px-4 py-3 font-medium">Size</th>
               <th className="px-4 py-3 font-medium">Permissions</th>
@@ -269,6 +291,7 @@ export default function FilesPage() {
           <tbody>
             {currentPath !== '/' && (
               <tr className="border-b border-border/10 hover:bg-foreground/5 cursor-pointer" onClick={navigateUp}>
+                <td className="px-4 py-3"></td>
                 <td className="px-4 py-3 flex items-center gap-2"><Folder className="w-4 h-4 text-blue-400" /> ..</td>
                 <td className="px-4 py-3">-</td>
                 <td className="px-4 py-3">-</td>
@@ -277,7 +300,19 @@ export default function FilesPage() {
               </tr>
             )}
             {files.map((file, i) => (
-              <tr key={i} className="border-b border-border/10 hover:bg-foreground/5">
+              <tr key={i} className={`border-b border-border/10 hover:bg-foreground/5 ${selectedFiles.includes(file.name) ? 'bg-primary/10 hover:bg-primary/20' : ''}`}>
+                <td className="px-4 py-3">
+                  <input 
+                    type="checkbox" 
+                    className="accent-primary w-4 h-4 rounded cursor-pointer"
+                    checked={selectedFiles.includes(file.name)}
+                    onClick={(e) => e.stopPropagation()}
+                    onChange={(e) => { 
+                      e.stopPropagation(); 
+                      setSelectedFiles(prev => e.target.checked ? [...prev, file.name] : prev.filter(n => n !== file.name)) 
+                    }}
+                  />
+                </td>
                 <td className="px-4 py-3 flex items-center gap-2 cursor-pointer" onClick={() => file.isFile ? handleEdit(file) : navigateTo(file.name)}>
                   {file.isFile ? <FileText className="w-4 h-4 text-foreground/60" /> : <Folder className="w-4 h-4 text-blue-400" />}
                   {file.name}
@@ -306,7 +341,7 @@ export default function FilesPage() {
             ))}
             {!loading && files.length === 0 && (
               <tr>
-                <td colSpan={5} className="px-4 py-8 text-center text-foreground/50">This directory is empty.</td>
+                <td colSpan={6} className="px-4 py-8 text-center text-foreground/50">This directory is empty.</td>
               </tr>
             )}
           </tbody>
@@ -334,6 +369,10 @@ export default function FilesPage() {
               <p className="mb-6 text-foreground/80">Are you sure you want to delete <strong>{activeModal.file.name}</strong>? This action cannot be undone.</p>
             )}
             
+            {activeModal.type === 'bulk-delete' && (
+              <p className="mb-6 text-foreground/80">Are you sure you want to delete <strong>{selectedFiles.length}</strong> selected item(s)? This action cannot be undone.</p>
+            )}
+            
             {activeModal.type === 'archive' && (
               <p className="mb-6 text-foreground/80">Are you sure you want to archive <strong>{activeModal.file.name}</strong>?</p>
             )}
@@ -346,11 +385,11 @@ export default function FilesPage() {
               <Button variant="ghost" onClick={() => setActiveModal(null)}>Cancel</Button>
               <Button 
                 variant="default"
-                className={activeModal.type === 'delete' ? 'bg-red-500 hover:bg-red-600 text-white' : ''}
+                className={(activeModal.type === 'delete' || activeModal.type === 'bulk-delete') ? 'bg-red-500 hover:bg-red-600 text-white' : ''}
                 onClick={executeModalAction}
                 disabled={loading}
               >
-                {loading ? 'Processing...' : activeModal.type === 'delete' ? 'Delete' : 'Confirm'}
+                {loading ? 'Processing...' : (activeModal.type === 'delete' || activeModal.type === 'bulk-delete') ? 'Delete' : 'Confirm'}
               </Button>
             </div>
           </div>
