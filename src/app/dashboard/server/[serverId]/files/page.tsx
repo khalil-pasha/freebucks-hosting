@@ -3,7 +3,7 @@
 import { useContext, useEffect, useState, useRef } from "react"
 import { ServerContext } from "../layout"
 import api, { handleApiError } from "@/lib/api"
-import { Folder, FileText, Upload, Plus, ChevronRight, Save, X, MoreVertical, Trash } from "lucide-react"
+import { Folder, FileText, Upload, Plus, ChevronRight, Save, X, MoreVertical, Trash, Archive } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import axios from "axios"
@@ -17,7 +17,7 @@ export default function FilesPage() {
   const [editingFile, setEditingFile] = useState<{ name: string, content: string } | null>(null)
   const [saving, setSaving] = useState(false)
 
-  const [activeModal, setActiveModal] = useState<{type: 'rename'|'move'|'chmod'|'archive'|'unarchive'|'delete'|'create-folder'|'bulk-delete', file?: any} | null>(null)
+  const [activeModal, setActiveModal] = useState<{type: 'rename'|'move'|'chmod'|'archive'|'unarchive'|'delete'|'create-folder'|'bulk-delete'|'bulk-archive', file?: any} | null>(null)
   const [modalInput, setModalInput] = useState("")
   const [openDropdownId, setOpenDropdownId] = useState<string | null>(null)
   const [selectedFiles, setSelectedFiles] = useState<string[]>([])
@@ -207,6 +207,13 @@ export default function FilesPage() {
         })
         alert("Deleted successfully")
         setSelectedFiles([])
+      } else if (type === 'bulk-archive') {
+        await api.post(`/servers/${server.id}/panel/files/archive`, {
+          root: currentPath,
+          files: selectedFiles
+        })
+        alert("Archive created successfully")
+        setSelectedFiles([])
       }
 
       fetchFiles(currentPath)
@@ -259,9 +266,14 @@ export default function FilesPage() {
         </div>
         <div className="flex gap-2">
           {selectedFiles.length > 0 && (
-            <Button variant="default" className="bg-red-500 hover:bg-red-600 text-white" onClick={() => setActiveModal({type: 'bulk-delete'})}>
-              <Trash className="w-4 h-4 mr-2" /> Delete Selected ({selectedFiles.length})
-            </Button>
+            <>
+              <Button variant="default" className="bg-blue-500 hover:bg-blue-600 text-white" onClick={() => setActiveModal({type: 'bulk-archive'})}>
+                <Archive className="w-4 h-4 mr-2" /> Archive
+              </Button>
+              <Button variant="default" className="bg-red-500 hover:bg-red-600 text-white" onClick={() => setActiveModal({type: 'bulk-delete'})}>
+                <Trash className="w-4 h-4 mr-2" /> Delete ({selectedFiles.length})
+              </Button>
+            </>
           )}
           <input type="file" multiple ref={fileInputRef} className="hidden" onChange={handleFileUpload} />
           <Button variant="outline" onClick={() => { setActiveModal({type: 'create-folder'}); setModalInput("new_folder") }}><Plus className="w-4 h-4 mr-2" /> New Folder</Button>
@@ -377,6 +389,10 @@ export default function FilesPage() {
               <p className="mb-6 text-foreground/80">Are you sure you want to archive <strong>{activeModal.file.name}</strong>?</p>
             )}
 
+            {activeModal.type === 'bulk-archive' && (
+              <p className="mb-6 text-foreground/80">Are you sure you want to archive <strong>{selectedFiles.length}</strong> selected item(s)?</p>
+            )}
+
             {activeModal.type === 'unarchive' && (
               <p className="mb-6 text-foreground/80">Are you sure you want to extract <strong>{activeModal.file.name}</strong> into the current directory?</p>
             )}
@@ -389,7 +405,7 @@ export default function FilesPage() {
                 onClick={executeModalAction}
                 disabled={loading}
               >
-                {loading ? 'Processing...' : (activeModal.type === 'delete' || activeModal.type === 'bulk-delete') ? 'Delete' : 'Confirm'}
+                {loading ? 'Processing...' : (activeModal.type === 'delete' || activeModal.type === 'bulk-delete') ? 'Delete' : activeModal.type === 'bulk-archive' ? 'Archive' : 'Confirm'}
               </Button>
             </div>
           </div>
