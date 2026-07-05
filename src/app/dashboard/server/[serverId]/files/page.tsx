@@ -259,7 +259,7 @@ export default function FilesPage() {
         </div>
         <div className="flex gap-2">
           {selectedFiles.length > 0 && (
-            <Button variant="destructive" onClick={() => setActiveModal({type: 'bulk-delete'})}>
+            <Button variant="default" className="bg-red-500 hover:bg-red-600 text-white" onClick={() => setActiveModal({type: 'bulk-delete'})}>
               <Trash className="w-4 h-4 mr-2" /> Delete Selected ({selectedFiles.length})
             </Button>
           )}
