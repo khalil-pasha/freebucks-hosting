@@ -714,10 +714,11 @@ export default function ServersPage() {
                           </CardContent>
                           <CardFooter>
                             <Button 
-                              onClick={() => handlePlanSelect(plan)}
-                              className={`w-full ${plan.isPremium ? 'bg-[#FFD700] hover:bg-[#FFD700]/90 text-black' : 'bg-primary hover:bg-primary/90 text-white'}`}
+                              onClick={() => plan.isPremium && handlePlanSelect(plan)}
+                              disabled={!plan.isPremium}
+                              className={`w-full ${plan.isPremium ? 'bg-[#FFD700] hover:bg-[#FFD700]/90 text-black' : 'bg-primary/50 text-white cursor-not-allowed'}`}
                             >
-                              {plan.isPremium ? 'Buy Premium' : 'Deploy Server'}
+                              {plan.isPremium ? 'Buy Premium' : 'Coming Soon'}
                             </Button>
                           </CardFooter>
                         </Card>

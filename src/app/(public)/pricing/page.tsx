@@ -92,11 +92,11 @@ function PricingContent() {
               </CardContent>
               <CardFooter>
                 <Button 
-                  onClick={handlePlanClick}
-                  disabled={authLoading}
-                  className={`w-full ${plan.isPremium ? 'bg-[#FFD700] hover:bg-[#FFD700]/90 text-black' : 'bg-primary hover:bg-primary/90 text-white'}`}
+                  onClick={() => plan.isPremium && handlePlanClick()}
+                  disabled={authLoading || !plan.isPremium}
+                  className={`w-full ${plan.isPremium ? 'bg-[#FFD700] hover:bg-[#FFD700]/90 text-black' : 'bg-primary/50 text-white cursor-not-allowed'}`}
                 >
-                  {authLoading ? 'Verifying...' : plan.isPremium ? 'Buy Premium' : 'Deploy Server'}
+                  {authLoading ? 'Verifying...' : plan.isPremium ? 'Buy Premium' : 'Coming Soon'}
                 </Button>
               </CardFooter>
             </Card>
