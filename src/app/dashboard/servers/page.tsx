@@ -646,7 +646,7 @@ export default function ServersPage() {
               </CardContent>
 
               <CardFooter className="pt-4 border-t border-border/50 bg-card/30 flex flex-wrap gap-2">
-                {displayStatus === "STOPPED" || displayStatus === "OFFLINE" ? (
+                {finalStatus === "STOPPED" || finalStatus === "OFFLINE" ? (
                   <Button disabled={actionLoading === server.id || !!(user && user.balance < server.costPerHour)} onClick={(e) => { e.stopPropagation(); handleAction('start-server', server.id)}} size="sm" className="bg-success hover:bg-success/90 text-white shadow-lg shadow-success/20 flex-1 sm:flex-none">
                     {actionLoading === server.id ? (
                       <><RefreshCw className="w-4 h-4 mr-2 animate-spin" /> Starting...</>
